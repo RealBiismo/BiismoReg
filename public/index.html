@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BiismoReg | Free Car Check</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .hero {
+      background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.85)), 
+                  url('https://images.unsplash.com/photo-1583121274602-3e2820c69888') center/cover no-repeat;
+      min-height: 85vh;
+    }
+    .plate-input {
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen">
+
+  <!-- Navigation -->
+  <nav class="bg-black border-b border-zinc-800 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-car text-3xl text-blue-500"></i>
+        <span class="text-2xl font-bold tracking-tight">BiismoReg</span>
+      </div>
+      <div class="text-xs sm:text-sm text-gray-400"></div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero flex items-center py-12 md:py-0">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center w-full">
+      <h1 class="text-4xl md:text-6xl font-bold mb-4 tracking-tighter">FREE CAR CHECK</h1>
+      <p class="text-lg md:text-2xl text-gray-300 mb-8 md:mb-10">MOT • TAX • VEHICLE DETAILS</p>
+
+      <!-- UK Plate Style Input -->
+      <div class="max-w-md mx-auto">
+        <div class="flex bg-white rounded-2xl overflow-hidden plate-input shadow-2xl">
+          <!-- GB Flag -->
+          <div class="bg-blue-600 text-white px-4 sm:px-6 py-5 flex items-center gap-2 font-bold text-sm sm:text-base">
+            🇬🇧 <span class="hidden sm:inline">GB</span>
+          </div>
+
+          <input 
+            id="reg" 
+            type="text" 
+            placeholder="ENTER REG" 
+            maxlength="7"
+            class="flex-1 px-4 sm:px-6 py-5 text-2xl sm:text-3xl font-bold text-black uppercase focus:outline-none text-center"
+          >
+
+          <button onclick="checkVehicle()" 
+                  class="bg-yellow-400 hover:bg-yellow-500 transition text-black font-bold px-6 sm:px-10 text-lg sm:text-xl">
+            CHECK
+          </button>
+        </div>
+        <p class="text-xs text-gray-400 mt-3">e.g. YourReg</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="result" class="max-w-6xl mx-auto px-4 sm:px-6 py-8"></div>
+
+  <script>
+    function daysUntil(dateStr) {
+      if (!dateStr) return null;
+      const date = new Date(dateStr);
+      const today = new Date();
+      return Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+    }
+
+    async function checkVehicle() {
+      const reg = document.getElementById('reg').value.trim().toUpperCase().replace(/\s/g, '');
+      const resultDiv = document.getElementById('result');
+
+      if (!reg) return alert("Please enter a registration number");
+
+      resultDiv.innerHTML = `
+        <div class="flex justify-center py-20">
+          <div class="animate-spin rounded-full h-14 w-14 border-t-4 border-blue-500"></div>
+        </div>`;
+
+      try {
+        const res = await fetch('/api/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ registrationNumber: reg })
+        });
+
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        const motDays = data.motExpiryDate ? daysUntil(data.motExpiryDate) : null;
+        const taxDays = data.taxDueDate ? daysUntil(data.taxDueDate) : null;
+        const isTaxed = data.taxStatus?.toLowerCase().includes('taxed');
+
+        resultDiv.innerHTML = `
+          <div class="bg-zinc-900 rounded-3xl p-6 md:p-12">
+            <div class="text-center mb-8 md:mb-12">
+              <p class="text-5xl md:text-6xl font-bold tracking-widest">${reg}</p>
+              <p class="text-2xl md:text-3xl text-blue-400 mt-3">${data.make || ''} ${data.model || ''}</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-10">
+              <!-- MOT -->
+              <div class="rounded-3xl p-6 md:p-8 border ${motDays < 0 ? 'border-red-500' : 'border-green-500'} bg-zinc-950">
+                <p class="text-gray-400 text-sm">MOT Expiry</p>
+                <p class="text-3xl font-bold mt-2">${data.motExpiryDate ? new Date(data.motExpiryDate).toLocaleDateString('en-GB') : 'No Data'}</p>
+                <div class="mt-4 ${motDays < 0 ? 'text-red-500' : 'text-green-500'} font-semibold">
+                  ${motDays < 0 ? 'EXPIRED' : 'VALID'} 
+                  ${motDays >= 0 ? `(${motDays} days left)` : ''}
+                </div>
+              </div>
+
+              <!-- Tax -->
+              <div class="rounded-3xl p-6 md:p-8 border ${isTaxed ? 'border-green-500' : 'border-red-500'} bg-zinc-950">
+                <p class="text-gray-400 text-sm">Tax Status</p>
+                <p class="text-3xl font-bold mt-2">${data.taxStatus || 'Unknown'}</p>
+                <div class="mt-4 ${isTaxed ? 'text-green-500' : 'text-red-500'} font-semibold">
+                  ${isTaxed ? 'TAXED' : 'NOT TAXED'} 
+                  ${taxDays !== null ? `(${taxDays} days left)` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- Vehicle Details -->
+            <div class="bg-zinc-950 rounded-2xl p-6 md:p-8">
+              <h3 class="text-lg font-semibold mb-6 text-gray-300">Vehicle Information</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                ${Object.entries(data)
+                  .filter(([k]) => !['make','model','motExpiryDate','taxDueDate','taxStatus'].includes(k))
+                  .map(([key, val]) => `
+                    <div class="flex justify-between py-2 border-b border-zinc-800 last:border-0">
+                      <span class="text-gray-400">${key.replace(/([A-Z])/g, ' $1')}</span>
+                      <span class="font-medium text-right">${val || '—'}</span>
+                    </div>
+                  `).join('')}
+              </div>
+            </div>
+          </div>`;
+      } catch (e) {
+        resultDiv.innerHTML = `<div class="text-red-500 text-center py-12 text-lg">Error: ${e.message}</div>`;
+      }
+    }
+
+    // Enter key support
+    document.getElementById('reg').addEventListener('keypress', e => {
+      if (e.key === 'Enter') checkVehicle();
+    });
+  </script>
+</body>
+</html>
