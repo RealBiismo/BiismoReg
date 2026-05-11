@@ -11,12 +11,15 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// middleware
 app.use(cors());
 app.use(express.json());
+
+// serve frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * Helper: safe DVLA fetch wrapper
+ * DVLA API helper
  */
 async function fetchVehicle(reg) {
   const response = await fetch(
@@ -40,10 +43,11 @@ async function fetchVehicle(reg) {
   return await response.json();
 }
 
+/**
+ * API route
+ */
 app.post('/api/check', async (req, res) => {
-
   try {
-
     const reg = (req.body.registrationNumber || '')
       .replace(/\s+/g, '')
       .toUpperCase();
@@ -54,52 +58,41 @@ app.post('/api/check', async (req, res) => {
 
     const data = await fetchVehicle(reg);
 
-    /**
-     * NORMALISED RESPONSE (this is what your frontend should use)
-     */
-    const result = {
+    res.json({
       registrationNumber: data.registrationNumber || reg,
-
       make: data.make || null,
       model: data.model || null,
       colour: data.colour || null,
       fuelType: data.fuelType || null,
       yearOfManufacture: data.yearOfManufacture || null,
-
       engineCapacity: data.engineCapacity || null,
       co2Emissions: data.co2Emissions || null,
       euroStatus: data.euroStatus || null,
-
       motStatus: data.motStatus || null,
       taxStatus: data.taxStatus || null,
-
       motExpiryDate: data.motExpiryDate || null,
       taxDueDate: data.taxDueDate || null,
-
-      // computed helpers (clean for UI)
       isTaxed: data.taxStatus === 'Taxed',
       hasMot: data.motStatus === 'Valid'
-    };
-
-    res.json(result);
+    });
 
   } catch (err) {
     console.log('API ERROR:', err.message);
-
-    res.status(500).json({
-      error: 'Server error'
-    });
+    res.status(500).json({ error: 'Server error' });
   }
-
 });
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+/**
+ * fallback homepage (fixes "Cannot GET /")
+ */
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-console.log("STATIC PATH:", path.join(__dirname, 'public'));
-import path from "path";
-import express from "express";
 
-const app = express();
-
-app.use(express.static("public"));
+/**
+ * IMPORTANT for Render
+ */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log('Server running on port', PORT);
+});
