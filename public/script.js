@@ -8,22 +8,27 @@ function daysLeft(dateStr){
   const diff =
     Math.ceil(
       (target - now) /
-      (1000*60*60*24)
+      (1000 * 60 * 60 * 24)
     );
 
   return diff;
 }
 
 /* =========================
-   MOT STATUS (FIXED)
+   MOT STATUS (ROBUST)
 ========================= */
-
 function getMotStatus(dateStr){
+
+  if(!dateStr){
+    return {
+      text: "EXPIRED",
+      class: "tax-red"
+    };
+  }
 
   const days = daysLeft(dateStr);
 
-  if(!dateStr || days === null || isNaN(days) || days < 0){
-
+  if(isNaN(days) || days === null || days < 0){
     return {
       text: "EXPIRED",
       class: "tax-red"
@@ -37,39 +42,38 @@ function getMotStatus(dateStr){
 }
 
 /* =========================
-   TAX STATUS (FIXED)
+   TAX STATUS (DVLA SAFE PARSER)
 ========================= */
+function getTaxStatus(d){
 
-function getTaxStatus(status){
+  const raw =
+    (
+      d.taxStatus ||
+      d.taxStatusDescription ||
+      d.taxStatusDetails ||
+      d.vehicleTax?.status ||
+      d.taxStatusCode ||
+      ""
+    ).toString().toLowerCase();
 
-  const s = (status || "").toLowerCase();
-
-  if(s.includes("taxed")){
-
-    return {
-      text: "TAXED",
-      class: "tax-green"
-    };
+  if(raw.includes("taxed")){
+    return { text:"TAXED", class:"tax-green" };
   }
 
-  if(s.includes("sorn")){
-
-    return {
-      text: "SORN",
-      class: "tax-red"
-    };
+  if(raw.includes("sorn")){
+    return { text:"SORN", class:"tax-red" };
   }
 
-  return {
-    text: "UNTAXED",
-    class: "tax-red"
-  };
+  if(raw.includes("untaxed") || raw === ""){
+    return { text:"UNTAXED", class:"tax-red" };
+  }
+
+  return { text:"UNKNOWN", class:"tax-red" };
 }
 
 /* =========================
-   TOGGLE MOT
+   MOT TOGGLE
 ========================= */
-
 function toggleMot(){
 
   const el =
@@ -93,11 +97,9 @@ function toggleMot(){
 /* =========================
    DEFECT GROUPING
 ========================= */
-
 function buildDefects(defects){
 
   if(!defects || !defects.length){
-
     return `
       <div class="clean-pass">
         No advisories or defects
@@ -118,9 +120,9 @@ function buildDefects(defects){
       (d.type || "ADVISORY").toUpperCase();
 
     if(groups[type]){
-      groups[type].push(d.text);
+      groups[type].push(d.text || d.description || d.comment || "Issue found");
     }else{
-      groups.ADVISORY.push(d.text);
+      groups.ADVISORY.push(d.text || d.description || d.comment || "Issue found");
     }
 
   });
@@ -148,9 +150,8 @@ function buildDefects(defects){
 }
 
 /* =========================
-   MAIN CHECK
+   MAIN VEHICLE CHECK
 ========================= */
-
 async function checkVehicle(){
 
   const reg =
@@ -162,13 +163,13 @@ async function checkVehicle(){
       .replace(/\s/g,"");
 
   if(!reg){
-    alert("Enter reg");
+    alert("Enter registration");
     return;
   }
 
   document.getElementById("result").innerHTML = `
     <div class="result-card glass">
-      Loading vehicle...
+      Loading vehicle data...
     </div>
   `;
 
@@ -188,31 +189,37 @@ async function checkVehicle(){
     const d =
       await res.json();
 
-    /* FIXED STATUS */
+    if(d.error){
+      throw new Error(d.error);
+    }
+
     const motStatus =
       getMotStatus(d.motExpiryDate);
 
     const taxStatus =
-      getTaxStatus(d.taxStatus);
+      getTaxStatus(d);
 
     document.getElementById("result").innerHTML = `
 
       <div class="result-card glass">
 
+        <!-- PLATE -->
         <div class="result-plate">
 
           <div class="gb">GB</div>
 
           <div class="result-reg">
-            ${d.registration}
+            ${d.registration || reg}
           </div>
 
         </div>
 
+        <!-- TITLE -->
         <div class="car-title">
-          ${d.make} ${d.model}
+          ${d.make || "Unknown"} ${d.model || ""}
         </div>
 
+        <!-- GRID -->
         <div class="grid">
 
           <div class="info-box">
@@ -235,19 +242,20 @@ async function checkVehicle(){
           <div class="info-box">
             <div class="info-title">Engine</div>
             <div class="info-value">
-              ${d.engineCapacity}cc
+              ${d.engineCapacity || "N/A"}cc
             </div>
           </div>
 
           <div class="info-box">
             <div class="info-title">Fuel</div>
             <div class="info-value">
-              ${d.fuelType}
+              ${d.fuelType || "N/A"}
             </div>
           </div>
 
         </div>
 
+        <!-- MOT BUTTON -->
         <button
           id="motBtn"
           class="mot-button"
@@ -256,29 +264,31 @@ async function checkVehicle(){
           Show MOT History
         </button>
 
+        <!-- MOT HISTORY -->
         <div id="motContainer">
 
           ${
-            d.motHistory?.length
+            d.motHistory && d.motHistory.length
 
             ? d.motHistory.map(m => `
 
               <div class="mot-card">
 
-                <div class="${m.result === "PASSED" ? "pass":"fail"}">
-                  ${m.result}
+                <div class="${m.result === "PASSED" ? "pass" : "fail"}">
+                  ${m.result || "UNKNOWN"}
                 </div>
 
                 <div>
-                  ${new Date(m.completedDate)
-                    .toLocaleDateString("en-GB")}
+                  ${m.completedDate
+                    ? new Date(m.completedDate).toLocaleDateString("en-GB")
+                    : "Unknown date"}
                 </div>
 
                 <div>
-                  ${m.mileage} ${m.mileageUnit}
+                  ${m.mileage || "N/A"} ${m.mileageUnit || ""}
                 </div>
 
-                ${buildDefects(m.defects)}
+                ${buildDefects(m.defects || [])}
 
               </div>
 
