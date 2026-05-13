@@ -57,7 +57,7 @@
 
     <div class="max-w-4xl mx-auto px-4 text-center w-full">
 
-      <h1 class="text-5xl md:text-6xl font-bold mb-4">
+      <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight">
         FREE CAR CHECK
       </h1>
 
@@ -66,13 +66,16 @@
       </p>
 
       <!-- SEARCH -->
-      <div class="max-w-md mx-auto">
+      <div class="max-w-3xl mx-auto">
 
         <div class="flex bg-white rounded-2xl overflow-hidden plate-input">
 
-          <!-- GB -->
-          <div class="bg-blue-600 text-white px-5 py-5 flex items-center font-bold">
-            🇬🇧 GB
+          <!-- GB SIDE -->
+          <div class="bg-blue-600 text-white w-[80px] flex flex-col items-center justify-center font-bold text-sm">
+
+            <span>GB</span>
+            <span class="text-xl">🇬🇧</span>
+
           </div>
 
           <!-- INPUT -->
@@ -82,20 +85,31 @@
             placeholder="ENTER REG"
             maxlength="10"
 
-            class="flex-1 py-5 text-3xl font-bold text-black uppercase focus:outline-none text-center tracking-widest"
-
-            style="padding-left:70px;padding-right:20px;"
+            class="flex-1 px-6 py-5 text-3xl md:text-5xl font-bold text-black uppercase focus:outline-none text-center tracking-[0.25em]"
           />
 
           <!-- BUTTON -->
           <button
             onclick="checkVehicle()"
-            class="bg-yellow-400 hover:bg-yellow-500 transition text-black font-bold px-8"
+            class="bg-yellow-400 hover:bg-yellow-500 transition text-black font-bold px-8 md:px-12 text-lg md:text-xl"
           >
             CHECK
           </button>
 
         </div>
+
+        <!-- TAGLINE -->
+        <p class="text-gray-300 mt-6 text-lg font-medium">
+          Built by car lovers, for car lovers 🏎️
+        </p>
+
+        <!-- SMALL PRINT -->
+        <p class="text-gray-500 text-xs mt-3 max-w-lg mx-auto leading-relaxed">
+
+          We do not store registration searches or personal vehicle data.
+          Vehicle information is provided using official DVLA and DVSA data sources.
+
+        </p>
 
       </div>
 
@@ -124,7 +138,7 @@
     }
 
     /**
-     * SHOW/HIDE MOT HISTORY
+     * TOGGLE MOT HISTORY
      */
     function toggleMotHistory() {
 
@@ -147,7 +161,7 @@
     }
 
     /**
-     * MAIN VEHICLE CHECK
+     * MAIN SEARCH
      */
     async function checkVehicle() {
 
@@ -165,7 +179,7 @@
       }
 
       /**
-       * LOADING
+       * LOADER
        */
       resultDiv.innerHTML = `
         <div class="flex justify-center py-20">
@@ -176,21 +190,23 @@
       try {
 
         /**
-         * FETCH BACKEND
+         * FETCH API
          */
         const res = await fetch('/api/check', {
+
           method: 'POST',
+
           headers: {
             'Content-Type': 'application/json'
           },
+
           body: JSON.stringify({
             registrationNumber: reg
           })
+
         });
 
         const data = await res.json();
-
-        console.log(data);
 
         if (data.error) {
           throw new Error(data.error);
@@ -209,7 +225,7 @@
           .includes('taxed');
 
         /**
-         * RENDER PAGE
+         * PAGE HTML
          */
         resultDiv.innerHTML = `
 
@@ -372,23 +388,14 @@
 
                   ? (data.motHistory || []).map(test => {
 
-                      /**
-                       * COMBINE ALL POSSIBLE ISSUE ARRAYS
-                       */
                       const issues = [
 
                         ...(test.rfrAndComments || []),
-
                         ...(test.advisories || []),
-
                         ...(test.minorDefects || []),
-
                         ...(test.majorDefects || []),
-
                         ...(test.dangerousDefects || []),
-
                         ...(test.defects || []),
-
                         ...(test.reasons || [])
 
                       ];
@@ -431,7 +438,6 @@
                               <p class="text-3xl font-bold">
 
                                 ${test.odometerValue || 'N/A'}
-                                ${test.odometerUnit || ''}
 
                               </p>
 
@@ -553,7 +559,7 @@
     }
 
     /**
-     * ENTER KEY SUPPORT
+     * ENTER KEY
      */
     document.addEventListener('DOMContentLoaded', () => {
 
