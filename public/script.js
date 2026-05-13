@@ -1,6 +1,6 @@
 function daysLeft(dateStr){
 
-  if(!dateStr) return 0;
+  if(!dateStr) return null;
 
   const now = new Date();
   const target = new Date(dateStr);
@@ -11,10 +11,10 @@ function daysLeft(dateStr){
       (1000*60*60*24)
     );
 
-  return diff < 0 ? 0 : diff;
+  return diff;
 }
 
-/* TOGGLE MOT */
+/* MOT TOGGLE */
 function toggleMot(){
 
   const el =
@@ -35,38 +35,35 @@ function toggleMot(){
       : "Hide MOT History";
 }
 
-/* TAX FIX (NO DUPLICATES + COLOR) */
-function getTaxDisplay(d){
+/* TAX STATUS (CLEAN + NO DUPLICATE) */
+function taxUI(d){
 
   const status =
     (d.taxStatus || "").toLowerCase();
 
   if(status.includes("taxed")){
 
-    return `
-      <div class="info-value tax-green">
-        TAXED
-      </div>
-    `;
+    return {
+      text:"TAXED",
+      class:"tax-green"
+    };
   }
 
   if(status.includes("sorn")){
 
-    return `
-      <div class="info-value tax-red">
-        SORN
-      </div>
-    `;
+    return {
+      text:"SORN",
+      class:"tax-red"
+    };
   }
 
-  return `
-    <div class="info-value tax-red">
-      UNTAXED
-    </div>
-  `;
+  return {
+    text:"UNTAXED",
+    class:"tax-red"
+  };
 }
 
-/* GROUP DEFECTS */
+/* DEFECT GROUPS */
 function buildDefects(defects){
 
   if(!defects.length){
@@ -161,8 +158,13 @@ async function checkVehicle(){
     const motDays =
       daysLeft(d.motExpiryDate);
 
-    const taxDays =
-      daysLeft(d.taxDueDate);
+    const tax =
+      taxUI(d);
+
+    const motStatus =
+      !d.motExpiryDate
+        ? `<span style="color:#f87171;font-weight:900;">EXPIRED</span>`
+        : `${motDays} days left`;
 
     document.getElementById("result").innerHTML = `
 
@@ -189,13 +191,14 @@ async function checkVehicle(){
             <div class="info-value">
               ${d.motExpiryDate || "N/A"}
             </div>
-            <div>${motDays} days</div>
+            <div>${motStatus}</div>
           </div>
 
           <div class="info-box">
             <div class="info-title">Tax Status</div>
-            ${getTaxDisplay(d)}
-            <div>${taxDays} days</div>
+            <div class="info-value ${tax.class}">
+              ${tax.text}
+            </div>
           </div>
 
           <div class="info-box">
@@ -225,7 +228,9 @@ async function checkVehicle(){
         <div id="motContainer">
 
           ${
-            d.motHistory.map(m => `
+            d.motHistory.length
+
+            ? d.motHistory.map(m => `
 
               <div class="mot-card">
 
@@ -234,8 +239,7 @@ async function checkVehicle(){
                 </div>
 
                 <div>
-                  ${new Date(m.completedDate)
-                    .toLocaleDateString("en-GB")}
+                  ${new Date(m.completedDate).toLocaleDateString("en-GB")}
                 </div>
 
                 <div>
@@ -247,6 +251,12 @@ async function checkVehicle(){
               </div>
 
             `).join("")
+
+            : `
+              <div class="mot-card">
+                No MOT history found
+              </div>
+            `
           }
 
         </div>
