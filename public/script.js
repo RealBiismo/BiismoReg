@@ -46,15 +46,37 @@ function getMotStatus(dateStr){
 ========================= */
 function getTaxStatus(d){
 
+  const today = new Date();
+
+  const taxDate =
+    d.taxDueDate
+      ? new Date(d.taxDueDate)
+      : null;
+
+  /* ✅ PRIMARY RULE: DATE BASED */
+  if(taxDate){
+
+    if(taxDate < today){
+      return {
+        text: "UNTAXED",
+        class: "tax-red"
+      };
+    }
+
+    return {
+      text: "TAXED",
+      class: "tax-green"
+    };
+  }
+
+  /* FALLBACK TO STRING (if API doesn't give date) */
   const raw =
     (
       d.taxStatus ||
       d.taxStatusDescription ||
-      d.taxStatusDetails ||
       d.vehicleTax?.status ||
-      d.taxStatusCode ||
       ""
-    ).toString().toLowerCase();
+    ).toLowerCase();
 
   if(raw.includes("taxed")){
     return { text:"TAXED", class:"tax-green" };
@@ -64,13 +86,8 @@ function getTaxStatus(d){
     return { text:"SORN", class:"tax-red" };
   }
 
-  if(raw.includes("untaxed") || raw === ""){
-    return { text:"UNTAXED", class:"tax-red" };
-  }
-
   return { text:"UNKNOWN", class:"tax-red" };
 }
-
 /* =========================
    MOT TOGGLE
 ========================= */
