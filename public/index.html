@@ -6,12 +6,17 @@
   <title>BiismoReg | Free Car Check</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
     .hero {
-      background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.85)),
-                  url('https://images.unsplash.com/photo-1583121274602-3e2820c69888') center/cover no-repeat;
+      background:
+        linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.85)),
+        url('https://images.unsplash.com/photo-1583121274602-3e2820c69888')
+        center/cover no-repeat;
+
       min-height: 85vh;
     }
 
@@ -25,26 +30,38 @@
 
   <!-- NAV -->
   <nav class="bg-black border-b border-zinc-800 sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+
       <div class="flex items-center gap-3">
         <i class="fa-solid fa-car text-3xl text-blue-500"></i>
-        <span class="text-2xl font-bold">BiismoReg</span>
+
+        <span class="text-2xl font-bold tracking-tight">
+          BiismoReg
+        </span>
       </div>
+
     </div>
   </nav>
 
   <!-- HERO -->
-  <div class="hero flex items-center">
+  <div class="hero flex items-center py-12">
+
     <div class="max-w-4xl mx-auto px-4 text-center w-full">
 
-      <h1 class="text-5xl md:text-6xl font-bold mb-4">FREE CAR CHECK</h1>
-      <p class="text-lg md:text-2xl text-gray-300 mb-10">MOT • TAX • VEHICLE DETAILS</p>
+      <h1 class="text-5xl md:text-6xl font-bold mb-4">
+        FREE CAR CHECK
+      </h1>
 
-      <!-- INPUT -->
+      <p class="text-lg md:text-2xl text-gray-300 mb-10">
+        MOT • TAX • VEHICLE DETAILS
+      </p>
+
+      <!-- SEARCH -->
       <div class="max-w-md mx-auto">
+
         <div class="flex bg-white rounded-2xl overflow-hidden plate-input">
 
-          <div class="bg-blue-600 text-white px-6 py-5 flex items-center font-bold">
+          <div class="bg-blue-600 text-white px-5 py-5 flex items-center font-bold">
             🇬🇧 GB
           </div>
 
@@ -58,12 +75,13 @@
 
           <button
             onclick="checkVehicle()"
-            class="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-8"
+            class="bg-yellow-400 hover:bg-yellow-500 transition text-black font-bold px-8"
           >
             CHECK
           </button>
 
         </div>
+
       </div>
 
     </div>
@@ -73,90 +91,207 @@
   <div id="result" class="max-w-6xl mx-auto px-4 py-10"></div>
 
   <script>
+
     function daysUntil(dateStr) {
+
       if (!dateStr) return null;
-      const d = new Date(dateStr);
-      return Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+
+      const date = new Date(dateStr);
+      const today = new Date();
+
+      return Math.ceil(
+        (date - today) / (1000 * 60 * 60 * 24)
+      );
     }
 
     async function checkVehicle() {
-      const reg = document.getElementById('reg').value.trim().toUpperCase().replace(/\s/g, '');
+
+      const reg = document.getElementById('reg')
+        .value
+        .trim()
+        .toUpperCase()
+        .replace(/\s/g, '');
+
       const resultDiv = document.getElementById('result');
 
-      if (!reg) return alert("Enter a registration number");
+      if (!reg) {
+        return alert('Please enter a registration');
+      }
 
+      /**
+       * LOADING
+       */
       resultDiv.innerHTML = `
         <div class="flex justify-center py-20">
-          <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
+          <div class="animate-spin rounded-full h-14 w-14 border-t-4 border-blue-500"></div>
         </div>
       `;
 
       try {
+
+        /**
+         * FETCH API
+         */
         const res = await fetch('/api/check', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ registrationNumber: reg })
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            registrationNumber: reg
+          })
         });
 
         const data = await res.json();
 
-        if (data.error) throw new Error(data.error);
+        console.log(data);
 
-        const motDays = data.motExpiryDate ? daysUntil(data.motExpiryDate) : null;
-        const taxDays = data.taxDueDate ? daysUntil(data.taxDueDate) : null;
-        const taxed = data.taxStatus?.toLowerCase().includes('taxed');
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
+        const motDays = data.motExpiryDate
+          ? daysUntil(data.motExpiryDate)
+          : null;
+
+        const taxDays = data.taxDueDate
+          ? daysUntil(data.taxDueDate)
+          : null;
+
+        const taxed = data.taxStatus
+          ?.toLowerCase()
+          .includes('taxed');
+
+        /**
+         * RENDER
+         */
         resultDiv.innerHTML = `
-          <div class="bg-zinc-900 rounded-3xl p-8">
+
+          <div class="bg-zinc-900 rounded-3xl p-6 md:p-10">
 
             <!-- HEADER -->
             <div class="text-center mb-10">
-              <p class="text-5xl font-bold">${reg}</p>
-              <p class="text-2xl text-blue-400 mt-2">
+
+              <p class="text-5xl md:text-6xl font-bold tracking-widest">
+                ${reg}
+              </p>
+
+              <p class="text-2xl text-blue-400 mt-3">
                 ${data.make || ''} ${data.model || ''}
               </p>
+
             </div>
 
-            <!-- MOT + TAX -->
+            <!-- STATUS -->
             <div class="grid md:grid-cols-2 gap-6 mb-10">
 
-              <div class="border ${motDays < 0 ? 'border-red-500' : 'border-green-500'} bg-zinc-950 rounded-2xl p-6">
-                <p class="text-gray-400">MOT Expiry</p>
+              <!-- MOT -->
+              <div class="rounded-3xl p-6 border
+                ${motDays < 0
+                  ? 'border-red-500'
+                  : 'border-green-500'}
+                bg-zinc-950">
+
+                <p class="text-gray-400 text-sm">
+                  MOT Expiry
+                </p>
+
                 <p class="text-3xl font-bold mt-2">
-                  ${data.motExpiryDate ? new Date(data.motExpiryDate).toLocaleDateString('en-GB') : 'No Data'}
+                  ${
+                    data.motExpiryDate
+                      ? new Date(data.motExpiryDate)
+                          .toLocaleDateString('en-GB')
+                      : 'No Data'
+                  }
                 </p>
-                <p class="${motDays < 0 ? 'text-red-500' : 'text-green-500'} mt-3 font-semibold">
+
+                <div class="mt-4 font-semibold
+                  ${motDays < 0
+                    ? 'text-red-500'
+                    : 'text-green-500'}">
+
                   ${motDays < 0 ? 'EXPIRED' : 'VALID'}
-                  ${motDays >= 0 ? `(${motDays} days)` : ''}
-                </p>
+
+                  ${
+                    motDays >= 0
+                      ? `(${motDays} days left)`
+                      : ''
+                  }
+
+                </div>
+
               </div>
 
-              <div class="border ${taxed ? 'border-green-500' : 'border-red-500'} bg-zinc-950 rounded-2xl p-6">
-                <p class="text-gray-400">Tax Status</p>
-                <p class="text-3xl font-bold mt-2">${data.taxStatus || 'Unknown'}</p>
-                <p class="${taxed ? 'text-green-500' : 'text-red-500'} mt-3 font-semibold">
-                  ${taxed ? 'TAXED' : 'NOT TAXED'}
-                  ${taxDays ? `(${taxDays} days)` : ''}
+              <!-- TAX -->
+              <div class="rounded-3xl p-6 border
+                ${taxed
+                  ? 'border-green-500'
+                  : 'border-red-500'}
+                bg-zinc-950">
+
+                <p class="text-gray-400 text-sm">
+                  Tax Status
                 </p>
+
+                <p class="text-3xl font-bold mt-2">
+                  ${data.taxStatus || 'Unknown'}
+                </p>
+
+                <div class="mt-4 font-semibold
+                  ${taxed
+                    ? 'text-green-500'
+                    : 'text-red-500'}">
+
+                  ${taxed ? 'TAXED' : 'NOT TAXED'}
+
+                  ${
+                    taxDays !== null
+                      ? `(${taxDays} days left)`
+                      : ''
+                  }
+
+                </div>
+
               </div>
 
             </div>
 
-            <!-- VEHICLE INFO -->
+            <!-- VEHICLE DETAILS -->
             <div class="bg-zinc-950 rounded-2xl p-6">
-              <h3 class="text-xl font-bold mb-6 text-gray-300">Vehicle Information</h3>
+
+              <h3 class="text-xl font-bold mb-6">
+                Vehicle Information
+              </h3>
 
               <div class="grid md:grid-cols-2 gap-4 text-sm">
 
                 ${Object.entries(data)
+
                   .filter(([k]) =>
-                    !['make','model','motExpiryDate','taxDueDate','taxStatus','motHistory'].includes(k)
+                    ![
+                      'make',
+                      'model',
+                      'motExpiryDate',
+                      'taxDueDate',
+                      'taxStatus',
+                      'motHistory'
+                    ].includes(k)
                   )
+
                   .map(([key, val]) => `
-                    <div class="flex justify-between border-b border-zinc-800 py-2">
-                      <span class="text-gray-400">${key}</span>
-                      <span class="font-medium">${val ?? '—'}</span>
+
+                    <div class="flex justify-between py-2 border-b border-zinc-800">
+
+                      <span class="text-gray-400">
+                        ${key.replace(/([A-Z])/g, ' $1')}
+                      </span>
+
+                      <span class="font-medium text-right">
+                        ${val ?? '—'}
+                      </span>
+
                     </div>
+
                   `).join('')}
 
               </div>
@@ -164,80 +299,170 @@
 
             <!-- MOT HISTORY -->
             <div class="mt-10">
-              <h3 class="text-2xl font-bold mb-6">MOT History</h3>
+
+              <h3 class="text-2xl font-bold mb-6">
+                MOT History
+              </h3>
 
               <div class="space-y-4">
+
                 ${(data.motHistory || []).length
-                  ? (data.motHistory || []).map(test => `
-                      <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
 
-                        <div class="flex justify-between mb-4">
-                          <div>
-                            <p class="text-xl font-bold">
-                              ${new Date(test.completedDate).toLocaleDateString('en-GB')}
-                            </p>
+                  ? (data.motHistory || []).map(test => {
 
-                            <p class="${test.testResult === 'PASSED' ? 'text-green-500' : 'text-red-500'} font-semibold">
-                              ${test.testResult}
-                            </p>
+                      const issues = [
+
+                        ...(test.rfrAndComments || []),
+                        ...(test.advisories || []),
+                        ...(test.minorDefects || []),
+                        ...(test.majorDefects || []),
+                        ...(test.dangerousDefects || [])
+
+                      ];
+
+                      return `
+
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+
+                          <div class="flex justify-between items-center mb-4">
+
+                            <div>
+
+                              <p class="text-xl font-bold">
+                                ${new Date(test.completedDate)
+                                  .toLocaleDateString('en-GB')}
+                              </p>
+
+                              <p class="${
+                                test.testResult === 'PASSED'
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                              } font-semibold">
+
+                                ${test.testResult}
+
+                              </p>
+
+                            </div>
+
+                            <div class="text-right">
+
+                              <p class="text-gray-400 text-sm">
+                                Mileage
+                              </p>
+
+                              <p class="text-lg font-bold">
+                                ${test.odometerValue || 'N/A'}
+                                ${test.odometerUnit || ''}
+                              </p>
+
+                            </div>
+
                           </div>
 
-                          <div class="text-right">
-                            <p class="text-gray-400 text-sm">Mileage</p>
-                            <p class="font-bold">
-                              ${test.odometerValue || 'N/A'}
-                            </p>
-                          </div>
+                          ${
+                            issues.length
+
+                              ? `
+
+                                <div class="space-y-2">
+
+                                  ${issues.map(issue => `
+
+                                    <div class="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+
+                                      <p class="text-sm">
+                                        ${issue.text || issue.comment || 'Issue found'}
+                                      </p>
+
+                                      <span class="text-xs mt-1 inline-block
+                                        ${
+                                          issue.type === 'DANGEROUS'
+                                            ? 'text-red-500'
+                                            : issue.type === 'MAJOR'
+                                            ? 'text-orange-400'
+                                            : 'text-yellow-400'
+                                        }">
+
+                                        ${issue.type || 'ADVISORY'}
+
+                                      </span>
+
+                                    </div>
+
+                                  `).join('')}
+
+                                </div>
+
+                              `
+
+                              : `
+
+                                <p class="text-green-500 text-sm">
+                                  No advisories or defects
+                                </p>
+
+                              `
+                          }
+
                         </div>
 
-                        ${
-                          test.rfrAndComments?.length
-                            ? `
-                              <div class="space-y-2">
-                                ${test.rfrAndComments.map(i => `
-                                  <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-                                    <p class="text-sm">${i.text}</p>
-                                    <span class="text-xs ${
-                                      i.type === 'DANGEROUS'
-                                        ? 'text-red-500'
-                                        : 'text-yellow-400'
-                                    }">
-                                      ${i.type}
-                                    </span>
-                                  </div>
-                                `).join('')}
-                              </div>
-                            `
-                            : `<p class="text-green-500 text-sm">No advisories</p>`
-                        }
+                      `;
+                    }).join('')
 
-                      </div>
-                    `).join('')
-                  : `<p class="text-gray-400">No MOT history found</p>`
+                  : `
+
+                    <div class="bg-zinc-950 rounded-2xl p-6 border border-zinc-800">
+
+                      No MOT history found
+
+                    </div>
+
+                  `
                 }
+
               </div>
+
             </div>
 
           </div>
+
         `;
+
       } catch (err) {
+
+        console.log(err);
+
         resultDiv.innerHTML = `
-          <div class="text-red-500 text-center py-10">
-            ${err.message}
+
+          <div class="text-red-500 text-center py-12 text-lg">
+
+            Error: ${err.message}
+
           </div>
+
         `;
       }
     }
 
-    // ENTER KEY FIX (IMPORTANT)
+    /**
+     * ENTER KEY SUPPORT
+     */
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('reg').addEventListener('keydown', (e) => {
+
+      const regInput = document.getElementById('reg');
+
+      regInput.addEventListener('keydown', (e) => {
+
         if (e.key === 'Enter') {
+
           e.preventDefault();
+
           checkVehicle();
         }
       });
     });
+
   </script>
 
 </body>
