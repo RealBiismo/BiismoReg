@@ -268,6 +268,7 @@ button:hover{
 #motContainer{
   display:none;
   margin-top:22px;
+  background:none !important;
 }
 
 .mot-card{
