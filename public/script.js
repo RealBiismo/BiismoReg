@@ -14,7 +14,7 @@ function daysLeft(dateStr){
   return diff;
 }
 
-/* MOT TOGGLE */
+/* TOGGLE MOT */
 function toggleMot(){
 
   const el =
@@ -35,7 +35,7 @@ function toggleMot(){
       : "Hide MOT History";
 }
 
-/* TAX STATUS (CLEAN + NO DUPLICATE) */
+/* TAX UI */
 function taxUI(d){
 
   const status =
@@ -161,10 +161,25 @@ async function checkVehicle(){
     const tax =
       taxUI(d);
 
-    const motStatus =
-      !d.motExpiryDate
-        ? `<span style="color:#f87171;font-weight:900;">EXPIRED</span>`
-        : `${motDays} days left`;
+    /* =========================
+       MOT STATUS FIX (IMPORTANT)
+       ========================= */
+
+    let motDisplay = "";
+
+    if(!d.motExpiryDate){
+
+      motDisplay =
+        `<span style="color:#f87171;font-weight:900;">
+          EXPIRED
+        </span>`;
+
+    } else {
+
+      motDisplay =
+        `${motDays} days left`;
+
+    }
 
     document.getElementById("result").innerHTML = `
 
@@ -191,7 +206,7 @@ async function checkVehicle(){
             <div class="info-value">
               ${d.motExpiryDate || "N/A"}
             </div>
-            <div>${motStatus}</div>
+            <div>${motDisplay}</div>
           </div>
 
           <div class="info-box">
@@ -239,7 +254,8 @@ async function checkVehicle(){
                 </div>
 
                 <div>
-                  ${new Date(m.completedDate).toLocaleDateString("en-GB")}
+                  ${new Date(m.completedDate)
+                    .toLocaleDateString("en-GB")}
                 </div>
 
                 <div>
