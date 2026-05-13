@@ -1,28 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BiismoReg</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BiismoReg Pro</title>
 
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
-<div class="nav">
-  🚗 BiismoReg Vehicle Check
-</div>
+<div class="nav">🚗 BiismoReg Vehicle Intelligence</div>
 
-<div class="container">
+<div class="wrap">
 
-  <div class="card">
+  <!-- UK PLATE SEARCH -->
+  <div class="plate-search">
 
-    <h1>Vehicle Check</h1>
+    <div class="uk-prefix">GB</div>
 
-    <input id="reg" placeholder="ENTER REG">
+    <input id="reg" placeholder="AB12CDE">
 
-    <button onclick="checkVehicle()">CHECK</button>
+    <button onclick="check()">SEARCH</button>
 
   </div>
 
