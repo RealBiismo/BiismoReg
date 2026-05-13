@@ -133,7 +133,11 @@ body{
 
   text-transform:uppercase;
 
-  padding:18px;
+  padding:18px 0;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 /* BUTTON */
