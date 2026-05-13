@@ -1,93 +1,223 @@
-body {
+*{
   margin:0;
-  font-family: Arial;
-  background: radial-gradient(circle at top,#0b1220,#000);
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial;
+  background:
+    radial-gradient(circle at top,#182338,#000);
   color:white;
+  min-height:100vh;
 }
 
-.nav {
-  text-align:center;
-  padding:15px;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
+/* NAV */
+
+.nav{
+  padding:20px;
+  border-bottom:
+    1px solid rgba(255,255,255,0.08);
+
+  backdrop-filter:blur(12px);
+
+  background:
+    rgba(255,255,255,0.03);
+}
+
+.logo{
+  font-size:22px;
   font-weight:bold;
 }
 
-/* SEARCH PLATE */
-.plate-search {
+/* HERO */
+
+.hero{
   display:flex;
-  max-width:500px;
-  margin:40px auto;
-  border-radius:12px;
+  justify-content:center;
+  padding:60px 20px;
+}
+
+/* GLASS */
+
+.glass{
+  background:
+    rgba(255,255,255,0.05);
+
+  border:
+    1px solid rgba(255,255,255,0.08);
+
+  backdrop-filter:blur(18px);
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.4);
+}
+
+/* SEARCH */
+
+.search-box{
+  width:100%;
+  max-width:700px;
+  border-radius:24px;
+  padding:40px;
+  text-align:center;
+}
+
+.search-box h1{
+  font-size:42px;
+  margin-bottom:10px;
+}
+
+.search-box p{
+  color:#b4b4b4;
+  margin-bottom:30px;
+}
+
+/* UK PLATE */
+
+.plate{
+  display:flex;
   overflow:hidden;
-  border:2px solid #111;
+  border-radius:12px;
+  margin-bottom:20px;
 }
 
-.uk-prefix {
-  background:#1d4ed8;
-  padding:15px;
+.gb{
+  background:#003399;
+  color:white;
   font-weight:bold;
+  display:flex;
+  align-items:center;
+  padding:0 14px;
 }
 
-.plate-search input {
+.plate input{
   flex:1;
   border:none;
+  outline:none;
+  background:#ffd800;
+  color:black;
+  font-size:32px;
   text-align:center;
-  font-size:22px;
-  letter-spacing:4px;
+  letter-spacing:5px;
   text-transform:uppercase;
+  padding:18px;
+  font-weight:bold;
 }
 
-.plate-search button {
-  background:#facc15;
+/* BUTTON */
+
+button{
+  width:100%;
+  padding:18px;
   border:none;
+  border-radius:12px;
+  background:#2563eb;
+  color:white;
+  font-size:18px;
   font-weight:bold;
-  padding:0 20px;
   cursor:pointer;
 }
 
-/* RESULT CARD */
-.card {
-  max-width:900px;
+/* RESULT */
+
+.result-card{
+  max-width:1000px;
   margin:20px auto;
-  padding:20px;
-  border-radius:20px;
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(18px);
-  border:1px solid rgba(255,255,255,0.1);
+  padding:30px;
+  border-radius:24px;
 }
 
-.grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.box {
-  background:rgba(255,255,255,0.04);
-  padding:10px;
-  border-radius:10px;
-}
-
-/* UK RESULT PLATE */
-.result-plate {
+.result-plate{
   display:flex;
-  margin:auto;
   width:fit-content;
-  border-radius:10px;
+  margin:auto;
   overflow:hidden;
+  border-radius:10px;
 }
 
-.result-plate .gb {
-  background:#1d4ed8;
-  padding:10px;
+.result-plate .gb{
+  padding:12px;
 }
 
-.result-plate .reg {
-  background:white;
+.result-reg{
+  background:#ffd800;
   color:black;
-  font-size:26px;
-  padding:10px 25px;
-  letter-spacing:5px;
+  font-size:38px;
   font-weight:bold;
+  padding:12px 30px;
+  letter-spacing:5px;
+}
+
+/* GRID */
+
+.grid{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+
+  gap:15px;
+  margin-top:30px;
+}
+
+.info-box{
+  background:
+    rgba(255,255,255,0.04);
+
+  padding:18px;
+  border-radius:16px;
+}
+
+.info-title{
+  color:#999;
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+.info-value{
+  font-size:22px;
+  font-weight:bold;
+}
+
+/* MOT */
+
+.mot-btn{
+  margin-top:25px;
+}
+
+#motContainer{
+  display:none;
+  margin-top:20px;
+}
+
+.mot-item{
+  background:
+    rgba(255,255,255,0.04);
+
+  border:
+    1px solid rgba(255,255,255,0.06);
+
+  padding:20px;
+  border-radius:16px;
+  margin-bottom:15px;
+}
+
+.defect{
+  margin-top:10px;
+  padding:10px;
+  border-radius:10px;
+  background:
+    rgba(255,255,255,0.03);
+}
+
+.advisory{
+  color:#facc15;
+}
+
+.major{
+  color:#fb923c;
+}
+
+.dangerous{
+  color:#ef4444;
 }
