@@ -9,16 +9,15 @@
 
 <style>
 body {
-  background: radial-gradient(circle at top, #0b0f1a, #000);
+  background: radial-gradient(circle at top, #070b14, #000);
   font-family: Inter, sans-serif;
   color: white;
 }
 
-/* GLASS EFFECT */
+/* GLASS */
 .glass {
   background: rgba(255,255,255,0.06);
   backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
@@ -28,37 +27,64 @@ body {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.06);
 }
+
+/* UK NUMBER PLATE */
+.plate {
+  display: flex;
+  width: fit-content;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 3px solid #111;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.plate .gb {
+  background: #1d4ed8;
+  color: white;
+  font-weight: 800;
+  padding: 10px 12px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.plate .reg {
+  background: #f4f4f4;
+  color: #111;
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: 6px;
+  padding: 10px 22px;
+  text-transform: uppercase;
+}
 </style>
 </head>
 
-<body class="min-h-screen">
+<body>
 
 <!-- NAV -->
-<nav class="glass-soft p-5 flex justify-between items-center sticky top-0 z-50">
-  <div class="flex items-center gap-3 font-bold text-xl">
-    🚗 BiismoReg
-  </div>
-</nav>
+<div class="glass-soft p-5 text-center font-bold text-xl">
+  🚗 BiismoReg Vehicle Intelligence
+</div>
 
 <!-- HERO -->
-<div class="flex justify-center items-center px-4 py-16">
+<div class="flex justify-center px-4 py-14">
 
   <div class="glass rounded-3xl p-8 w-full max-w-2xl text-center">
 
-    <h1 class="text-4xl font-extrabold mb-2">FREE CAR CHECK</h1>
-    <p class="text-gray-400 mb-8">DVLA • MOT HISTORY • TAX STATUS</p>
+    <h1 class="text-4xl font-extrabold">FREE CAR CHECK</h1>
+    <p class="text-gray-400 mt-2">DVLA • TAX • MOT HISTORY</p>
 
     <!-- INPUT -->
-    <div class="flex rounded-2xl overflow-hidden border border-white/10">
+    <div class="mt-8 flex rounded-2xl overflow-hidden border border-white/10">
 
-      <div class="bg-blue-600 px-4 flex items-center font-bold">
-        GB
-      </div>
+      <div class="bg-blue-600 px-4 flex items-center font-bold">GB</div>
 
       <input
         id="reg"
+        class="flex-1 bg-white/5 text-center text-xl uppercase tracking-widest outline-none"
         placeholder="PN63UOS"
-        class="flex-1 bg-white/5 text-center uppercase tracking-widest text-xl outline-none"
       />
 
       <button
@@ -71,7 +97,7 @@ body {
     </div>
 
     <p class="text-xs text-gray-500 mt-4">
-      Built by car lovers — no data stored 🔒
+      No data stored • Official DVLA sources
     </p>
 
   </div>
@@ -89,9 +115,22 @@ document.getElementById('reg').addEventListener('input', e=>{
   e.target.value = formatReg(e.target.value);
 });
 
-function daysUntil(dateStr){
-  if(!dateStr) return null;
-  return Math.ceil((new Date(dateStr) - new Date()) / (1000*60*60*24));
+function daysUntil(date){
+  if(!date) return null;
+  return Math.ceil((new Date(date) - new Date()) / (1000*60*60*24));
+}
+
+function toggleMot(){
+  const el = document.getElementById('motSection');
+  const btn = document.getElementById('motBtn');
+
+  if(el.classList.contains('hidden')){
+    el.classList.remove('hidden');
+    btn.innerText = 'Hide MOT History';
+  } else {
+    el.classList.add('hidden');
+    btn.innerText = 'Show MOT History';
+  }
 }
 
 async function checkVehicle(){
@@ -99,71 +138,68 @@ async function checkVehicle(){
   const reg = document.getElementById('reg').value.trim().toUpperCase();
   const resultDiv = document.getElementById('result');
 
-  if(!reg){
-    alert("Enter a registration");
-    return;
-  }
+  if(!reg) return alert("Enter a registration");
 
-  // LOADER
   resultDiv.innerHTML = `
     <div class="flex justify-center py-20">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
+      <div class="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
     </div>
   `;
 
   try {
 
     const res = await fetch('/api/check', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ registrationNumber: reg })
     });
 
     const data = await res.json();
-
     if(data.error) throw new Error(data.error);
 
     const motDays = daysUntil(data.motExpiryDate);
     const taxDays = daysUntil(data.taxDueDate);
-
     const taxed = (data.taxStatus || '').toLowerCase().includes('tax');
 
     resultDiv.innerHTML = `
 
       <div class="glass rounded-3xl p-8">
 
-        <!-- HEADER -->
-        <div class="text-center mb-10">
-          <h1 class="text-5xl font-bold tracking-widest">${reg}</h1>
-          <p class="text-blue-400 text-2xl mt-2">
+        <!-- NUMBER PLATE -->
+        <div class="plate mb-6">
+          <div class="gb">GB</div>
+          <div class="reg">${reg}</div>
+        </div>
+
+        <!-- TITLE -->
+        <div class="text-center mb-8">
+          <h2 class="text-2xl text-blue-400 font-bold">
             ${data.make || ''} ${data.model || ''}
-          </p>
+          </h2>
         </div>
 
         <!-- CARDS -->
         <div class="grid md:grid-cols-2 gap-6">
 
-          <!-- MOT -->
-          <div class="glass-soft rounded-2xl p-6">
+          <div class="glass-soft p-6 rounded-2xl">
             <p class="text-gray-400">MOT Expiry</p>
             <p class="text-2xl font-bold mt-2">
               ${data.motExpiryDate ? new Date(data.motExpiryDate).toLocaleDateString('en-GB') : 'No Data'}
             </p>
 
-            <p class="mt-3 font-bold ${motDays < 0 ? 'text-red-500' : 'text-green-400'}">
+            <p class="mt-2 font-bold ${motDays < 0 ? 'text-red-500' : 'text-green-400'}">
               ${motDays < 0 ? 'EXPIRED' : 'VALID'}
               ${motDays ? ` (${motDays} days)` : ''}
             </p>
           </div>
 
-          <!-- TAX -->
-          <div class="glass-soft rounded-2xl p-6">
+          <div class="glass-soft p-6 rounded-2xl">
             <p class="text-gray-400">Tax Status</p>
             <p class="text-2xl font-bold mt-2">
               ${data.taxStatus || 'Unknown'}
             </p>
 
-            <p class="mt-3 font-bold ${taxed ? 'text-green-400' : 'text-red-500'}">
+            <p class="mt-2 font-bold ${taxed ? 'text-green-400' : 'text-red-500'}">
               ${taxed ? 'TAXED' : 'NOT TAXED'}
               ${taxDays ? ` (${taxDays} days)` : ''}
             </p>
@@ -171,40 +207,32 @@ async function checkVehicle(){
 
         </div>
 
-        <!-- VEHICLE INFO -->
-        <div class="mt-8 glass-soft rounded-2xl p-6">
-          <h2 class="text-xl font-bold mb-4">Vehicle Data</h2>
-
-          <div class="grid md:grid-cols-2 gap-3 text-sm">
-
-            ${Object.entries(data)
-              .filter(([k]) =>
-                !['make','model','motExpiryDate','taxDueDate','taxStatus','motHistory'].includes(k)
-              )
-              .map(([k,v]) => `
-                <div class="flex justify-between border-b border-white/10 py-2">
-                  <span class="text-gray-400">${k}</span>
-                  <span>${v ?? '—'}</span>
-                </div>
-              `).join('')}
-
-          </div>
+        <!-- MOT BUTTON -->
+        <div class="mt-8 text-center">
+          <button
+            id="motBtn"
+            onclick="toggleMot()"
+            class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition"
+          >
+            Show MOT History
+          </button>
         </div>
 
         <!-- MOT HISTORY -->
-        <div class="mt-8">
-          <h2 class="text-xl font-bold mb-4">MOT History</h2>
+        <div id="motSection" class="hidden mt-6">
+
+          <h3 class="text-xl font-bold mb-4">MOT History</h3>
 
           ${(data.motHistory || []).length ? data.motHistory.map(test => `
-            
-            <div class="glass-soft rounded-2xl p-6 mb-4">
+
+            <div class="glass-soft p-6 rounded-2xl mb-4">
 
               <div class="flex justify-between">
                 <div>
-                  <p class="text-xl font-bold">
+                  <p class="text-lg font-bold">
                     ${new Date(test.completedDate).toLocaleDateString('en-GB')}
                   </p>
-                  <p class="text-${test.testResult === 'PASSED' ? 'green' : 'red'}-400 font-bold">
+                  <p class="${test.testResult === 'PASSED' ? 'text-green-400' : 'text-red-500'} font-bold">
                     ${test.testResult}
                   </p>
                 </div>
@@ -218,7 +246,7 @@ async function checkVehicle(){
             </div>
 
           `).join('') : `
-            <div class="text-gray-500">No MOT history found</div>
+            <p class="text-gray-500">No MOT history found</p>
           `}
 
         </div>
@@ -229,8 +257,8 @@ async function checkVehicle(){
 
   } catch(err){
     resultDiv.innerHTML = `
-      <div class="text-red-500 text-center py-10">
-        Error: ${err.message}
+      <div class="text-red-500 text-center py-10 text-lg">
+        ${err.message}
       </div>
     `;
   }
