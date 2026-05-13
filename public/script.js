@@ -1,22 +1,21 @@
+function daysLeft(date) {
+  if (!date) return null;
+  return Math.ceil((new Date(date) - new Date()) / (1000*60*60*24));
+}
 
 function toggleMot() {
   const el = document.getElementById("mot");
   if (!el) return;
-
-  if (el.style.display === "none") {
-    el.style.display = "block";
-  } else {
-    el.style.display = "none";
-  }
+  el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
-async function checkVehicle() {
+async function check() {
 
   const reg = document.getElementById("reg").value.trim();
 
   const res = await fetch("/api/check", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type":"application/json" },
     body: JSON.stringify({ registrationNumber: reg })
   });
 
@@ -24,39 +23,80 @@ async function checkVehicle() {
 
   const mot = d.motHistory || [];
 
+  const motDays = daysLeft(d.motExpiryDate);
+  const taxDays = daysLeft(d.taxDueDate);
+
   document.getElementById("result").innerHTML = `
 
-    <div class="resultBox">
+  <div class="card">
 
-      <h2>${d.make} ${d.model}</h2>
+    <!-- UK PLATE -->
+    <div class="result-plate">
+      <div class="gb">GB</div>
+      <div class="reg">${reg}</div>
+    </div>
 
-      <p>Engine: ${d.engineCapacity}cc</p>
-      <p>Fuel: ${d.fuelType}</p>
-      <p>MOT Expiry: ${d.motExpiryDate}</p>
+    <h2 style="text-align:center;margin-top:10px">
+      ${d.make} ${d.model}
+    </h2>
 
-      <button onclick="toggleMot()">
-        Show MOT History
-      </button>
+    <div class="grid">
 
-      <div id="mot">
+      <div class="box">
+        MOT: ${d.motExpiryDate || "N/A"}<br>
+        ${motDays ? motDays + " days left" : ""}
+      </div>
 
-        ${
-          mot.length
-            ? mot.map(m => `
-              <div class="box">
-                <b>${m.completedDate}</b><br>
-                ${m.result} - ${m.mileage} miles
-              </div>
-            `).join("")
-            : `<p>No MOT history found</p>`
-        }
+      <div class="box">
+        TAX: ${d.taxStatus}<br>
+        ${taxDays ? taxDays + " days left" : ""}
+      </div>
 
+      <div class="box">
+        Engine: ${d.engineCapacity}cc
+      </div>
+
+      <div class="box">
+        Fuel: ${d.fuelType}
       </div>
 
     </div>
 
-  `;
+    <button onclick="toggleMot()" style="
+      margin-top:15px;
+      padding:10px;
+      width:100%;
+      background:#3b82f6;
+      color:white;
+      border:none;
+      border-radius:10px;
+      font-weight:bold;
+    ">
+      Toggle MOT History
+    </button>
 
-  // IMPORTANT: ensure hidden state resets every render
-  document.getElementById("mot").style.display = "none";
+    <div id="mot" style="display:none;margin-top:15px">
+
+      ${mot.map(m => `
+
+        <div class="box" style="margin-bottom:8px">
+          <b>${m.date}</b><br>
+          ${m.result} - ${m.mileage} miles<br>
+          Station: ${m.station || "Unknown"}
+
+          ${m.defects.map(d => `
+            <div style="color:#fbbf24;font-size:12px">
+              • ${d.text}
+            </div>
+          `).join("")}
+
+        </div>
+
+      `).join("")}
+
+    </div>
+
+  </div>
+
+  `;
 }
