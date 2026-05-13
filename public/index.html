@@ -148,6 +148,84 @@
       }
     }
 
+    <!-- MOT HISTORY -->
+<div class="mt-10">
+  <h3 class="text-2xl font-bold mb-6">MOT History</h3>
+
+  <div class="space-y-4">
+    ${
+      data.motHistory?.length
+        ? data.motHistory.map(test => `
+          <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <p class="text-xl font-bold">
+                  ${new Date(test.completedDate).toLocaleDateString('en-GB')}
+                </p>
+
+                <p class="${
+                  test.testResult === 'PASSED'
+                    ? 'text-green-500'
+                    : 'text-red-500'
+                } font-semibold">
+                  ${test.testResult}
+                </p>
+              </div>
+
+              <div class="text-right">
+                <p class="text-gray-400 text-sm">Mileage</p>
+                <p class="text-lg font-bold">
+                  ${test.odometerValue || 'N/A'} ${test.odometerUnit || ''}
+                </p>
+              </div>
+            </div>
+
+            ${
+              test.rfrAndComments?.length
+                ? `
+                <div class="mt-4">
+                  <p class="font-semibold mb-2 text-yellow-400">
+                    Advisories / Defects
+                  </p>
+
+                  <div class="space-y-2">
+                    ${test.rfrAndComments.map(issue => `
+                      <div class="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+                        <p class="text-sm">${issue.text}</p>
+
+                        <span class="text-xs mt-1 inline-block ${
+                          issue.type === 'DANGEROUS'
+                            ? 'text-red-500'
+                            : issue.type === 'MAJOR'
+                            ? 'text-orange-400'
+                            : 'text-yellow-400'
+                        }">
+                          ${issue.type}
+                        </span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+                `
+                : `
+                  <p class="text-green-500 text-sm">
+                    No advisories or defects
+                  </p>
+                `
+            }
+
+          </div>
+        `).join('')
+        : `
+          <div class="bg-zinc-950 rounded-2xl p-6 border border-zinc-800">
+            No MOT history found
+          </div>
+        `
+    }
+  </div>
+</div>
+
     // Enter key support
     document.getElementById('reg').addEventListener('keypress', e => {
       if (e.key === 'Enter') checkVehicle();
