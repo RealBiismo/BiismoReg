@@ -6,7 +6,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 /* =========================
-   ENV VARIABLES
+   ENV
 ========================= */
 
 const DVLA_API_KEY =
@@ -32,7 +32,6 @@ const MOT_TOKEN_URL =
 ========================= */
 
 let cachedToken = null;
-
 let tokenExpiry = 0;
 
 /* =========================
@@ -84,16 +83,12 @@ async function getMotToken() {
   const tokenData =
     await tokenRes.json();
 
-  console.log(
-    "MOT TOKEN:",
-    tokenData
-  );
+  console.log("TOKEN:", tokenData);
 
   if (!tokenData.access_token) {
 
     throw new Error(
-      "Failed MOT token: " +
-      JSON.stringify(tokenData)
+      "MOT token failed"
     );
   }
 
@@ -111,124 +106,115 @@ async function getMotToken() {
    MAIN API
 ========================= */
 
-app.post(
-  "/api/check",
-  async (req, res) => {
+app.post("/api/check", async (req, res) => {
 
-    try {
+  try {
 
-      const reg =
-        req.body.registrationNumber
-          .toUpperCase()
-          .replace(/\s/g, "");
+    const reg =
+      req.body.registrationNumber
+        .toUpperCase()
+        .replace(/\s/g, "");
 
-      /* =========================
-         DVLA REQUEST
-      ========================= */
+    /* =========================
+       DVLA
+    ========================= */
 
-      const dvlaRes = await fetch(
+    const dvlaRes = await fetch(
 
-        "https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles",
+      "https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles",
 
-        {
-          method: "POST",
+      {
+        method: "POST",
 
-          headers: {
+        headers: {
 
-            "x-api-key":
-              DVLA_API_KEY,
+          "x-api-key":
+            DVLA_API_KEY,
 
-            "Content-Type":
-              "application/json"
+          "Content-Type":
+            "application/json"
 
-          },
+        },
 
-          body: JSON.stringify({
-            registrationNumber: reg
-          })
+        body: JSON.stringify({
+          registrationNumber: reg
+        })
 
-        }
-      );
+      }
+    );
 
-      const dvla =
-        await dvlaRes.json();
+    const dvla =
+      await dvlaRes.json();
 
-      console.log(
-        "DVLA:",
-        dvla
-      );
+    console.log("DVLA:", dvla);
 
-      /* =========================
-         GET MOT TOKEN
-      ========================= */
+    /* =========================
+       MOT TOKEN
+    ========================= */
 
-      const token =
-        await getMotToken();
+    const token =
+      await getMotToken();
 
-      /* =========================
-         MOT REQUEST
-      ========================= */
+    /* =========================
+       MOT FETCH
+    ========================= */
 
-      const motRes = await fetch(
+    const motRes = await fetch(
 
-        `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
+      `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
 
-        {
+      {
+        headers: {
 
-          headers: {
+          Authorization:
+            `Bearer ${token}`,
 
-            Authorization:
-              `Bearer ${token}`,
+          "x-api-key":
+            MOT_API_KEY,
 
-            "x-api-key":
-              MOT_API_KEY,
-
-            Accept:
-              "application/json"
-
-          }
+          Accept:
+            "application/json"
 
         }
-      );
+      }
+    );
 
-      const motRaw =
-        await motRes.json();
+    const motRaw =
+      await motRes.json();
 
-      console.log(
-        "MOT RAW:",
-        motRaw
-      );
+    console.log(
+      "FULL MOT RAW:",
+      JSON.stringify(motRaw, null, 2)
+    );
 
-      /* =========================
-         API RETURNS ARRAY
-      ========================= */
+    /* =========================
+       ARRAY FIX
+    ========================= */
 
-      const vehicle =
-        Array.isArray(motRaw)
-          ? motRaw[0]
-          : motRaw;
+    const vehicle =
+      Array.isArray(motRaw)
+        ? motRaw[0]
+        : motRaw;
 
-      /* =========================
-         MOT HISTORY
-      ========================= */
+    /* =========================
+       MOT HISTORY FIX
+    ========================= */
 
-      const motHistory =
-        (vehicle?.motTests || []).map(test => ({
+    const motHistory =
+      (vehicle?.motTests || []).map(test => {
 
-          completedDate:
-            test.completedDate || null,
+        /* =========================
+           COLLECT ALL DEFECT TYPES
+        ========================= */
 
-          result:
-            test.testResult || "UNKNOWN",
+        const defects = [];
 
-          mileage:
-            test.odometerValue || "Unknown",
+        /* OLD FORMAT */
+        if (test.rfrAndComments) {
 
-          mileageUnit:
-            test.odometerUnit || "mi",
+          test.rfrAndComments.forEach(issue => {
 
-          defects:
-            (test.rfrAndComments || []).map(issue => ({
+            defects.push({
 
               text:
                 issue.text ||
@@ -240,83 +226,150 @@ app.post(
                   "ADVISORY"
                 ).toUpperCase()
 
-            }))
+            });
 
-        }));
+          });
 
-      /* =========================
-         RESPONSE
-      ========================= */
+        }
 
-      res.json({
+        /* NEWER FORMAT FALLBACKS */
 
-        registration:
-          reg,
+        [
+          "advisories",
+          "minorDefects",
+          "majorDefects",
+          "dangerousDefects",
+          "defects",
+          "reasons"
+        ].forEach(key => {
 
-        make:
-          dvla.make ||
-          vehicle?.make ||
-          "Unknown",
+          if (
+            Array.isArray(test[key])
+          ) {
 
-        model:
-          dvla.model ||
-          vehicle?.model ||
-          "Unknown",
+            test[key].forEach(issue => {
 
-        colour:
-          dvla.colour ||
-          "Unknown",
+              defects.push({
 
-        fuelType:
-          dvla.fuelType ||
-          "Unknown",
+                text:
+                  issue.text ||
+                  issue.comment ||
+                  issue.reason ||
+                  issue.description ||
+                  "Issue found",
 
-        engineCapacity:
-          dvla.engineCapacity ||
-          "Unknown",
+                type:
+                  (
+                    issue.type ||
+                    issue.severity ||
+                    issue.category ||
+                    key.replace(
+                      "Defects",
+                      ""
+                    ) ||
+                    "ADVISORY"
+                  ).toUpperCase()
 
-        year:
-          dvla.yearOfManufacture ||
-          "Unknown",
+              });
 
-        taxStatus:
-          dvla.taxStatus ||
-          "Unknown",
+            });
 
-        taxDueDate:
-          dvla.taxDueDate ||
-          null,
+          }
 
-        motExpiryDate:
-          dvla.motExpiryDate ||
-          null,
+        });
 
-        motHistory
+        return {
+
+          completedDate:
+            test.completedDate || null,
+
+          result:
+            test.testResult ||
+            "UNKNOWN",
+
+          mileage:
+            test.odometerValue ||
+            "Unknown",
+
+          mileageUnit:
+            test.odometerUnit ||
+            "mi",
+
+          defects
+
+        };
 
       });
 
-    } catch (err) {
+    /* =========================
+       RESPONSE
+    ========================= */
 
-      console.log(
-        "SERVER ERROR:",
-        err
-      );
+    res.json({
 
-      res.status(500).json({
+      registration:
+        reg,
 
-        error:
-          err.message ||
-          "Unknown server error"
+      make:
+        dvla.make ||
+        vehicle?.make ||
+        "Unknown",
 
-      });
+      model:
+        dvla.model ||
+        vehicle?.model ||
+        "Unknown",
 
-    }
+      colour:
+        dvla.colour ||
+        "Unknown",
+
+      fuelType:
+        dvla.fuelType ||
+        "Unknown",
+
+      engineCapacity:
+        dvla.engineCapacity ||
+        "Unknown",
+
+      year:
+        dvla.yearOfManufacture ||
+        "Unknown",
+
+      taxStatus:
+        dvla.taxStatus ||
+        "Unknown",
+
+      taxDueDate:
+        dvla.taxDueDate ||
+        null,
+
+      motExpiryDate:
+        dvla.motExpiryDate ||
+        null,
+
+      motHistory
+
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+
+      error:
+        err.message ||
+        "Server error"
+
+    });
 
   }
-);
+
+});
 
 /* =========================
-   START SERVER
+   START
 ========================= */
 
 const PORT =
