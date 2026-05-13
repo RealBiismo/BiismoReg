@@ -1,45 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<title>BiismoReg</title>
+<meta charset="UTF-8">
 
-<link rel="stylesheet" href="style.css">
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+/>
+
+<title>BIISMO REG</title>
+
+<link rel="stylesheet" href="style.css"/>
+
 </head>
 
 <body>
 
-<header class="topbar">
-  <div class="logo">BIISMO REG</div>
-  <div class="subtitle">UK Vehicle Intelligence Platform</div>
-</header>
+<nav class="nav">
+  <span class="biis">BIIS</span><span class="mo"> MO</span> REG.com
+</nav>
 
-<main class="wrap">
+<div class="hero">
 
-  <section class="card">
+  <div class="glass search-card">
 
-    <div class="plate">
-      <span class="gb">GB</span>
-      <input id="regInput" placeholder="AB12CDE" maxlength="8">
-    </div>
+    <h1>
+      UK Vehicle Check
+    </h1>
 
-    <button onclick="checkVehicle()">Check Vehicle</button>
-
-    <p class="disclaimer">
-      We do not store searches. Data provided via DVLA & DVSA APIs.
+    <p>
+      MOT • TAX • HISTORY
     </p>
 
-    <div id="result"></div>
+    <div class="plate">
 
-  </section>
+      <div class="gb">
+        GB
+      </div>
 
-</main>
+      <input
+        id="regInput"
+        placeholder="PA55MGN"
+        maxlength="8"
+      />
 
-<footer>
-  All rights reserved BiismoReg | RealBiismo
-</footer>
+    </div>
+
+    <button onclick="checkVehicle()">
+      SEARCH
+    </button>
+
+  </div>
+
+</div>
+<div class="disclaimer">
+  <div class="disclaimer-title">
+    We do not store searches or personal data.
+  </div>
+
+  <div class="disclaimer-text">
+    Vehicle data is provided using official DVLA & DVSA APIs.
+  </div>
+</div>
+  
+<div id="result"></div>
 
 <script src="script.js"></script>
 
