@@ -1,47 +1,45 @@
-function daysLeft(dateStr){
+let chart = null;
 
-  if(!dateStr) return null;
-
-  return Math.ceil(
-    (new Date(dateStr) - new Date()) /
-    (1000*60*60*24)
-  );
+function daysLeft(date){
+  if(!date) return null;
+  return Math.ceil((new Date(date)-new Date())/86400000);
 }
 
-function status(dateStr){
+function status(date){
 
-  if(!dateStr){
+  if(!date){
     return {date:"N/A",text:"EXPIRED",class:"tax-red"};
   }
 
-  const days = daysLeft(dateStr);
+  const d = daysLeft(date);
 
-  if(days < 0){
+  if(d < 0){
     return {
-      date:new Date(dateStr).toLocaleDateString("en-GB"),
+      date:new Date(date).toLocaleDateString("en-GB"),
       text:"EXPIRED",
       class:"tax-red"
     };
   }
 
   return {
-    date:new Date(dateStr).toLocaleDateString("en-GB"),
-    text:`${days} days left`,
+    date:new Date(date).toLocaleDateString("en-GB"),
+    text:`${d} days left`,
     class:"tax-green"
   };
 }
 
-let chartInstance = null;
+/* =========================
+   GRAPH
+========================= */
+function renderGraph(data){
 
-function renderGraph(history){
-
-  const ctx =
+  const el =
     document.getElementById("motChart");
 
-  if(!ctx || !history?.length) return;
+  if(!el || !data?.length) return;
 
   const sorted =
-    [...history].sort((a,b)=>
+    [...data].sort((a,b)=>
       new Date(a.completedDate)-new Date(b.completedDate)
     );
 
@@ -50,18 +48,18 @@ function renderGraph(history){
       new Date(x.completedDate).toLocaleDateString("en-GB")
     );
 
-  const data =
+  const mileage =
     sorted.map(x => x.odometerValue || 0);
 
-  if(chartInstance) chartInstance.destroy();
+  if(chart) chart.destroy();
 
-  chartInstance = new Chart(ctx,{
+  chart = new Chart(el,{
     type:"line",
     data:{
       labels,
       datasets:[{
         label:"Mileage",
-        data,
+        data:mileage,
         borderColor:"#60a5fa",
         tension:0.3
       }]
@@ -69,6 +67,9 @@ function renderGraph(history){
   });
 }
 
+/* =========================
+   MAIN
+========================= */
 async function checkVehicle(){
 
   const reg =
@@ -91,27 +92,23 @@ async function checkVehicle(){
 
   document.getElementById("result").innerHTML = `
 
-    <div class="result-plate">${reg}</div>
-
     <div class="grid">
 
       <div class="info-box">
         MOT<br>${mot.date}<br>
-        <span class="${mot.class}">
-          ${mot.text}
-        </span>
+        <span class="${mot.class}">${mot.text}</span>
       </div>
 
       <div class="info-box">
         TAX<br>${tax.date}<br>
-        <span class="${tax.class}">
-          ${tax.text}
-        </span>
+        <span class="${tax.class}">${tax.text}</span>
       </div>
 
     </div>
 
-    <canvas id="motChart"></canvas>
+    <div class="chart-wrap">
+      <canvas id="motChart"></canvas>
+    </div>
 
   `;
 
