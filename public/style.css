@@ -4,6 +4,22 @@
   box-sizing:border-box;
 }
 
+.disclaimer{
+  text-align:center;
+  margin-top:18px;
+  font-size:13px;
+  line-height:1.6;
+}
+
+.disclaimer-title{
+  color:#f87171;
+  font-weight:800;
+}
+
+.disclaimer-text{
+  color:#aaa;
+  margin-top:4px;
+}
 body{
   font-family:Inter, Arial, sans-serif;
   background:#000 !important;
