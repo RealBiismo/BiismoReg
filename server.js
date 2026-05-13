@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
@@ -11,15 +12,32 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// middleware
+/**
+ * RATE LIMITER
+ */
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: {
+    error: 'Too many requests, try again later.'
+  }
+});
+
+app.use(limiter);
+
+/**
+ * MIDDLEWARE
+ */
 app.use(cors());
 app.use(express.json());
 
-// serve frontend
+/**
+ * SERVE FRONTEND
+ */
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * DVLA API helper
+ * DVLA VEHICLE API
  */
 async function fetchVehicle(reg) {
   const response = await fetch(
@@ -44,7 +62,29 @@ async function fetchVehicle(reg) {
 }
 
 /**
- * API route
+ * DVSA MOT HISTORY API
+ */
+async function fetchMotHistory(reg) {
+  const response = await fetch(
+    `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
+    {
+      method: 'GET',
+      headers: {
+        'x-api-key': process.env.MOT_API_KEY,
+        'Accept': 'application/json+v6'
+      }
+    }
+  );
+
+  if (!response.ok) {
+    return { motTests: [] };
+  }
+
+  return await response.json();
+}
+
+/**
+ * API ROUTE
  */
 app.post('/api/check', async (req, res) => {
   try {
@@ -53,46 +93,64 @@ app.post('/api/check', async (req, res) => {
       .toUpperCase();
 
     if (!reg) {
-      return res.status(400).json({ error: 'Invalid registration' });
+      return res.status(400).json({
+        error: 'Invalid registration'
+      });
     }
 
-    const data = await fetchVehicle(reg);
+    /**
+     * FETCH BOTH APIS
+     */
+    const [vehicleData, motData] = await Promise.all([
+      fetchVehicle(reg),
+      fetchMotHistory(reg)
+    ]);
 
     res.json({
-      registrationNumber: data.registrationNumber || reg,
-      make: data.make || null,
-      model: data.model || null,
-      colour: data.colour || null,
-      fuelType: data.fuelType || null,
-      yearOfManufacture: data.yearOfManufacture || null,
-      engineCapacity: data.engineCapacity || null,
-      co2Emissions: data.co2Emissions || null,
-      euroStatus: data.euroStatus || null,
-      motStatus: data.motStatus || null,
-      taxStatus: data.taxStatus || null,
-      motExpiryDate: data.motExpiryDate || null,
-      taxDueDate: data.taxDueDate || null,
-      isTaxed: data.taxStatus === 'Taxed',
-      hasMot: data.motStatus === 'Valid'
+      registrationNumber: vehicleData.registrationNumber || reg,
+      make: vehicleData.make || null,
+      model: vehicleData.model || null,
+      colour: vehicleData.colour || null,
+      fuelType: vehicleData.fuelType || null,
+      yearOfManufacture: vehicleData.yearOfManufacture || null,
+      engineCapacity: vehicleData.engineCapacity || null,
+      co2Emissions: vehicleData.co2Emissions || null,
+      euroStatus: vehicleData.euroStatus || null,
+      motStatus: vehicleData.motStatus || null,
+      taxStatus: vehicleData.taxStatus || null,
+      motExpiryDate: vehicleData.motExpiryDate || null,
+      taxDueDate: vehicleData.taxDueDate || null,
+
+      isTaxed: vehicleData.taxStatus === 'Taxed',
+      hasMot: vehicleData.motStatus === 'Valid',
+
+      /**
+       * MOT HISTORY
+       */
+      motHistory: motData.motTests || []
     });
 
   } catch (err) {
     console.log('API ERROR:', err.message);
-    res.status(500).json({ error: 'Server error' });
+
+    res.status(500).json({
+      error: err.message || 'Server error'
+    });
   }
 });
 
 /**
- * fallback homepage (fixes "Cannot GET /")
+ * HOMEPAGE
  */
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 /**
- * IMPORTANT for Render
+ * PORT
  */
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log('Server running on port', PORT);
+  console.log(`Server running on port ${PORT}`);
 });
