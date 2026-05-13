@@ -616,6 +616,14 @@ button:hover{
   .car-title{
     font-size:28px;
   }
+  /* TAX */
 
+.tax-green{
+  color:#4ade80;
 }
+
+.tax-red{
+  color:#f87171;
+}
+
 }
