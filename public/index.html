@@ -14,6 +14,7 @@
   />
 
   <style>
+
     .hero {
       background:
         linear-gradient(rgba(0,0,0,0.82), rgba(0,0,0,0.88)),
@@ -26,6 +27,7 @@
     .plate-input {
       box-shadow: 0 10px 20px rgba(0,0,0,0.35);
     }
+
   </style>
 </head>
 
@@ -68,18 +70,24 @@
 
         <div class="flex bg-white rounded-2xl overflow-hidden plate-input">
 
+          <!-- GB -->
           <div class="bg-blue-600 text-white px-5 py-5 flex items-center font-bold">
             🇬🇧 GB
           </div>
 
+          <!-- INPUT -->
           <input
             id="reg"
             type="text"
             placeholder="ENTER REG"
             maxlength="10"
-            class="flex-1 px-6 py-5 text-3xl font-bold text-black uppercase focus:outline-none text-center"
+
+            class="flex-1 py-5 text-3xl font-bold text-black uppercase focus:outline-none text-center tracking-widest"
+
+            style="padding-left:70px;padding-right:20px;"
           />
 
+          <!-- BUTTON -->
           <button
             onclick="checkVehicle()"
             class="bg-yellow-400 hover:bg-yellow-500 transition text-black font-bold px-8"
@@ -100,6 +108,9 @@
 
   <script>
 
+    /**
+     * DAYS UNTIL
+     */
     function daysUntil(dateStr) {
 
       if (!dateStr) return null;
@@ -112,6 +123,32 @@
       );
     }
 
+    /**
+     * SHOW/HIDE MOT HISTORY
+     */
+    function toggleMotHistory() {
+
+      const container = document.getElementById('motHistoryContainer');
+
+      const button = document.getElementById('motToggleBtn');
+
+      if (container.classList.contains('hidden')) {
+
+        container.classList.remove('hidden');
+
+        button.innerText = 'Hide MOT History';
+
+      } else {
+
+        container.classList.add('hidden');
+
+        button.innerText = 'Show MOT History';
+      }
+    }
+
+    /**
+     * MAIN VEHICLE CHECK
+     */
     async function checkVehicle() {
 
       const reg = document
@@ -128,7 +165,7 @@
       }
 
       /**
-       * LOADER
+       * LOADING
        */
       resultDiv.innerHTML = `
         <div class="flex justify-center py-20">
@@ -139,7 +176,7 @@
       try {
 
         /**
-         * FETCH API
+         * FETCH BACKEND
          */
         const res = await fetch('/api/check', {
           method: 'POST',
@@ -172,7 +209,7 @@
           .includes('taxed');
 
         /**
-         * PAGE HTML
+         * RENDER PAGE
          */
         resultDiv.innerHTML = `
 
@@ -267,7 +304,7 @@
 
             </div>
 
-            <!-- VEHICLE DETAILS -->
+            <!-- VEHICLE INFO -->
             <div class="bg-zinc-950 rounded-2xl p-6">
 
               <h3 class="text-xl font-bold mb-6">
@@ -309,8 +346,21 @@
 
             </div>
 
-            <!-- MOT HISTORY -->
+            <!-- MOT BUTTON -->
             <div class="mt-10">
+
+              <button
+                id="motToggleBtn"
+                onclick="toggleMotHistory()"
+                class="w-full bg-blue-600 hover:bg-blue-700 transition rounded-2xl p-4 text-lg font-bold"
+              >
+                Show MOT History
+              </button>
+
+            </div>
+
+            <!-- MOT HISTORY -->
+            <div id="motHistoryContainer" class="hidden mt-6">
 
               <h3 class="text-3xl font-bold mb-6">
                 MOT History
@@ -321,8 +371,6 @@
                 ${(data.motHistory || []).length
 
                   ? (data.motHistory || []).map(test => {
-
-                      console.log(test);
 
                       /**
                        * COMBINE ALL POSSIBLE ISSUE ARRAYS
