@@ -6,13 +6,10 @@ function daysLeft(dateStr){
 
   const target = new Date(dateStr);
 
-  const diff =
-    Math.ceil(
-      (target - now) /
-      (1000 * 60 * 60 * 24)
-    );
-
-  return diff;
+  return Math.ceil(
+    (target - now) /
+    (1000 * 60 * 60 * 24)
+  );
 }
 
 function toggleMot(){
@@ -66,7 +63,8 @@ async function checkVehicle(){
 
       });
 
-    const d = await res.json();
+    const d =
+      await res.json();
 
     console.log(d);
 
@@ -84,7 +82,6 @@ async function checkVehicle(){
 
       <div class="result-card glass">
 
-        <!-- RESULT PLATE -->
         <div class="result-plate">
 
           <div class="gb">
@@ -99,19 +96,17 @@ async function checkVehicle(){
 
         <h2 style="
           text-align:center;
-          margin-top:18px;
-          font-size:32px;
+          margin-top:20px;
+          font-size:34px;
         ">
           ${d.make} ${d.model}
         </h2>
 
-        <!-- INFO GRID -->
         <div class="grid">
 
           <div class="info-box">
-
             <div class="info-title">
-              MOT Status
+              MOT Expiry
             </div>
 
             <div class="info-value">
@@ -121,11 +116,9 @@ async function checkVehicle(){
             <div>
               ${motDays} days left
             </div>
-
           </div>
 
           <div class="info-box">
-
             <div class="info-title">
               Tax Status
             </div>
@@ -137,11 +130,9 @@ async function checkVehicle(){
             <div>
               ${taxDays} days left
             </div>
-
           </div>
 
           <div class="info-box">
-
             <div class="info-title">
               Engine
             </div>
@@ -149,11 +140,9 @@ async function checkVehicle(){
             <div class="info-value">
               ${d.engineCapacity}cc
             </div>
-
           </div>
 
           <div class="info-box">
-
             <div class="info-title">
               Fuel
             </div>
@@ -161,44 +150,17 @@ async function checkVehicle(){
             <div class="info-value">
               ${d.fuelType}
             </div>
-
-          </div>
-
-          <div class="info-box">
-
-            <div class="info-title">
-              Colour
-            </div>
-
-            <div class="info-value">
-              ${d.colour}
-            </div>
-
-          </div>
-
-          <div class="info-box">
-
-            <div class="info-title">
-              Year
-            </div>
-
-            <div class="info-value">
-              ${d.year}
-            </div>
-
           </div>
 
         </div>
 
-        <!-- MOT BUTTON -->
         <button
-          class="mot-btn"
+          style="margin-top:20px"
           onclick="toggleMot()"
         >
           Show MOT History
         </button>
 
-        <!-- MOT HISTORY -->
         <div id="motContainer">
 
           ${
