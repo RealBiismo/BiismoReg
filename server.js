@@ -1,92 +1,75 @@
 import express from "express";
-import fetch from "node-fetch";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json());
 
-/**
- * 🔧 Convert DVSA MOT format → frontend format
- */
-function mapMotHistory(tests = []) {
-  return tests.map(t => ({
-    completedDate: t.completedDate,
-    result: t.testResult,
-    mileage: t.odometerValue || 0,
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-    defects: {
-      advisories: (t.rfrAndComments || []).filter(x =>
-        (x.type || "").toUpperCase().includes("ADVIS")
-      ),
-      major: (t.rfrAndComments || []).filter(x =>
-        (x.type || "").toUpperCase().includes("MAJOR")
-      ),
-      minor: (t.rfrAndComments || []).filter(x =>
-        (x.type || "").toUpperCase().includes("MINOR")
-      )
-    }
-  }));
+app.use(express.static("public"));
+
+/**
+ * 🚗 MOCK DVLA + MOT DATA (replace with real APIs later)
+ */
+function getMockVehicle(reg) {
+  return {
+    make: "BMW",
+    model: "320D",
+    yearOfManufacture: 2017,
+    engineCapacity: 1995,
+    fuelType: "Diesel",
+    colour: "White",
+    taxStatus: "Taxed",
+    taxDueDate: "2026-10-01",
+    motExpiryDate: "2026-04-10",
+
+    motHistory: [
+      {
+        completedDate: "2025-03-01",
+        result: "PASS",
+        mileage: 82000,
+        defects: {
+          advisories: [{ text: "Tyres slightly worn" }],
+          major: [],
+          minor: []
+        }
+      },
+      {
+        completedDate: "2024-03-02",
+        result: "FAIL",
+        mileage: 74000,
+        defects: {
+          advisories: [],
+          major: [{ text: "Brake imbalance detected" }],
+          minor: []
+        }
+      },
+      {
+        completedDate: "2023-03-05",
+        result: "PASS",
+        mileage: 66000,
+        defects: {
+          advisories: [],
+          major: [],
+          minor: []
+        }
+      }
+    ]
+  };
 }
 
 /**
- * 🚗 MAIN API
+ * 🚗 MAIN API ROUTE
  */
-app.post("/api/check", async (req, res) => {
-
+app.post("/api/check", (req, res) => {
   try {
-
     const { registrationNumber } = req.body;
 
-    // -----------------------------
-    // 🔵 DVLA DATA (replace with real API)
-    // -----------------------------
-    const dvla = {
-      make: "BMW",
-      model: "320D",
-      yearOfManufacture: 2017,
-      engineCapacity: 1995,
-      fuelType: "Diesel",
-      colour: "White",
-      taxStatus: "Taxed",
-      taxDueDate: "2026-10-01",
-      motExpiryDate: "2026-04-10"
-    };
+    const data = getMockVehicle(registrationNumber);
 
-    // -----------------------------
-    // 🔴 DVSA MOT DATA (replace with real API)
-    // -----------------------------
-    const motRaw = {
-      motTests: [
-        {
-          completedDate: "2025-03-01",
-          testResult: "PASS",
-          odometerValue: 82000,
-          rfrAndComments: [
-            { type: "ADVISORY", text: "Tyres slightly worn" }
-          ]
-        },
-        {
-          completedDate: "2024-03-02",
-          testResult: "FAIL",
-          odometerValue: 74000,
-          rfrAndComments: [
-            { type: "MAJOR", text: "Brake imbalance detected" }
-          ]
-        },
-        {
-          completedDate: "2023-03-05",
-          testResult: "PASS",
-          odometerValue: 66000,
-          rfrAndComments: []
-        }
-      ]
-    };
-
-    const motHistory = mapMotHistory(motRaw.motTests);
-
-    res.json({
-      ...dvla,
-      motHistory
-    });
+    res.json(data);
 
   } catch (err) {
     res.json({ error: err.message });
@@ -94,5 +77,5 @@ app.post("/api/check", async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log("Running on http://localhost:3000");
+  console.log("Server running: http://localhost:3000");
 });
