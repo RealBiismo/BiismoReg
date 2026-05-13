@@ -15,12 +15,14 @@ function daysLeft(dateStr){
 }
 
 /* =========================
-   MOT STATUS (ROBUST)
+   UNIFIED STATUS (MOT + TAX)
 ========================= */
-function getMotStatus(dateStr){
+
+function getStatus(dateStr){
 
   if(!dateStr){
     return {
+      date: "N/A",
       text: "EXPIRED",
       class: "tax-red"
     };
@@ -28,68 +30,24 @@ function getMotStatus(dateStr){
 
   const days = daysLeft(dateStr);
 
-  if(isNaN(days) || days === null || days < 0){
+  if(isNaN(days) || days < 0){
+
     return {
+      date: new Date(dateStr).toLocaleDateString("en-GB"),
       text: "EXPIRED",
       class: "tax-red"
     };
   }
 
   return {
+    date: new Date(dateStr).toLocaleDateString("en-GB"),
     text: `${days} days left`,
     class: "tax-green"
   };
 }
 
 /* =========================
-   TAX STATUS (DVLA SAFE PARSER)
-========================= */
-function getTaxStatus(d){
-
-  const today = new Date();
-
-  const taxDate =
-    d.taxDueDate
-      ? new Date(d.taxDueDate)
-      : null;
-
-  /* ✅ PRIMARY RULE: DATE BASED */
-  if(taxDate){
-
-    if(taxDate < today){
-      return {
-        text: "UNTAXED",
-        class: "tax-red"
-      };
-    }
-
-    return {
-      text: "TAXED",
-      class: "tax-green"
-    };
-  }
-
-  /* FALLBACK TO STRING (if API doesn't give date) */
-  const raw =
-    (
-      d.taxStatus ||
-      d.taxStatusDescription ||
-      d.vehicleTax?.status ||
-      ""
-    ).toLowerCase();
-
-  if(raw.includes("taxed")){
-    return { text:"TAXED", class:"tax-green" };
-  }
-
-  if(raw.includes("sorn")){
-    return { text:"SORN", class:"tax-red" };
-  }
-
-  return { text:"UNKNOWN", class:"tax-red" };
-}
-/* =========================
-   MOT TOGGLE
+   TOGGLE MOT
 ========================= */
 function toggleMot(){
 
@@ -106,22 +64,27 @@ function toggleMot(){
     open ? "none" : "block";
 
   btn.innerText =
-    open
-      ? "Show MOT History"
-      : "Hide MOT History";
+    open ? "Show MOT History" : "Hide MOT History";
 }
 
 /* =========================
-   DEFECT GROUPING
+   TAX NORMALISER (fallback safe)
+========================= */
+function getTaxDate(d){
+
+  return d.taxDueDate ||
+         d.taxExpiryDate ||
+         d.vehicleTax?.expiryDate ||
+         null;
+}
+
+/* =========================
+   MOT DEFECT GROUPS
 ========================= */
 function buildDefects(defects){
 
   if(!defects || !defects.length){
-    return `
-      <div class="clean-pass">
-        No advisories or defects
-      </div>
-    `;
+    return `<div class="clean-pass">No advisories or defects</div>`;
   }
 
   const groups = {
@@ -137,9 +100,9 @@ function buildDefects(defects){
       (d.type || "ADVISORY").toUpperCase();
 
     if(groups[type]){
-      groups[type].push(d.text || d.description || d.comment || "Issue found");
+      groups[type].push(d.text || d.description || d.comment);
     }else{
-      groups.ADVISORY.push(d.text || d.description || d.comment || "Issue found");
+      groups.ADVISORY.push(d.text || d.description || d.comment);
     }
 
   });
@@ -155,9 +118,7 @@ function buildDefects(defects){
           <b>${type}</b>
 
           ${items.map(i => `
-            <div class="defect-item">
-              ${i}
-            </div>
+            <div class="defect-item">${i}</div>
           `).join("")}
 
         </div>
@@ -167,7 +128,7 @@ function buildDefects(defects){
 }
 
 /* =========================
-   MAIN VEHICLE CHECK
+   MAIN
 ========================= */
 async function checkVehicle(){
 
@@ -186,7 +147,7 @@ async function checkVehicle(){
 
   document.getElementById("result").innerHTML = `
     <div class="result-card glass">
-      Loading vehicle data...
+      Loading...
     </div>
   `;
 
@@ -206,21 +167,16 @@ async function checkVehicle(){
     const d =
       await res.json();
 
-    if(d.error){
-      throw new Error(d.error);
-    }
+    const mot =
+      getStatus(d.motExpiryDate);
 
-    const motStatus =
-      getMotStatus(d.motExpiryDate);
-
-    const taxStatus =
-      getTaxStatus(d);
+    const tax =
+      getStatus(getTaxDate(d));
 
     document.getElementById("result").innerHTML = `
 
       <div class="result-card glass">
 
-        <!-- PLATE -->
         <div class="result-plate">
 
           <div class="gb">GB</div>
@@ -231,28 +187,29 @@ async function checkVehicle(){
 
         </div>
 
-        <!-- TITLE -->
         <div class="car-title">
-          ${d.make || "Unknown"} ${d.model || ""}
+          ${d.make || ""} ${d.model || ""}
         </div>
 
-        <!-- GRID -->
         <div class="grid">
 
           <div class="info-box">
             <div class="info-title">MOT</div>
             <div class="info-value">
-              ${d.motExpiryDate || "N/A"}
+              ${mot.date}
             </div>
-            <div class="${motStatus.class}">
-              ${motStatus.text}
+            <div class="${mot.class}">
+              MOT • ${mot.text}
             </div>
           </div>
 
           <div class="info-box">
-            <div class="info-title">Tax Status</div>
-            <div class="info-value ${taxStatus.class}">
-              ${taxStatus.text}
+            <div class="info-title">TAX</div>
+            <div class="info-value">
+              ${tax.date}
+            </div>
+            <div class="${tax.class}">
+              TAX • ${tax.text}
             </div>
           </div>
 
@@ -272,37 +229,31 @@ async function checkVehicle(){
 
         </div>
 
-        <!-- MOT BUTTON -->
-        <button
-          id="motBtn"
-          class="mot-button"
-          onclick="toggleMot()"
-        >
+        <button id="motBtn" onclick="toggleMot()">
           Show MOT History
         </button>
 
-        <!-- MOT HISTORY -->
         <div id="motContainer">
 
           ${
-            d.motHistory && d.motHistory.length
+            d.motHistory?.length
 
             ? d.motHistory.map(m => `
 
               <div class="mot-card">
 
-                <div class="${m.result === "PASSED" ? "pass" : "fail"}">
-                  ${m.result || "UNKNOWN"}
+                <div class="${m.result === "PASSED" ? "pass":"fail"}">
+                  ${m.result}
                 </div>
 
                 <div>
                   ${m.completedDate
                     ? new Date(m.completedDate).toLocaleDateString("en-GB")
-                    : "Unknown date"}
+                    : "Unknown"}
                 </div>
 
                 <div>
-                  ${m.mileage || "N/A"} ${m.mileageUnit || ""}
+                  ${m.mileage || "N/A"}
                 </div>
 
                 ${buildDefects(m.defects || [])}
@@ -311,11 +262,7 @@ async function checkVehicle(){
 
             `).join("")
 
-            : `
-              <div class="mot-card">
-                No MOT history found
-              </div>
-            `
+            : `<div class="mot-card">No MOT history found</div>`
           }
 
         </div>
