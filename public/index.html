@@ -137,7 +137,7 @@
                   .map(([key, val]) => `
                     <div class="flex justify-between py-2 border-b border-zinc-800 last:border-0">
                       <span class="text-gray-400">${key.replace(/([A-Z])/g, ' $1')}</span>
-                      <span class="font-medium text-right">${val || '—'}</span>
+                      <span class="font-medium text-right">${val ?? '—'}}</span>
                     </div>
                   `).join('')}
               </div>
