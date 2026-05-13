@@ -48,46 +48,63 @@ body{
   text-align:center;
 }
 
-/* TITLE */
 .search-card h1{
   font-size:48px;
   font-weight:900;
 }
 
-/* UK PLATE */
+/* ===== UK PLATE INPUT FIX ===== */
+
 .plate{
   display:flex;
   overflow:hidden;
   border-radius:14px;
   margin:22px 0;
+  height:78px;
 }
 
 .gb{
   background:#003399;
-  color:white;
+  color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:0 16px;
-  font-weight:700;
+  padding:0 18px;
+  font-weight:800;
+  font-size:18px;
 }
 
+/* REAL UK PLATE LOOK */
 .plate input{
   flex:1;
+
   border:none;
   outline:none;
+
   background:#ffd800;
-  color:black;
-  font-size:38px;
+  color:#000;
+
+  font-size:40px;
   font-weight:900;
-  letter-spacing:5px;
+
+  letter-spacing:6px;
   text-transform:uppercase;
 
-  /* FIXED CENTERING */
+  /* TRUE CENTER FIX */
   text-align:center;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
+  line-height:78px;
+
+  font-family:
+    "Charles Wright",
+    "UKNumberPlate",
+    "FE-Schrift",
+    Arial,
+    sans-serif;
 }
 
 /* BUTTON */
@@ -95,7 +112,7 @@ button{
   width:100%;
   border:none;
   background:linear-gradient(135deg,#2563eb,#1d4ed8);
-  color:white;
+  color:#fff;
   padding:18px;
   border-radius:14px;
   font-size:18px;
@@ -103,7 +120,7 @@ button{
   cursor:pointer;
 }
 
-/* RESULT CARD */
+/* RESULT */
 .result-card{
   width:100%;
   max-width:1200px;
@@ -123,7 +140,7 @@ button{
 
 .result-reg{
   background:#ffd800;
-  color:black;
+  color:#000;
   font-size:42px;
   font-weight:900;
   letter-spacing:5px;
@@ -164,21 +181,16 @@ button{
   font-weight:800;
 }
 
-/* TAX FIX */
-.tax-green{
-  color:#4ade80;
-}
-
-.tax-red{
-  color:#f87171;
-}
+/* TAX */
+.tax-green{ color:#4ade80; }
+.tax-red{ color:#f87171; }
 
 /* MOT BUTTON */
 .mot-button{
   margin-top:22px;
 }
 
-/* MOT CONTAINER (NO COLOUR CHANGE BUG FIX) */
+/* MOT CONTAINER */
 #motContainer{
   display:none;
   margin-top:22px;
@@ -198,7 +210,7 @@ button{
 .pass{color:#4ade80;font-weight:900;}
 .fail{color:#f87171;font-weight:900;}
 
-/* DEFECTS */
+/* DEFECT GROUPS */
 .defect-group{
   margin-top:14px;
   padding:16px;
@@ -212,7 +224,6 @@ button{
   border-radius:12px;
 }
 
-/* GROUP COLORS */
 .advisory{border:1px solid rgba(250,204,21,0.3);}
 .major{border:1px solid rgba(249,115,22,0.3);}
 .minor{border:1px solid rgba(59,130,246,0.3);}
@@ -228,7 +239,15 @@ button{
 
 /* MOBILE */
 @media(max-width:700px){
+
   .search-card h1{font-size:34px;}
+
   .result-reg{font-size:28px;}
+
   .car-title{font-size:26px;}
+
+  .plate input{
+    font-size:30px;
+    letter-spacing:4px;
+  }
 }
