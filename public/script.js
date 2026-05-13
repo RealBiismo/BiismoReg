@@ -197,21 +197,42 @@ async function checkVehicle(){
 
         <div class="grid">
 
-          <div class="info-box glass-inner">
+<div class="info-box glass-inner">
 
-            <div class="info-title">
-              MOT Expiry
-            </div>
+  <div class="info-title">
+    Tax Status
+  </div>
 
-            <div class="info-value">
-              ${d.motExpiryDate || "N/A"}
-            </div>
+  <div class="
+    info-value
+    ${
+      d.taxStatus?.toLowerCase()
+        .includes("taxed")
 
-            <div class="info-sub">
-              ${motDays} days left
-            </div>
+        ? "tax-green"
 
-          </div>
+        : "tax-red"
+    }
+  ">
+
+    ${d.taxStatus}
+
+  </div>
+
+  <div class="info-sub">
+
+    ${
+      d.taxStatus?.toLowerCase()
+        .includes("taxed")
+
+        ? `${taxDays} days left`
+
+        : "Vehicle untaxed"
+    }
+
+  </div>
+
+</div>
 
           <div class="info-box glass-inner">
 
