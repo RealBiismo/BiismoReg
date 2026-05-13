@@ -1,75 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
-/>
+<title>BiismoReg</title>
 
-<title>BIISMO REG</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<link rel="stylesheet" href="style.css"/>
+<link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
 <nav class="nav">
-  <span class="biis">BIIS</span><span class="mo"> MO</span> REG
+  <span class="biis">BIIS</span><span class="mo">MO</span> REG
 </nav>
 
-<div class="hero">
+<div class="container">
 
-  <div class="glass search-card">
-
-    <h1>
-      UK Vehicle Check
-    </h1>
-
-    <p>
-      MOT • TAX • HISTORY
-    </p>
+  <div class="glass">
 
     <div class="plate">
-
-      <div class="gb">
-        GB
-      </div>
-
-      <input
-        id="regInput"
-        placeholder="PA55MGN"
-        maxlength="8"
-      />
-
+      <div>GB</div>
+      <input id="regInput" placeholder="AB12CDE">
     </div>
 
-    <button onclick="checkVehicle()">
-      SEARCH
-    </button>
+    <button onclick="checkVehicle()">SEARCH</button>
+
+    <div class="disclaimer">
+      <div class="warn">
+        We do not store searches or personal data.
+      </div>
+      <div>
+        Vehicle data is provided using official DVLA & DVSA APIs.
+      </div>
+    </div>
+
+    <div id="result"></div>
 
   </div>
 
 </div>
-<div class="disclaimer">
-  <div class="disclaimer-title">
-    We do not store searches or personal data.
-  </div>
 
-  <div class="disclaimer-text">
-    Vehicle data is provided using official DVLA & DVSA APIs.
-  </div>
-</div>
-  
-<div id="result"></div>
-<div class="chart-wrap">
-  <canvas id="motChart"></canvas>
-</div>
+<footer>
+  All rights reserved BiismoReg | RealBiismo
+</footer>
+
 <script src="script.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
