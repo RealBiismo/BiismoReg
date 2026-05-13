@@ -13,16 +13,16 @@ const PORT = process.env.PORT || 3000;
    MOT TOKEN CACHE
 ========================= */
 let motToken = null;
-let motTokenExpiry = null;
+let motTokenExpiry = 0;
 
 async function getMotToken(){
 
-  if(motToken && motTokenExpiry > Date.now()){
+  if(motToken && Date.now() < motTokenExpiry){
     return motToken;
   }
 
   const res = await fetch(
-    "https://login.microsoftonline.com/a455b827-244f-4c97-b5b4-ce5d13b4d00c/oauth2/v2.0/token",
+    process.env.MOT_TOKEN_URL,
     {
       method:"POST",
       headers:{
@@ -44,25 +44,27 @@ async function getMotToken(){
   }
 
   motToken = data.access_token;
-  motTokenExpiry = Date.now() + (50 * 60 * 1000);
+  motTokenExpiry = Date.now() + 50 * 60 * 1000;
 
   return motToken;
 }
 
 /* =========================
-   DVLA VEHICLE
+   DVLA
 ========================= */
 async function getVehicle(reg){
 
   const res = await fetch(
-    `https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles`,
+    process.env.DVLA_URL,
     {
       method:"POST",
       headers:{
         "Content-Type":"application/json",
         "x-api-key": process.env.DVLA_API_KEY
       },
-      body:JSON.stringify({ registrationNumber: reg })
+      body:JSON.stringify({
+        registrationNumber: reg
+      })
     }
   );
 
@@ -74,25 +76,31 @@ async function getVehicle(reg){
 ========================= */
 async function getMotHistory(reg){
 
-  const token = await getMotToken();
+  try{
 
-  const res = await fetch(
-    `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
-    {
-      headers:{
-        "Authorization":`Bearer ${token}`,
-        "x-api-key": process.env.MOT_API_KEY
+    const token = await getMotToken();
+
+    const res = await fetch(
+      `${process.env.MOT_API_URL}/${reg}`,
+      {
+        headers:{
+          "Authorization":`Bearer ${token}`,
+          "x-api-key": process.env.MOT_API_KEY
+        }
       }
-    }
-  );
+    );
 
-  const data = await res.json();
+    const data = await res.json();
 
-  return data?.motTests || [];
+    return data?.motTests || [];
+
+  }catch(e){
+    return [];
+  }
 }
 
 /* =========================
-   MAIN API
+   API ROUTE
 ========================= */
 app.post("/api/check", async (req,res)=>{
 
@@ -100,8 +108,8 @@ app.post("/api/check", async (req,res)=>{
 
     const reg =
       req.body.registrationNumber
-      ?.toUpperCase()
-      ?.replace(/\s/g,"");
+        ?.toUpperCase()
+        ?.replace(/\s/g,"");
 
     const vehicle =
       await getVehicle(reg);
@@ -111,12 +119,17 @@ app.post("/api/check", async (req,res)=>{
 
     res.json({
       registration: reg,
-      make: vehicle?.make,
-      model: vehicle?.model,
-      fuelType: vehicle?.fuelType,
-      engineCapacity: vehicle?.engineCapacity,
-      taxDueDate: vehicle?.taxDueDate,
-      motExpiryDate: vehicle?.motExpiryDate,
+      make: vehicle?.make || "Unknown",
+      model: vehicle?.model || "",
+      fuelType: vehicle?.fuelType || "Unknown",
+      engineCapacity: vehicle?.engineCapacity || "N/A",
+
+      taxDueDate:
+        vehicle?.taxDueDate || null,
+
+      motExpiryDate:
+        vehicle?.motExpiryDate || null,
+
       motHistory
     });
 
@@ -126,5 +139,5 @@ app.post("/api/check", async (req,res)=>{
 });
 
 app.listen(PORT, ()=>{
-  console.log("Server running on", PORT);
+  console.log("Running on", PORT);
 });
