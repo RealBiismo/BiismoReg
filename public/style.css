@@ -20,6 +20,25 @@
   color:#aaa;
   margin-top:4px;
 }
+
+.biis{
+  color:white;
+  font-size:34px;
+  font-weight:900;
+}
+
+.mo{
+  color:#60a5fa;
+  font-size:34px;
+  font-weight:900;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-3px);}
+}
+
 body{
   font-family:Inter, Arial, sans-serif;
   background:#000 !important;
