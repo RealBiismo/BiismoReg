@@ -1,70 +1,130 @@
-let chart = null;
+function daysLeft(dateStr){
 
-function daysLeft(date){
-  if(!date) return null;
-  return Math.ceil((new Date(date)-new Date())/86400000);
+  if(!dateStr) return null;
+
+  const now = new Date();
+  const target = new Date(dateStr);
+
+  const diff =
+    Math.ceil(
+      (target - now) /
+      (1000 * 60 * 60 * 24)
+    );
+
+  return diff;
 }
 
-function status(date){
+/* =========================
+   UNIFIED STATUS (MOT + TAX)
+========================= */
 
-  if(!date){
-    return {date:"N/A",text:"EXPIRED",class:"tax-red"};
+function getStatus(dateStr){
+
+  if(!dateStr){
+    return {
+      date: "N/A",
+      text: "EXPIRED",
+      class: "tax-red"
+    };
   }
 
-  const d = daysLeft(date);
+  const days = daysLeft(dateStr);
 
-  if(d < 0){
+  if(isNaN(days) || days < 0){
+
     return {
-      date:new Date(date).toLocaleDateString("en-GB"),
-      text:"EXPIRED",
-      class:"tax-red"
+      date: new Date(dateStr).toLocaleDateString("en-GB"),
+      text: "EXPIRED",
+      class: "tax-red"
     };
   }
 
   return {
-    date:new Date(date).toLocaleDateString("en-GB"),
-    text:`${d} days left`,
-    class:"tax-green"
+    date: new Date(dateStr).toLocaleDateString("en-GB"),
+    text: `${days} days left`,
+    class: "tax-green"
   };
 }
 
 /* =========================
-   GRAPH
+   TOGGLE MOT
 ========================= */
-function renderGraph(data){
+function toggleMot(){
 
   const el =
-    document.getElementById("motChart");
+    document.getElementById("motContainer");
 
-  if(!el || !data?.length) return;
+  const btn =
+    document.getElementById("motBtn");
 
-  const sorted =
-    [...data].sort((a,b)=>
-      new Date(a.completedDate)-new Date(b.completedDate)
-    );
+  const open =
+    el.style.display === "block";
 
-  const labels =
-    sorted.map(x =>
-      new Date(x.completedDate).toLocaleDateString("en-GB")
-    );
+  el.style.display =
+    open ? "none" : "block";
 
-  const mileage =
-    sorted.map(x => x.odometerValue || 0);
+  btn.innerText =
+    open ? "Show MOT History" : "Hide MOT History";
+}
 
-  if(chart) chart.destroy();
+/* =========================
+   TAX NORMALISER (fallback safe)
+========================= */
+function getTaxDate(d){
 
-  chart = new Chart(el,{
-    type:"line",
-    data:{
-      labels,
-      datasets:[{
-        label:"Mileage",
-        data:mileage,
-        borderColor:"#60a5fa",
-        tension:0.3
-      }]
+  return d.taxDueDate ||
+         d.taxExpiryDate ||
+         d.vehicleTax?.expiryDate ||
+         null;
+}
+
+/* =========================
+   MOT DEFECT GROUPS
+========================= */
+function buildDefects(defects){
+
+  if(!defects || !defects.length){
+    return `<div class="clean-pass">No advisories or defects</div>`;
+  }
+
+  const groups = {
+    DANGEROUS: [],
+    MAJOR: [],
+    MINOR: [],
+    ADVISORY: []
+  };
+
+  defects.forEach(d => {
+
+    const type =
+      (d.type || "ADVISORY").toUpperCase();
+
+    if(groups[type]){
+      groups[type].push(d.text || d.description || d.comment);
+    }else{
+      groups.ADVISORY.push(d.text || d.description || d.comment);
     }
+
   });
+
+  return Object.entries(groups)
+    .map(([type, items]) => {
+
+      if(!items.length) return "";
+
+      return `
+        <div class="defect-group ${type.toLowerCase()}">
+
+          <b>${type}</b>
+
+          ${items.map(i => `
+            <div class="defect-item">${i}</div>
+          `).join("")}
+
+        </div>
+      `;
+
+    }).join("");
 }
 
 /* =========================
@@ -73,46 +133,150 @@ function renderGraph(data){
 async function checkVehicle(){
 
   const reg =
-    document.getElementById("regInput")
-    .value
-    .toUpperCase()
-    .replace(/\s/g,"");
+    document
+      .getElementById("regInput")
+      .value
+      .trim()
+      .toUpperCase()
+      .replace(/\s/g,"");
 
-  const res =
-    await fetch("/api/check",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({registrationNumber:reg})
-    });
-
-  const d = await res.json();
-
-  const mot = status(d.motExpiryDate);
-  const tax = status(d.taxDueDate);
+  if(!reg){
+    alert("Enter registration");
+    return;
+  }
 
   document.getElementById("result").innerHTML = `
-
-    <div class="grid">
-
-      <div class="info-box">
-        MOT<br>${mot.date}<br>
-        <span class="${mot.class}">${mot.text}</span>
-      </div>
-
-      <div class="info-box">
-        TAX<br>${tax.date}<br>
-        <span class="${tax.class}">${tax.text}</span>
-      </div>
-
+    <div class="result-card glass">
+      Loading...
     </div>
-
-    <div class="chart-wrap">
-      <canvas id="motChart"></canvas>
-    </div>
-
   `;
 
-  setTimeout(()=>{
-    renderGraph(d.motHistory);
-  },100);
+  try{
+
+    const res =
+      await fetch("/api/check",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          registrationNumber:reg
+        })
+      });
+
+    const d =
+      await res.json();
+
+    const mot =
+      getStatus(d.motExpiryDate);
+
+    const tax =
+      getStatus(getTaxDate(d));
+
+    document.getElementById("result").innerHTML = `
+
+      <div class="result-card glass">
+
+        <div class="result-plate">
+
+          <div class="gb">GB</div>
+
+          <div class="result-reg">
+            ${d.registration || reg}
+          </div>
+
+        </div>
+
+        <div class="car-title">
+          ${d.make || ""} ${d.model || ""}
+        </div>
+
+        <div class="grid">
+
+          <div class="info-box">
+            <div class="info-title">MOT</div>
+            <div class="info-value">
+              ${mot.date}
+            </div>
+            <div class="${mot.class}">
+              MOT • ${mot.text}
+            </div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">TAX</div>
+            <div class="info-value">
+              ${tax.date}
+            </div>
+            <div class="${tax.class}">
+              TAX • ${tax.text}
+            </div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">Engine</div>
+            <div class="info-value">
+              ${d.engineCapacity || "N/A"}cc
+            </div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">Fuel</div>
+            <div class="info-value">
+              ${d.fuelType || "N/A"}
+            </div>
+          </div>
+
+        </div>
+
+        <button id="motBtn" onclick="toggleMot()">
+          Show MOT History
+        </button>
+
+        <div id="motContainer">
+
+          ${
+            d.motHistory?.length
+
+            ? d.motHistory.map(m => `
+
+              <div class="mot-card">
+
+                <div class="${m.result === "PASSED" ? "pass":"fail"}">
+                  ${m.result}
+                </div>
+
+                <div>
+                  ${m.completedDate
+                    ? new Date(m.completedDate).toLocaleDateString("en-GB")
+                    : "Unknown"}
+                </div>
+
+                <div>
+                  ${m.mileage || "N/A"}
+                </div>
+
+                ${buildDefects(m.defects || [])}
+
+              </div>
+
+            `).join("")
+
+            : `<div class="mot-card">No MOT history found</div>`
+          }
+
+        </div>
+
+      </div>
+
+    `;
+
+  }catch(e){
+
+    document.getElementById("result").innerHTML = `
+      <div class="result-card glass">
+        Error: ${e.message}
+      </div>
+    `;
+  }
 }
