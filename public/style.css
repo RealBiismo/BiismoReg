@@ -7,30 +7,23 @@
 body{
   font-family:Arial;
   background:
-    radial-gradient(circle at top,#182338,#000);
+    radial-gradient(circle at top,#152033,#000);
   color:white;
   min-height:100vh;
 }
 
-/* NAV */
-
 .nav{
   padding:20px;
-  border-bottom:
-    1px solid rgba(255,255,255,0.08);
-
-  backdrop-filter:blur(12px);
-
-  background:
-    rgba(255,255,255,0.03);
-}
-
-.logo{
   font-size:22px;
   font-weight:bold;
-}
+  background:
+    rgba(255,255,255,0.03);
 
-/* HERO */
+  backdrop-filter:blur(10px);
+
+  border-bottom:
+    1px solid rgba(255,255,255,0.06);
+}
 
 .hero{
   display:flex;
@@ -38,42 +31,36 @@ body{
   padding:60px 20px;
 }
 
-/* GLASS */
-
 .glass{
   background:
     rgba(255,255,255,0.05);
 
+  backdrop-filter:blur(20px);
+
   border:
     1px solid rgba(255,255,255,0.08);
 
-  backdrop-filter:blur(18px);
-
   box-shadow:
-    0 10px 40px rgba(0,0,0,0.4);
+    0 10px 40px rgba(0,0,0,0.5);
 }
 
-/* SEARCH */
-
-.search-box{
+.search-card{
   width:100%;
   max-width:700px;
-  border-radius:24px;
   padding:40px;
+  border-radius:28px;
   text-align:center;
 }
 
-.search-box h1{
+.search-card h1{
   font-size:42px;
   margin-bottom:10px;
 }
 
-.search-box p{
-  color:#b4b4b4;
+.search-card p{
+  color:#aaa;
   margin-bottom:30px;
 }
-
-/* UK PLATE */
 
 .plate{
   display:flex;
@@ -88,7 +75,7 @@ body{
   font-weight:bold;
   display:flex;
   align-items:center;
-  padding:0 14px;
+  padding:0 16px;
 }
 
 .plate input{
@@ -101,11 +88,9 @@ body{
   text-align:center;
   letter-spacing:5px;
   text-transform:uppercase;
-  padding:18px;
   font-weight:bold;
+  padding:18px;
 }
-
-/* BUTTON */
 
 button{
   width:100%;
@@ -119,10 +104,8 @@ button{
   cursor:pointer;
 }
 
-/* RESULT */
-
 .result-card{
-  max-width:1000px;
+  max-width:1100px;
   margin:20px auto;
   padding:30px;
   border-radius:24px;
@@ -136,20 +119,14 @@ button{
   border-radius:10px;
 }
 
-.result-plate .gb{
-  padding:12px;
-}
-
 .result-reg{
   background:#ffd800;
   color:black;
-  font-size:38px;
+  font-size:40px;
   font-weight:bold;
   padding:12px 30px;
   letter-spacing:5px;
 }
-
-/* GRID */
 
 .grid{
   display:grid;
@@ -164,25 +141,18 @@ button{
   background:
     rgba(255,255,255,0.04);
 
-  padding:18px;
+  padding:20px;
   border-radius:16px;
 }
 
 .info-title{
   color:#999;
-  font-size:14px;
-  margin-bottom:8px;
+  margin-bottom:10px;
 }
 
 .info-value{
-  font-size:22px;
+  font-size:24px;
   font-weight:bold;
-}
-
-/* MOT */
-
-.mot-btn{
-  margin-top:25px;
 }
 
 #motContainer{
@@ -193,9 +163,6 @@ button{
 .mot-item{
   background:
     rgba(255,255,255,0.04);
-
-  border:
-    1px solid rgba(255,255,255,0.06);
 
   padding:20px;
   border-radius:16px;
