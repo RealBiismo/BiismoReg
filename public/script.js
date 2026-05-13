@@ -1,82 +1,126 @@
-const form = document.getElementById('lookupForm');
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+function toggleMot(){
+  const el = document.getElementById("mot");
+  el.classList.toggle("hidden");
+}
 
-  const loader = document.getElementById('loader');
-  const error = document.getElementById('error');
-  const results = document.getElementById('results');
+function drawChart(history){
 
-  loader.style.display = 'block';
-  error.style.display = 'none';
-  results.style.display = 'none';
+  const ctx = document.getElementById("chart");
+  if(!ctx || !history.length) return;
 
-  const reg = document.getElementById('regInput').value.replace(/\s+/g,'').toUpperCase();
-
-  try {
-
-    const res = await fetch('/api/check', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ registrationNumber: reg })
-    });
-
-    const data = await res.json();
-
-    loader.style.display = 'none';
-
-    if(!data || data.error){
-      error.style.display = 'block';
-      return;
+  new Chart(ctx,{
+    type:"line",
+    data:{
+      labels: history.map(x =>
+        new Date(x.completedDate).toLocaleDateString("en-GB")
+      ),
+      datasets:[{
+        label:"Mileage",
+        data: history.map(x => x.mileage),
+        borderColor:"#3b82f6"
+      }]
     }
+  });
+}
 
-    results.style.display = 'block';
+function riskScore(data){
 
-    // BASIC INFO
-    document.getElementById('registration').textContent = data.registrationNumber || 'N/A';
-    document.getElementById('make').textContent = data.make || 'N/A';
-    document.getElementById('model').textContent = data.model || 'N/A';
-    document.getElementById('fuel').textContent = data.fuelType || 'N/A';
-    document.getElementById('year').textContent = data.yearOfManufacture || 'N/A';
-    document.getElementById('engine').textContent = data.engineCapacity || 'N/A';
-    document.getElementById('co2').textContent = data.co2Emissions || 'N/A';
-    document.getElementById('colour').textContent = data.colour || 'N/A';
-    document.getElementById('euro').textContent = data.euroStatus || 'N/A';
+  let score = 100;
 
-    // STATUS
-    const motValid = data.motStatus === 'Valid';
-    const taxed = data.taxStatus === 'Taxed';
+  const fails = data.motHistory.filter(x => x.result !== "PASS").length;
 
-    document.getElementById('motBox').className = 'status ' + (motValid ? 'green' : 'red');
-    document.getElementById('taxBox').className = 'status ' + (taxed ? 'green' : 'red');
+  let advisories = 0;
+  data.motHistory.forEach(x=>{
+    advisories += (x.defects.advisories?.length || 0);
+  });
 
-    document.getElementById('motText').textContent = motValid ? 'Valid MOT' : 'No MOT';
+  score -= fails * 15;
+  score -= advisories * 2;
 
-    document.getElementById('taxText').textContent = taxed ? 'Taxed' : 'Untaxed';
+  return Math.max(0, score);
+}
 
-    // EXPIRY (ONLY IF EXISTS)
-    const motExp = data.motExpiryDate;
-    const taxExp = data.taxDueDate;
+function estimateValue(data){
 
-    if(motExp){
-      const d = Math.ceil((new Date(motExp) - new Date()) / 86400000);
-      document.getElementById('motExpiry').textContent =
-        `Expires: ${motExp} (${d} days)`;
-    } else {
-      document.getElementById('motExpiry').textContent = '';
-    }
+  let base = 12000;
 
-    if(taxExp){
-      const d = Math.ceil((new Date(taxExp) - new Date()) / 86400000);
-      document.getElementById('taxExpiry').textContent =
-        `Expires: ${taxExp} (${d} days)`;
-    } else {
-      document.getElementById('taxExpiry').textContent = '';
-    }
+  const age = new Date().getFullYear() - data.yearOfManufacture;
+  base -= age * 700;
 
-  } catch(err){
-    loader.style.display = 'none';
-    error.style.display = 'block';
-  }
+  const mileage = data.motHistory.at(-1)?.mileage || 60000;
+  base -= (mileage / 1000) * 20;
 
-});
+  if(data.engineCapacity > 2000) base += 800;
+
+  return Math.max(500, Math.round(base));
+}
+
+async function checkVehicle(){
+
+  const reg = document.getElementById("reg").value.trim();
+
+  const res = await fetch("/api/check",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ registrationNumber: reg })
+  });
+
+  const d = await res.json();
+
+  const risk = riskScore(d);
+  const value = estimateValue(d);
+
+  setTimeout(()=>drawChart(d.motHistory),200);
+
+  document.getElementById("result").innerHTML = `
+
+    <div class="resultCard">
+
+      <div class="plate">
+        <div class="gb">GB</div>
+        <div class="reg">${reg}</div>
+      </div>
+
+      <h2 style="text-align:center;color:#60a5fa;margin-top:10px">
+        ${d.make} ${d.model}
+      </h2>
+
+      <h3 style="text-align:center">
+        Risk: ${risk}/100 | Value: £${value}
+      </h3>
+
+      <div class="grid">
+
+        <div class="box">Engine: ${d.engineCapacity}cc</div>
+        <div class="box">Fuel: ${d.fuelType}</div>
+        <div class="box">MOT: ${d.motExpiryDate}</div>
+        <div class="box">Tax: ${d.taxStatus}</div>
+
+      </div>
+
+      <div style="margin-top:20px">
+        <canvas id="chart"></canvas>
+      </div>
+
+      <button onclick="toggleMot()" style="margin-top:20px">
+        Toggle MOT History
+      </button>
+
+      <div id="mot" class="hidden" style="margin-top:15px">
+
+        ${d.motHistory.map(x=>`
+
+          <div class="box" style="margin-bottom:8px">
+            <b>${new Date(x.completedDate).toLocaleDateString("en-GB")}</b><br>
+            ${x.result} - ${x.mileage} miles
+          </div>
+
+        `).join("")}
+
+      </div>
+
+    </div>
+
+  `;
+}
