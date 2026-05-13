@@ -10,15 +10,32 @@ app.use(express.static("public"));
 ========================= */
 
 const DVLA_API_KEY = process.env.DVLA_API_KEY;
-const MOT_CLIENT_ID = process.env.MOT_CLIENT_ID;
-const MOT_CLIENT_SECRET = process.env.MOT_CLIENT_SECRET;
+
+const MOT_CLIENT_ID =
+  process.env.MOT_CLIENT_ID;
+
+const MOT_CLIENT_SECRET =
+  process.env.MOT_CLIENT_SECRET;
+
+const MOT_API_KEY =
+  process.env.MOT_API_KEY;
+
+const MOT_SCOPE =
+  process.env.MOT_SCOPE;
+
+const MOT_TOKEN_URL =
+  process.env.MOT_TOKEN_URL;
 
 /* =========================
-   MOT TOKEN CACHE
+   TOKEN CACHE
 ========================= */
 
 let cachedToken = null;
 let tokenExpiry = 0;
+
+/* =========================
+   GET MOT TOKEN
+========================= */
 
 async function getMotToken() {
 
@@ -29,143 +46,177 @@ async function getMotToken() {
   }
 
   const tokenRes = await fetch(
-    "https://login.microsoftonline.com/common/oauth2/token",
+    MOT_TOKEN_URL,
     {
       method: "POST",
+
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type":
+          "application/x-www-form-urlencoded"
       },
+
       body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: MOT_CLIENT_ID,
-        client_secret: MOT_CLIENT_SECRET,
-        scope: "https://auth.mot.api.gov.uk/.default"
+
+        client_id:
+          MOT_CLIENT_ID,
+
+        client_secret:
+          MOT_CLIENT_SECRET,
+
+        scope:
+          MOT_SCOPE,
+
+        grant_type:
+          "client_credentials"
+
       })
     }
   );
 
-  const tokenData = await tokenRes.json();
+  const tokenData =
+    await tokenRes.json();
 
   console.log("TOKEN:", tokenData);
 
   if (!tokenData.access_token) {
+
     throw new Error(
-      "Failed to get MOT token: " +
+      "MOT token failed: " +
       JSON.stringify(tokenData)
     );
   }
 
-  cachedToken = tokenData.access_token;
+  cachedToken =
+    tokenData.access_token;
 
   tokenExpiry =
-    Date.now() + ((tokenData.expires_in || 3600) * 1000);
+    now + ((tokenData.expires_in || 3600) * 1000);
 
   return cachedToken;
 }
 
 /* =========================
-   API ROUTE
+   MAIN API
 ========================= */
 
 app.post("/api/check", async (req, res) => {
 
   try {
 
-    const reg = req.body.registrationNumber
-      .toUpperCase()
-      .replace(/\s/g, "");
+    const reg =
+      req.body.registrationNumber
+        .toUpperCase()
+        .replace(/\s/g, "");
 
     /* =========================
-       DVLA
+       DVLA REQUEST
     ========================= */
 
     const dvlaRes = await fetch(
+
       "https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles",
+
       {
         method: "POST",
+
         headers: {
-          "x-api-key": DVLA_API_KEY,
-          "Content-Type": "application/json"
+          "x-api-key":
+            DVLA_API_KEY,
+
+          "Content-Type":
+            "application/json"
         },
+
         body: JSON.stringify({
           registrationNumber: reg
         })
       }
     );
 
-    const dvla = await dvlaRes.json();
+    const dvla =
+      await dvlaRes.json();
 
     console.log("DVLA:", dvla);
 
     /* =========================
-       MOT
+       MOT REQUEST
     ========================= */
 
-    const token = await getMotToken();
+    const token =
+      await getMotToken();
 
     const motRes = await fetch(
+
       `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
+
       {
         headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json"
+
+          Authorization:
+            `Bearer ${token}`,
+
+          "x-api-key":
+            MOT_API_KEY,
+
+          Accept:
+            "application/json"
+
         }
       }
     );
 
-    const motRaw = await motRes.json();
+    const motRaw =
+      await motRes.json();
 
     console.log("MOT:", motRaw);
 
     /* =========================
-       MOT RETURNS ARRAY
+       MOT ARRAY FIX
     ========================= */
 
-    const vehicle = Array.isArray(motRaw)
-      ? motRaw[0]
-      : motRaw;
+    const vehicle =
+      Array.isArray(motRaw)
+        ? motRaw[0]
+        : motRaw;
 
     /* =========================
-       MAP MOT TESTS
+       MOT HISTORY
     ========================= */
 
-    const motHistory = (vehicle?.motTests || []).map(test => ({
+    const motHistory =
+      (vehicle?.motTests || []).map(test => ({
 
-      completedDate: test.completedDate || null,
+        completedDate:
+          test.completedDate,
 
-      result:
-        test.testResult ||
-        "UNKNOWN",
+        result:
+          test.testResult,
 
-      mileage:
-        test.odometerValue ||
-        "Unknown",
+        mileage:
+          test.odometerValue,
 
-      mileageUnit:
-        test.odometerUnit ||
-        "mi",
+        mileageUnit:
+          test.odometerUnit,
 
-      station:
-        test.testStationName ||
-        "Unknown",
+        station:
+          test.testStationName ||
+          "Unknown",
 
-      defects:
-        (test.rfrAndComments || []).map(issue => ({
+        defects:
+          (test.rfrAndComments || []).map(issue => ({
 
-          text:
-            issue.text ||
-            "Issue",
+            text:
+              issue.text,
 
-          type:
-            issue.type ||
-            "ADVISORY"
+            type:
+              issue.type || "ADVISORY"
 
-        }))
+          }))
 
-    }));
+      }));
 
     /* =========================
-       FINAL RESPONSE
+       RESPONSE
     ========================= */
 
     res.json({
@@ -225,11 +276,16 @@ app.post("/api/check", async (req, res) => {
 });
 
 /* =========================
-   START SERVER
+   START
 ========================= */
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
+
+  console.log(
+    `Server running on ${PORT}`
+  );
+
 });
