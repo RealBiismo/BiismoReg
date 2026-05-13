@@ -10,7 +10,7 @@ app.use(express.static("public"));
 const PORT = process.env.PORT || 3000;
 
 /* =========================
-   MOT TOKEN CACHE
+   MOT TOKEN
 ========================= */
 let motToken = null;
 let motTokenExpiry = 0;
@@ -22,7 +22,7 @@ async function getMotToken(){
   }
 
   const res = await fetch(
-    process.env.MOT_TOKEN_URL,
+    "https://login.microsoftonline.com/a455b827-244f-4c97-b5b4-ce5d13b4d00c/oauth2/v2.0/token",
     {
       method:"POST",
       headers:{
@@ -50,12 +50,12 @@ async function getMotToken(){
 }
 
 /* =========================
-   DVLA
+   DVLA VEHICLE DATA
 ========================= */
 async function getVehicle(reg){
 
   const res = await fetch(
-    process.env.DVLA_URL,
+    "https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles",
     {
       method:"POST",
       headers:{
@@ -81,7 +81,7 @@ async function getMotHistory(reg){
     const token = await getMotToken();
 
     const res = await fetch(
-      `${process.env.MOT_API_URL}/${reg}`,
+      `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
       {
         headers:{
           "Authorization":`Bearer ${token}`,
@@ -100,7 +100,7 @@ async function getMotHistory(reg){
 }
 
 /* =========================
-   API ROUTE
+   MAIN API
 ========================= */
 app.post("/api/check", async (req,res)=>{
 
@@ -124,11 +124,8 @@ app.post("/api/check", async (req,res)=>{
       fuelType: vehicle?.fuelType || "Unknown",
       engineCapacity: vehicle?.engineCapacity || "N/A",
 
-      taxDueDate:
-        vehicle?.taxDueDate || null,
-
-      motExpiryDate:
-        vehicle?.motExpiryDate || null,
+      taxDueDate: vehicle?.taxDueDate || null,
+      motExpiryDate: vehicle?.motExpiryDate || null,
 
       motHistory
     });
@@ -139,5 +136,5 @@ app.post("/api/check", async (req,res)=>{
 });
 
 app.listen(PORT, ()=>{
-  console.log("Running on", PORT);
+  console.log("Server running on", PORT);
 });
