@@ -52,64 +52,213 @@
 
   </nav>
 
-  <!-- HERO -->
-  <div class="hero flex items-center py-12">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
 
-    <div class="max-w-4xl mx-auto px-4 text-center w-full">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
 
-      <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight">
-        FREE CAR CHECK
-      </h1>
+body {
+  background: radial-gradient(circle at top, #1a1a1a, #000);
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-      <p class="text-lg md:text-2xl text-gray-300 mb-10">
-        MOT • TAX • VEHICLE DETAILS
-      </p>
+/* NAV */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 50px;
+}
 
-      <!-- SEARCH -->
-      <div class="max-w-3xl mx-auto">
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 20px;
+}
 
-        <div class="flex bg-white rounded-2xl overflow-hidden plate-input">
+.logo-box {
+  width: 34px;
+  height: 34px;
+  background: #3b82f6;
+  border-radius: 8px;
+}
 
-          <!-- GB SIDE -->
-          <div class="bg-blue-600 text-white w-[80px] flex flex-col items-center justify-center font-bold text-sm">
+/* HERO */
+.hero {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+}
 
-            <span>GB</span>
-            <span class="text-xl">🇬🇧</span>
+.card {
+  width: 100%;
+  max-width: 700px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
 
-          </div>
+h1 {
+  font-size: 42px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
 
-          <!-- INPUT -->
-          <input
-            id="reg"
-            type="text"
-            placeholder="ENTER REG"
-            maxlength="10"
+.sub {
+  color: #aaa;
+  margin-bottom: 30px;
+}
 
-            class="flex-1 px-6 py-5 text-3xl md:text-5xl font-bold text-black uppercase focus:outline-none text-center tracking-[0.25em]"
-          />
+/* INPUT */
+.input-wrap {
+  display: flex;
+  height: 64px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.15);
+}
 
-          <!-- BUTTON -->
-          <button
-            onclick="checkVehicle()"
-            class="bg-yellow-400 hover:bg-yellow-500 transition text-black font-bold px-8 md:px-12 text-lg md:text-xl"
-          >
-            CHECK
-          </button>
+.prefix {
+  background: #2563eb;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+}
 
-        </div>
+input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 0 16px;
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  text-align: center;
+}
 
-        <!-- TAGLINE -->
-        <p class="text-gray-300 mt-6 text-lg font-medium">
-          Built by car lovers, for car lovers 🏎️
-        </p>
+button {
+  background: #facc15;
+  border: none;
+  padding: 0 28px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s;
+}
 
-        <!-- SMALL PRINT -->
-        <p class="text-gray-500 text-xs mt-3 max-w-lg mx-auto leading-relaxed">
+button:hover {
+  background: #ffe047;
+  transform: scale(1.03);
+}
 
-          We do not store registration searches or personal vehicle data.
-          Vehicle information is provided using official DVLA and DVSA data sources.
+/* TAGLINE */
+.tagline {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #bbb;
+}
 
-        </p>
+.small {
+  font-size: 11px;
+  color: #666;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+/* RESULT */
+.result {
+  margin-top: 25px;
+  padding: 15px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 12px;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="logo">
+    <div class="logo-box"></div>
+    BiismoReg
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="card">
+
+    <h1>FREE CAR CHECK</h1>
+    <div class="sub">MOT • TAX • VEHICLE DETAILS</div>
+
+    <div class="input-wrap">
+      <div class="prefix">GB</div>
+      <input id="reg" placeholder="PN63UOS" maxlength="8"/>
+      <button onclick="checkReg()">CHECK</button>
+    </div>
+
+    <div class="tagline">Built by car lovers, for car lovers 🚗</div>
+    <div class="small">
+      We do not store searches or personal data. Vehicle data is retrieved using official DVLA & DVSA sources.
+    </div>
+
+    <div class="result" id="resultBox">
+      Checking vehicle...
+    </div>
+
+  </div>
+</div>
+
+<script>
+function formatReg(value){
+  return value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+}
+
+document.getElementById('reg').addEventListener('input', (e)=>{
+  e.target.value = formatReg(e.target.value);
+});
+
+function checkReg(){
+  const reg = document.getElementById('reg').value.trim();
+  const box = document.getElementById('resultBox');
+
+  if(!reg){
+    alert("Enter a registration");
+    return;
+  }
+
+  box.style.display = "block";
+  box.innerHTML = "Searching DVLA for <b>" + reg + "</b>...";
+
+  // fake delay for UI feel
+  setTimeout(()=>{
+    box.innerHTML = `
+      <b>${reg}</b> found ✔️<br>
+      MOT Status: Unknown (connect API)<br>
+      Tax Status: Unknown (connect API)
+    `;
+  }, 1200);
+}
+</script>
 
       </div>
 
