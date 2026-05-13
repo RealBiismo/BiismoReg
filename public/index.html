@@ -3,67 +3,62 @@
 
 <head>
 
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+/>
 
-  <title>BiismoReg</title>
+<title>BiismoReg</title>
 
-  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css"/>
 
 </head>
 
 <body>
 
-  <div class="nav">
+<div class="nav">
+  🚗 BiismoReg
+</div>
 
-    <div class="logo">
-      🚗 BiismoReg
-    </div>
+<div class="hero">
 
-  </div>
+  <div class="glass search-card">
 
-  <div class="hero">
+    <h1>
+      UK Vehicle Check
+    </h1>
 
-    <div class="search-box glass">
+    <p>
+      MOT • TAX • Vehicle Intelligence
+    </p>
 
-      <h1>
-        UK Vehicle Check
-      </h1>
+    <div class="plate">
 
-      <p>
-        MOT • TAX • Vehicle Information
-      </p>
-
-      <!-- UK PLATE -->
-      <div class="plate">
-
-        <div class="gb">
-          GB
-        </div>
-
-        <input
-          id="regInput"
-          placeholder="PN63UOS"
-          maxlength="8"
-        >
-
+      <div class="gb">
+        GB
       </div>
 
-      <button onclick="checkVehicle()">
-        SEARCH
-      </button>
+      <input
+        id="regInput"
+        placeholder="PA55MGN"
+        maxlength="8"
+      />
 
     </div>
 
+    <button onclick="checkVehicle()">
+      SEARCH
+    </button>
+
   </div>
 
-  <div id="result"></div>
+</div>
 
-  <script src="script.js"></script>
+<div id="result"></div>
+
+<script src="script.js"></script>
 
 </body>
 </html>
