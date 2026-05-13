@@ -1,102 +1,288 @@
-function daysLeft(date) {
-  if (!date) return null;
-  return Math.ceil((new Date(date) - new Date()) / (1000*60*60*24));
+function daysLeft(dateStr){
+
+  if(!dateStr) return "N/A";
+
+  const now = new Date();
+
+  const target = new Date(dateStr);
+
+  const diff =
+    Math.ceil(
+      (target - now) /
+      (1000 * 60 * 60 * 24)
+    );
+
+  return diff;
 }
 
-function toggleMot() {
-  const el = document.getElementById("mot");
-  if (!el) return;
-  el.style.display = el.style.display === "none" ? "block" : "none";
+function toggleMot(){
+
+  const el =
+    document.getElementById("motContainer");
+
+  if(!el) return;
+
+  el.style.display =
+    el.style.display === "block"
+      ? "none"
+      : "block";
 }
 
-async function check() {
+async function checkVehicle(){
 
-  const reg = document.getElementById("reg").value.trim();
+  const reg =
+    document
+      .getElementById("regInput")
+      .value
+      .trim()
+      .toUpperCase()
+      .replace(/\s/g,"");
 
-  const res = await fetch("/api/check", {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ registrationNumber: reg })
-  });
-
-  const d = await res.json();
-
-  const mot = d.motHistory || [];
-
-  const motDays = daysLeft(d.motExpiryDate);
-  const taxDays = daysLeft(d.taxDueDate);
+  if(!reg){
+    alert("Enter registration");
+    return;
+  }
 
   document.getElementById("result").innerHTML = `
-
-  <div class="card">
-
-    <!-- UK PLATE -->
-    <div class="result-plate">
-      <div class="gb">GB</div>
-      <div class="reg">${reg}</div>
+    <div class="result-card glass">
+      Loading vehicle...
     </div>
+  `;
 
-    <h2 style="text-align:center;margin-top:10px">
-      ${d.make} ${d.model}
-    </h2>
+  try{
 
-    <div class="grid">
+    const res =
+      await fetch("/api/check",{
 
-      <div class="box">
-        MOT: ${d.motExpiryDate || "N/A"}<br>
-        ${motDays ? motDays + " days left" : ""}
-      </div>
+        method:"POST",
 
-      <div class="box">
-        TAX: ${d.taxStatus}<br>
-        ${taxDays ? taxDays + " days left" : ""}
-      </div>
+        headers:{
+          "Content-Type":"application/json"
+        },
 
-      <div class="box">
-        Engine: ${d.engineCapacity}cc
-      </div>
+        body:JSON.stringify({
+          registrationNumber:reg
+        })
 
-      <div class="box">
-        Fuel: ${d.fuelType}
-      </div>
+      });
 
-    </div>
+    const d = await res.json();
 
-    <button onclick="toggleMot()" style="
-      margin-top:15px;
-      padding:10px;
-      width:100%;
-      background:#3b82f6;
-      color:white;
-      border:none;
-      border-radius:10px;
-      font-weight:bold;
-    ">
-      Toggle MOT History
-    </button>
+    console.log(d);
 
-    <div id="mot" style="display:none;margin-top:15px">
+    if(d.error){
+      throw new Error(d.error);
+    }
 
-      ${mot.map(m => `
+    const motDays =
+      daysLeft(d.motExpiryDate);
 
-        <div class="box" style="margin-bottom:8px">
-          <b>${m.date}</b><br>
-          ${m.result} - ${m.mileage} miles<br>
-          Station: ${m.station || "Unknown"}
+    const taxDays =
+      daysLeft(d.taxDueDate);
 
-          ${m.defects.map(d => `
-            <div style="color:#fbbf24;font-size:12px">
-              • ${d.text}
-            </div>
-          `).join("")}
+    document.getElementById("result").innerHTML = `
+
+      <div class="result-card glass">
+
+        <!-- RESULT PLATE -->
+        <div class="result-plate">
+
+          <div class="gb">
+            GB
+          </div>
+
+          <div class="result-reg">
+            ${d.registration}
+          </div>
 
         </div>
 
-      `).join("")}
+        <h2 style="
+          text-align:center;
+          margin-top:18px;
+          font-size:32px;
+        ">
+          ${d.make} ${d.model}
+        </h2>
 
-    </div>
+        <!-- INFO GRID -->
+        <div class="grid">
 
-  </div>
+          <div class="info-box">
 
-  `;
+            <div class="info-title">
+              MOT Status
+            </div>
+
+            <div class="info-value">
+              ${d.motExpiryDate || "N/A"}
+            </div>
+
+            <div>
+              ${motDays} days left
+            </div>
+
+          </div>
+
+          <div class="info-box">
+
+            <div class="info-title">
+              Tax Status
+            </div>
+
+            <div class="info-value">
+              ${d.taxStatus}
+            </div>
+
+            <div>
+              ${taxDays} days left
+            </div>
+
+          </div>
+
+          <div class="info-box">
+
+            <div class="info-title">
+              Engine
+            </div>
+
+            <div class="info-value">
+              ${d.engineCapacity}cc
+            </div>
+
+          </div>
+
+          <div class="info-box">
+
+            <div class="info-title">
+              Fuel
+            </div>
+
+            <div class="info-value">
+              ${d.fuelType}
+            </div>
+
+          </div>
+
+          <div class="info-box">
+
+            <div class="info-title">
+              Colour
+            </div>
+
+            <div class="info-value">
+              ${d.colour}
+            </div>
+
+          </div>
+
+          <div class="info-box">
+
+            <div class="info-title">
+              Year
+            </div>
+
+            <div class="info-value">
+              ${d.year}
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- MOT BUTTON -->
+        <button
+          class="mot-btn"
+          onclick="toggleMot()"
+        >
+          Show MOT History
+        </button>
+
+        <!-- MOT HISTORY -->
+        <div id="motContainer">
+
+          ${
+            d.motHistory.length
+
+            ? d.motHistory.map(test => `
+
+              <div class="mot-item">
+
+                <h3>
+                  ${new Date(
+                    test.completedDate
+                  ).toLocaleDateString("en-GB")}
+                </h3>
+
+                <p>
+                  <b>${test.result}</b>
+                </p>
+
+                <p>
+                  Mileage:
+                  ${test.mileage}
+                  ${test.mileageUnit}
+                </p>
+
+                <p>
+                  Station:
+                  ${test.station}
+                </p>
+
+                ${
+                  test.defects.length
+
+                  ? test.defects.map(defect => `
+
+                    <div class="defect
+                      ${
+                        defect.type === "DANGEROUS"
+                          ? "dangerous"
+                          : defect.type === "MAJOR"
+                          ? "major"
+                          : "advisory"
+                      }
+                    ">
+
+                      ${defect.type}:
+                      ${defect.text}
+
+                    </div>
+
+                  `).join("")
+
+                  : `
+                    <div class="defect">
+                      No advisories
+                    </div>
+                  `
+                }
+
+              </div>
+
+            `).join("")
+
+            : `
+              <div class="mot-item">
+                No MOT history found
+              </div>
+            `
+          }
+
+        </div>
+
+      </div>
+
+    `;
+
+  }catch(err){
+
+    console.log(err);
+
+    document.getElementById("result").innerHTML = `
+      <div class="result-card glass">
+        Error: ${err.message}
+      </div>
+    `;
+  }
 }
