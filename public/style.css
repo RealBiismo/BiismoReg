@@ -4,6 +4,20 @@
   box-sizing:border-box;
 }
 
+.search-info{
+
+  margin-top:18px;
+
+  color:#9ca3af;
+
+  font-size:13px;
+
+  line-height:1.6;
+
+  text-align:center;
+
+}
+
 body{
   font-family:
     Inter,
