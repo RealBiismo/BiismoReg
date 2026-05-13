@@ -14,7 +14,62 @@ function daysLeft(dateStr){
   return diff;
 }
 
-/* TOGGLE MOT */
+/* =========================
+   MOT STATUS (FIXED)
+========================= */
+
+function getMotStatus(dateStr){
+
+  const days = daysLeft(dateStr);
+
+  if(!dateStr || days === null || isNaN(days) || days < 0){
+
+    return {
+      text: "EXPIRED",
+      class: "tax-red"
+    };
+  }
+
+  return {
+    text: `${days} days left`,
+    class: "tax-green"
+  };
+}
+
+/* =========================
+   TAX STATUS (FIXED)
+========================= */
+
+function getTaxStatus(status){
+
+  const s = (status || "").toLowerCase();
+
+  if(s.includes("taxed")){
+
+    return {
+      text: "TAXED",
+      class: "tax-green"
+    };
+  }
+
+  if(s.includes("sorn")){
+
+    return {
+      text: "SORN",
+      class: "tax-red"
+    };
+  }
+
+  return {
+    text: "UNTAXED",
+    class: "tax-red"
+  };
+}
+
+/* =========================
+   TOGGLE MOT
+========================= */
+
 function toggleMot(){
 
   const el =
@@ -35,38 +90,13 @@ function toggleMot(){
       : "Hide MOT History";
 }
 
-/* TAX UI */
-function taxUI(d){
+/* =========================
+   DEFECT GROUPING
+========================= */
 
-  const status =
-    (d.taxStatus || "").toLowerCase();
-
-  if(status.includes("taxed")){
-
-    return {
-      text:"TAXED",
-      class:"tax-green"
-    };
-  }
-
-  if(status.includes("sorn")){
-
-    return {
-      text:"SORN",
-      class:"tax-red"
-    };
-  }
-
-  return {
-    text:"UNTAXED",
-    class:"tax-red"
-  };
-}
-
-/* DEFECT GROUPS */
 function buildDefects(defects){
 
-  if(!defects.length){
+  if(!defects || !defects.length){
 
     return `
       <div class="clean-pass">
@@ -117,7 +147,10 @@ function buildDefects(defects){
     }).join("");
 }
 
-/* MAIN */
+/* =========================
+   MAIN CHECK
+========================= */
+
 async function checkVehicle(){
 
   const reg =
@@ -135,7 +168,7 @@ async function checkVehicle(){
 
   document.getElementById("result").innerHTML = `
     <div class="result-card glass">
-      Loading...
+      Loading vehicle...
     </div>
   `;
 
@@ -155,31 +188,12 @@ async function checkVehicle(){
     const d =
       await res.json();
 
-    const motDays =
-      daysLeft(d.motExpiryDate);
+    /* FIXED STATUS */
+    const motStatus =
+      getMotStatus(d.motExpiryDate);
 
-    const tax =
-      taxUI(d);
-
-    /* =========================
-       MOT STATUS FIX (IMPORTANT)
-       ========================= */
-
-    let motDisplay = "";
-
-    if(!d.motExpiryDate){
-
-      motDisplay =
-        `<span style="color:#f87171;font-weight:900;">
-          EXPIRED
-        </span>`;
-
-    } else {
-
-      motDisplay =
-        `${motDays} days left`;
-
-    }
+    const taxStatus =
+      getTaxStatus(d.taxStatus);
 
     document.getElementById("result").innerHTML = `
 
@@ -206,13 +220,15 @@ async function checkVehicle(){
             <div class="info-value">
               ${d.motExpiryDate || "N/A"}
             </div>
-            <div>${motDisplay}</div>
+            <div class="${motStatus.class}">
+              ${motStatus.text}
+            </div>
           </div>
 
           <div class="info-box">
             <div class="info-title">Tax Status</div>
-            <div class="info-value ${tax.class}">
-              ${tax.text}
+            <div class="info-value ${taxStatus.class}">
+              ${taxStatus.text}
             </div>
           </div>
 
@@ -243,7 +259,7 @@ async function checkVehicle(){
         <div id="motContainer">
 
           ${
-            d.motHistory.length
+            d.motHistory?.length
 
             ? d.motHistory.map(m => `
 
