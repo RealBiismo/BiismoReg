@@ -1,36 +1,69 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BiismoReg Pro</title>
+<html lang="en">
 
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>BiismoReg</title>
+
+  <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
-<div class="nav">🚗 BiismoReg Vehicle Intelligence</div>
+  <div class="nav">
 
-<div class="wrap">
-
-  <!-- UK PLATE SEARCH -->
-  <div class="plate-search">
-
-    <div class="uk-prefix">GB</div>
-
-    <input id="reg" placeholder="AB12CDE">
-
-    <button onclick="check()">SEARCH</button>
+    <div class="logo">
+      🚗 BiismoReg
+    </div>
 
   </div>
 
-</div>
+  <div class="hero">
 
-<div id="result"></div>
+    <div class="search-box glass">
 
-<script src="script.js"></script>
+      <h1>
+        UK Vehicle Check
+      </h1>
+
+      <p>
+        MOT • TAX • Vehicle Information
+      </p>
+
+      <!-- UK PLATE -->
+      <div class="plate">
+
+        <div class="gb">
+          GB
+        </div>
+
+        <input
+          id="regInput"
+          placeholder="PN63UOS"
+          maxlength="8"
+        >
+
+      </div>
+
+      <button onclick="checkVehicle()">
+        SEARCH
+      </button>
+
+    </div>
+
+  </div>
+
+  <div id="result"></div>
+
+  <script src="script.js"></script>
 
 </body>
 </html>
