@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BiismoReg | Vehicle Intelligence</title>
+<title>BiismoReg Pro</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
-  background: radial-gradient(circle at top, #070b14, #000);
-  font-family: Inter, sans-serif;
-  color: white;
+  background: radial-gradient(circle at top,#070b14,#000);
+  color:white;
+  font-family:inter;
 }
 
-/* GLASS UI */
+/* GLASS */
 .glass {
   background: rgba(255,255,255,0.06);
   backdrop-filter: blur(18px);
   border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
 
 .glass-soft {
@@ -35,13 +34,13 @@ body {
   border-radius:10px;
   overflow:hidden;
   border:3px solid #111;
-  margin:auto;
   width:fit-content;
+  margin:auto;
 }
 
 .plate .gb {
   background:#1d4ed8;
-  padding:10px 12px;
+  padding:10px;
   font-size:12px;
   font-weight:800;
 }
@@ -59,232 +58,177 @@ body {
 
 <body>
 
-<!-- NAV -->
-<div class="glass-soft p-5 text-center font-bold text-xl">
-🚗 BiismoReg Vehicle Intelligence
+<div class="text-center p-6 glass-soft font-bold">
+🚗 BiismoReg Pro Vehicle Intelligence
 </div>
 
 <!-- INPUT -->
-<div class="flex justify-center px-4 py-10">
-  <div class="glass rounded-3xl p-8 w-full max-w-xl text-center">
+<div class="flex justify-center p-10">
+  <div class="glass p-8 rounded-3xl w-full max-w-xl text-center">
 
-    <h1 class="text-4xl font-bold">FREE CAR CHECK</h1>
-    <p class="text-gray-400 mt-2">DVLA • MOT • VALUE • RISK</p>
+    <input id="reg"
+      class="w-full text-center text-xl uppercase tracking-widest bg-white/5 p-4 rounded-xl"
+      placeholder="ENTER REG"
+    />
 
-    <div class="mt-8 flex rounded-2xl overflow-hidden border border-white/10">
-      <div class="bg-blue-600 px-4 flex items-center font-bold">GB</div>
-
-      <input id="reg"
-        class="flex-1 bg-white/5 text-center text-xl uppercase tracking-widest outline-none"
-        placeholder="PN63UOS"
-      />
-
-      <button onclick="checkVehicle()"
-        class="bg-yellow-400 px-6 font-bold hover:bg-yellow-300 transition">
-        CHECK
-      </button>
-    </div>
+    <button onclick="checkVehicle()"
+      class="mt-4 bg-yellow-400 text-black px-6 py-3 rounded-xl font-bold">
+      CHECK VEHICLE
+    </button>
 
   </div>
 </div>
 
-<!-- RESULTS -->
-<div id="result" class="max-w-6xl mx-auto px-4 pb-20"></div>
+<div id="out" class="max-w-6xl mx-auto px-4 pb-20"></div>
 
 <script>
-function formatReg(v){
-  return v.toUpperCase().replace(/[^A-Z0-9]/g,'');
-}
-document.getElementById('reg').addEventListener('input',e=>{
-  e.target.value = formatReg(e.target.value);
-});
 
-function daysUntil(d){
-  if(!d) return null;
-  return Math.ceil((new Date(d)-new Date())/86400000);
+function toggleMot(){
+  document.getElementById("mot").classList.toggle("hidden");
 }
 
-/* ---------- RISK SCORE ---------- */
-function riskScore(d){
-
-  let score = 100;
-
-  const fails = (d.motHistory||[]).filter(x=>x.result!=='PASS').length;
-  const advisories = (d.motHistory||[])
-    .reduce((a,x)=>a+(x.defects?.advisories?.length||0),0);
-
-  score -= fails * 15;
-  score -= advisories * 2;
-
-  return Math.max(0,Math.min(100,score));
-}
-
-/* ---------- VALUE ---------- */
-function estimateValue(d){
-
-  let base = 12000;
-
-  const age = new Date().getFullYear() - (d.yearOfManufacture || 2015);
-  base -= age * 800;
-
-  const mileage = d.motHistory?.at(-1)?.mileage || 60000;
-  base -= (mileage/1000)*25;
-
-  if(d.engineCapacity > 2000) base += 800;
-  if(d.fuelType === 'Diesel') base += 500;
-
-  return Math.max(500,Math.round(base));
-}
-
-/* ---------- CHART ---------- */
 function drawChart(history){
 
-  const ctx = document.getElementById('chart');
-  if(!ctx || !history?.length) return;
+  const ctx = document.getElementById("chart");
+  if(!ctx || !history.length) return;
 
   new Chart(ctx,{
-    type:'line',
+    type:"line",
     data:{
-      labels: history.map(x=>new Date(x.completedDate).toLocaleDateString('en-GB')),
+      labels: history.map(x =>
+        new Date(x.completedDate).toLocaleDateString("en-GB")
+      ),
       datasets:[{
-        label:'Mileage',
-        data: history.map(x=>x.mileage||0),
-        borderColor:'#3b82f6'
+        label:"Mileage",
+        data: history.map(x => x.mileage),
+        borderColor:"#3b82f6"
       }]
     }
   });
 }
 
-/* ---------- MOT TOGGLE ---------- */
-function toggleMot(){
-  const el = document.getElementById('mot');
-  const btn = document.getElementById('motBtn');
+function riskScore(data){
 
-  el.classList.toggle('hidden');
-  btn.innerText = el.classList.contains('hidden')
-    ? 'Show MOT History'
-    : 'Hide MOT History';
+  let score = 100;
+
+  const fails = data.motHistory.filter(x => x.result !== "PASS").length;
+
+  const advisories = data.motHistory.reduce(
+    (a,b)=>a + (b.defects.advisories?.length || 0), 0
+  );
+
+  score -= fails * 15;
+  score -= advisories * 2;
+
+  return Math.max(0, score);
 }
 
-/* ---------- MAIN ---------- */
+function estimateValue(data){
+
+  let base = 12000;
+
+  const age = new Date().getFullYear() - data.yearOfManufacture;
+  base -= age * 750;
+
+  const mileage = data.motHistory.at(-1)?.mileage || 60000;
+  base -= (mileage / 1000) * 20;
+
+  if(data.engineCapacity > 2000) base += 800;
+
+  return Math.max(500, Math.round(base));
+}
+
 async function checkVehicle(){
 
-  const reg = document.getElementById('reg').value.trim().toUpperCase();
-  const out = document.getElementById('result');
+  const reg = document.getElementById("reg").value.trim();
 
-  if(!reg) return alert("Enter reg");
+  const res = await fetch("/api/check",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ registrationNumber: reg })
+  });
 
-  out.innerHTML = `<div class="text-center py-20">Loading...</div>`;
+  const d = await res.json();
 
-  try {
+  const risk = riskScore(d);
+  const value = estimateValue(d);
 
-    const res = await fetch('/api/check',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({registrationNumber:reg})
-    });
+  setTimeout(()=>drawChart(d.motHistory),200);
 
-    const d = await res.json();
-    if(d.error) throw new Error(d.error);
+  document.getElementById("out").innerHTML = `
 
-    const risk = riskScore(d);
-    const value = estimateValue(d);
+    <div class="glass p-8 rounded-3xl">
 
-    setTimeout(()=>drawChart(d.motHistory),200);
+      <!-- PLATE -->
+      <div class="plate mb-6">
+        <div class="gb">GB</div>
+        <div class="reg">${reg}</div>
+      </div>
 
-    out.innerHTML = `
+      <h2 class="text-center text-blue-400 text-xl font-bold mb-6">
+        ${d.make} ${d.model}
+      </h2>
 
-      <div class="glass rounded-3xl p-8">
+      <!-- SCORE -->
+      <div class="glass-soft p-6 rounded-2xl mb-6 text-center">
+        <p class="text-gray-400">Risk Score</p>
+        <p class="text-4xl font-bold">${risk}/100</p>
+        <p class="text-gray-400 mt-1">Estimated Value: £${value}</p>
+      </div>
 
-        <!-- PLATE -->
-        <div class="plate mb-6">
-          <div class="gb">GB</div>
-          <div class="reg">${reg}</div>
+      <!-- INFO -->
+      <div class="grid md:grid-cols-2 gap-4">
+
+        <div class="glass-soft p-4 rounded-xl">
+          Engine: ${d.engineCapacity}cc
         </div>
 
-        <div class="text-center mb-6">
-          <h2 class="text-blue-400 text-2xl font-bold">
-            ${d.make||''} ${d.model||''}
-          </h2>
+        <div class="glass-soft p-4 rounded-xl">
+          Fuel: ${d.fuelType}
         </div>
 
-        <!-- SCORE -->
-        <div class="glass-soft p-6 rounded-2xl mb-6 text-center">
-          <p class="text-gray-400">Risk Score</p>
-          <p class="text-4xl font-bold">${risk}/100</p>
-          <p class="text-gray-400 mt-1">Estimated Value: £${value}</p>
+        <div class="glass-soft p-4 rounded-xl">
+          MOT Expiry: ${d.motExpiryDate}
         </div>
 
-        <!-- CAR INFO -->
-        <div class="grid md:grid-cols-2 gap-4">
-
-          <div class="glass-soft p-5 rounded-2xl">
-            MOT: ${d.motExpiryDate ? new Date(d.motExpiryDate).toLocaleDateString('en-GB') : 'N/A'}
-          </div>
-
-          <div class="glass-soft p-5 rounded-2xl">
-            Tax: ${d.taxStatus || 'Unknown'}
-          </div>
-
-          <div class="glass-soft p-5 rounded-2xl">
-            Engine: ${d.engineCapacity || '—'} cc
-          </div>
-
-          <div class="glass-soft p-5 rounded-2xl">
-            Fuel: ${d.fuelType || '—'}
-          </div>
-
-        </div>
-
-        <!-- CHART -->
-        <div class="glass-soft p-6 rounded-2xl mt-6">
-          <canvas id="chart"></canvas>
-        </div>
-
-        <!-- MOT BUTTON -->
-        <div class="text-center mt-6">
-          <button id="motBtn"
-            onclick="toggleMot()"
-            class="bg-blue-600 px-6 py-3 rounded-xl font-bold">
-            Show MOT History
-          </button>
-        </div>
-
-        <!-- MOT HISTORY -->
-        <div id="mot" class="hidden mt-6">
-
-          ${(d.motHistory||[]).map(x=>`
-
-            <div class="glass-soft p-5 rounded-2xl mb-3">
-              <div class="flex justify-between">
-                <div>
-                  <b>${new Date(x.completedDate).toLocaleDateString('en-GB')}</b><br>
-                  <span class="${x.result==='PASS'?'text-green-400':'text-red-400'}">
-                    ${x.result}
-                  </span>
-                </div>
-                <div>
-                  ${x.mileage||'N/A'} mi
-                </div>
-              </div>
-            </div>
-
-          `).join('')}
-
+        <div class="glass-soft p-4 rounded-xl">
+          Tax: ${d.taxStatus}
         </div>
 
       </div>
 
-    `;
+      <!-- GRAPH -->
+      <div class="mt-6 glass-soft p-4 rounded-xl">
+        <canvas id="chart"></canvas>
+      </div>
 
-  } catch(err){
-    out.innerHTML = `<div class="text-red-500 text-center">${err.message}</div>`;
-  }
+      <!-- MOT BUTTON -->
+      <div class="text-center mt-6">
+        <button onclick="toggleMot()"
+          class="bg-blue-600 px-6 py-3 rounded-xl font-bold">
+          Toggle MOT History
+        </button>
+      </div>
+
+      <!-- MOT HISTORY -->
+      <div id="mot" class="hidden mt-6">
+
+        ${d.motHistory.map(x=>`
+
+          <div class="glass-soft p-4 rounded-xl mb-3">
+            <b>${new Date(x.completedDate).toLocaleDateString("en-GB")}</b><br>
+            ${x.result} - ${x.mileage} miles
+          </div>
+
+        `).join("")}
+
+      </div>
+
+    </div>
+
+  `;
 }
 
-document.addEventListener('keydown',e=>{
-  if(e.key==='Enter') checkVehicle();
-});
 </script>
 
 </body>
