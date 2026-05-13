@@ -3,32 +3,29 @@ function daysLeft(date){
   return Math.ceil((new Date(date)-new Date())/86400000);
 }
 
-function status(date){
+function formatStatus(date){
 
   if(!date){
-    return {date:"N/A",text:"EXPIRED",class:"tax-red"};
+    return {text:"EXPIRED",class:"bad",date:"N/A"};
   }
 
   const d = daysLeft(date);
 
   if(d < 0){
     return {
-      date:new Date(date).toLocaleDateString("en-GB"),
       text:"EXPIRED",
-      class:"tax-red"
+      class:"bad",
+      date:new Date(date).toLocaleDateString("en-GB")
     };
   }
 
   return {
-    date:new Date(date).toLocaleDateString("en-GB"),
     text:`${d} days left`,
-    class:"tax-green"
+    class:"good",
+    date:new Date(date).toLocaleDateString("en-GB")
   };
 }
 
-/* =========================
-   MAIN SEARCH
-========================= */
 async function checkVehicle(){
 
   const reg =
@@ -40,31 +37,43 @@ async function checkVehicle(){
   const res =
     await fetch("/api/check",{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{ "Content-Type":"application/json" },
       body:JSON.stringify({registrationNumber:reg})
     });
 
   const d = await res.json();
 
-  const mot = status(d.motExpiryDate);
-  const tax = status(d.taxDueDate);
+  const mot = formatStatus(d.motExpiryDate);
+  const tax = formatStatus(d.taxDueDate);
 
   document.getElementById("result").innerHTML = `
 
     <div class="grid">
 
-      <div class="info-box">
-        MOT<br>${mot.date}<br>
-        <span class="${mot.class}">
-          ${mot.text}
-        </span>
+      <div class="card-box">
+        <h3>MOT</h3>
+        <p>${mot.date}</p>
+        <p class="${mot.class}">${mot.text}</p>
       </div>
 
-      <div class="info-box">
-        TAX<br>${tax.date}<br>
-        <span class="${tax.class}">
-          ${tax.text}
-        </span>
+      <div class="card-box">
+        <h3>TAX</h3>
+        <p>${tax.date}</p>
+        <p class="${tax.class}">${tax.text}</p>
+      </div>
+
+    </div>
+
+    <div class="grid">
+
+      <div class="card-box">
+        Engine<br>
+        ${d.engineCapacity || "N/A"}cc
+      </div>
+
+      <div class="card-box">
+        Fuel<br>
+        ${d.fuelType || "N/A"}
       </div>
 
     </div>
