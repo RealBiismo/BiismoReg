@@ -94,13 +94,9 @@ async function checkVehicle(){
 
         </div>
 
-        <h2 style="
-          text-align:center;
-          margin-top:20px;
-          font-size:34px;
-        ">
+        <div class="car-title">
           ${d.make} ${d.model}
-        </h2>
+        </div>
 
         <div class="grid">
 
@@ -134,7 +130,7 @@ async function checkVehicle(){
 
           <div class="info-box">
             <div class="info-title">
-              Engine
+              Engine Size
             </div>
 
             <div class="info-value">
@@ -144,7 +140,7 @@ async function checkVehicle(){
 
           <div class="info-box">
             <div class="info-title">
-              Fuel
+              Fuel Type
             </div>
 
             <div class="info-value">
@@ -155,7 +151,7 @@ async function checkVehicle(){
         </div>
 
         <button
-          style="margin-top:20px"
+          class="mot-button"
           onclick="toggleMot()"
         >
           Show MOT History
@@ -168,55 +164,89 @@ async function checkVehicle(){
 
             ? d.motHistory.map(test => `
 
-              <div class="mot-item">
+              <div class="mot-card">
 
-                <h3>
-                  ${new Date(
-                    test.completedDate
-                  ).toLocaleDateString("en-GB")}
-                </h3>
+                <div class="mot-top">
 
-                <p>
-                  <b>${test.result}</b>
-                </p>
+                  <div>
 
-                <p>
-                  Mileage:
-                  ${test.mileage}
-                  ${test.mileageUnit}
-                </p>
+                    <div class="mot-date">
 
-                <p>
-                  Station:
-                  ${test.station}
-                </p>
+                      ${new Date(
+                        test.completedDate
+                      ).toLocaleDateString("en-GB")}
+
+                    </div>
+
+                    <div class="mileage">
+
+                      ${test.mileage}
+                      ${test.mileageUnit}
+
+                    </div>
+
+                  </div>
+
+                  <div class="
+                    ${
+                      test.result === "PASSED"
+                        ? "pass"
+                        : "fail"
+                    }
+                  " style="
+                    font-size:24px;
+                    font-weight:900;
+                  ">
+
+                    ${test.result}
+
+                  </div>
+
+                </div>
 
                 ${
                   test.defects.length
 
-                  ? test.defects.map(defect => `
+                  ? `
 
-                    <div class="defect
-                      ${
-                        defect.type === "DANGEROUS"
-                          ? "dangerous"
-                          : defect.type === "MAJOR"
-                          ? "major"
-                          : "advisory"
-                      }
-                    ">
+                    <div class="defects">
 
-                      ${defect.type}:
-                      ${defect.text}
+                      ${test.defects.map(defect => `
+
+                        <div class="defect
+                          ${
+                            defect.type === "DANGEROUS"
+                              ? "dangerous"
+                              : defect.type === "MAJOR"
+                              ? "major"
+                              : defect.type === "MINOR"
+                              ? "minor"
+                              : "advisory"
+                          }
+                        ">
+
+                          <b>
+                            ${defect.type}
+                          </b>
+
+                          <br>
+
+                          ${defect.text}
+
+                        </div>
+
+                      `).join("")}
 
                     </div>
 
-                  `).join("")
+                  `
 
                   : `
-                    <div class="defect">
-                      No advisories
+
+                    <div class="clean-pass">
+                      No advisories or defects
                     </div>
+
                   `
                 }
 
@@ -225,9 +255,11 @@ async function checkVehicle(){
             `).join("")
 
             : `
-              <div class="mot-item">
+
+              <div class="mot-card">
                 No MOT history found
               </div>
+
             `
           }
 
