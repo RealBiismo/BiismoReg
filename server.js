@@ -6,27 +6,29 @@ app.use(express.json());
 app.use(express.static("public"));
 
 /* =========================
-   ENV (Render)
+   ENV
 ========================= */
-const DVLA_KEY = process.env.DVLA_API_KEY;
-const MOT_CLIENT = process.env.MOT_CLIENT_ID;
-const MOT_SECRET = process.env.MOT_CLIENT_SECRET;
+
+const DVLA_API_KEY = process.env.DVLA_API_KEY;
+const MOT_CLIENT_ID = process.env.MOT_CLIENT_ID;
+const MOT_CLIENT_SECRET = process.env.MOT_CLIENT_SECRET;
 
 /* =========================
-   MOT TOKEN (cached)
+   MOT TOKEN CACHE
 ========================= */
+
 let cachedToken = null;
-let tokenTime = 0;
+let tokenExpiry = 0;
 
 async function getMotToken() {
 
   const now = Date.now();
 
-  if (cachedToken && now - tokenTime < 3500000) {
+  if (cachedToken && now < tokenExpiry) {
     return cachedToken;
   }
 
-  const res = await fetch(
+  const tokenRes = await fetch(
     "https://login.microsoftonline.com/common/oauth2/token",
     {
       method: "POST",
@@ -35,123 +37,199 @@ async function getMotToken() {
       },
       body: new URLSearchParams({
         grant_type: "client_credentials",
-        client_id: MOT_CLIENT,
-        client_secret: MOT_SECRET,
+        client_id: MOT_CLIENT_ID,
+        client_secret: MOT_CLIENT_SECRET,
         scope: "https://auth.mot.api.gov.uk/.default"
       })
     }
   );
 
-  const data = await res.json();
+  const tokenData = await tokenRes.json();
 
-  if (!data.access_token) {
-    throw new Error("MOT token failed: " + JSON.stringify(data));
+  console.log("TOKEN:", tokenData);
+
+  if (!tokenData.access_token) {
+    throw new Error(
+      "Failed to get MOT token: " +
+      JSON.stringify(tokenData)
+    );
   }
 
-  cachedToken = data.access_token;
-  tokenTime = now;
+  cachedToken = tokenData.access_token;
+
+  tokenExpiry =
+    Date.now() + ((tokenData.expires_in || 3600) * 1000);
 
   return cachedToken;
 }
 
 /* =========================
-   DVLA API
-========================= */
-async function getDvla(reg) {
-
-  const res = await fetch(
-    "https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles",
-    {
-      method: "POST",
-      headers: {
-        "x-api-key": DVLA_KEY,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        registrationNumber: reg
-      })
-    }
-  );
-
-  return await res.json();
-}
-
-/* =========================
-   MOT API
-========================= */
-async function getMot(reg) {
-
-  const token = await getMotToken();
-
-  const res = await fetch(
-    `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json"
-      }
-    }
-  );
-
-  return await res.json();
-}
-
-/* =========================
-   MAP MOT
-========================= */
-function mapMot(raw = {}) {
-
-  return (raw.motTests || []).map(t => ({
-    date: t.completedDate,
-    result: t.testResult,
-    mileage: t.odometerValue || 0,
-
-    station: t.testStationName || "Unknown",
-
-    defects: (t.rfrAndComments || []).map(x => ({
-      text: x.text,
-      type: x.type || "ADVISORY"
-    }))
-  }));
-}
-
-/* =========================
    API ROUTE
 ========================= */
+
 app.post("/api/check", async (req, res) => {
 
   try {
 
-    const reg = req.body.registrationNumber;
+    const reg = req.body.registrationNumber
+      .toUpperCase()
+      .replace(/\s/g, "");
 
-    const dvla = await getDvla(reg);
-    const motRaw = await getMot(reg);
+    /* =========================
+       DVLA
+    ========================= */
 
-    const motHistory = mapMot(motRaw);
+    const dvlaRes = await fetch(
+      "https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles",
+      {
+        method: "POST",
+        headers: {
+          "x-api-key": DVLA_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          registrationNumber: reg
+        })
+      }
+    );
+
+    const dvla = await dvlaRes.json();
+
+    console.log("DVLA:", dvla);
+
+    /* =========================
+       MOT
+    ========================= */
+
+    const token = await getMotToken();
+
+    const motRes = await fetch(
+      `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json"
+        }
+      }
+    );
+
+    const motRaw = await motRes.json();
+
+    console.log("MOT:", motRaw);
+
+    /* =========================
+       MOT RETURNS ARRAY
+    ========================= */
+
+    const vehicle = Array.isArray(motRaw)
+      ? motRaw[0]
+      : motRaw;
+
+    /* =========================
+       MAP MOT TESTS
+    ========================= */
+
+    const motHistory = (vehicle?.motTests || []).map(test => ({
+
+      completedDate: test.completedDate || null,
+
+      result:
+        test.testResult ||
+        "UNKNOWN",
+
+      mileage:
+        test.odometerValue ||
+        "Unknown",
+
+      mileageUnit:
+        test.odometerUnit ||
+        "mi",
+
+      station:
+        test.testStationName ||
+        "Unknown",
+
+      defects:
+        (test.rfrAndComments || []).map(issue => ({
+
+          text:
+            issue.text ||
+            "Issue",
+
+          type:
+            issue.type ||
+            "ADVISORY"
+
+        }))
+
+    }));
+
+    /* =========================
+       FINAL RESPONSE
+    ========================= */
 
     res.json({
 
-      make: dvla.make,
-      model: dvla.model,
-      yearOfManufacture: dvla.yearOfManufacture,
-      engineCapacity: dvla.engineCapacity,
-      fuelType: dvla.fuelType,
-      colour: dvla.colour,
+      registration: reg,
 
-      taxStatus: dvla.taxStatus,
-      taxDueDate: dvla.taxDueDate,
-      motExpiryDate: dvla.motExpiryDate,
+      make:
+        dvla.make ||
+        vehicle?.make ||
+        "Unknown",
+
+      model:
+        dvla.model ||
+        vehicle?.model ||
+        "Unknown",
+
+      colour:
+        dvla.colour ||
+        "Unknown",
+
+      fuelType:
+        dvla.fuelType ||
+        "Unknown",
+
+      engineCapacity:
+        dvla.engineCapacity ||
+        "Unknown",
+
+      year:
+        dvla.yearOfManufacture ||
+        "Unknown",
+
+      taxStatus:
+        dvla.taxStatus ||
+        "Unknown",
+
+      taxDueDate:
+        dvla.taxDueDate ||
+        null,
+
+      motExpiryDate:
+        dvla.motExpiryDate ||
+        null,
 
       motHistory
 
     });
 
   } catch (err) {
+
     console.log(err);
-    res.json({ error: err.message });
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Server running");
+/* =========================
+   START SERVER
+========================= */
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
 });
