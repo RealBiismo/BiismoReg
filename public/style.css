@@ -48,21 +48,16 @@ body{
 }
 
 /* NAV */
-.nav{
-  width:100%;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+.nav {
+  display: flex;
+  align-items: center;
+  padding: 15px 30px;
+}
 
-  font-size:34px;
-  font-weight:900;
-  letter-spacing:4px;
-
-  color:#fff;
-
-  padding:22px 0;
-
-  text-transform:uppercase;
+.logo {
+  height: 50px; /* adjust size */
+  width: auto;
+  object-fit: contain;
 }
 
 /* HERO */
