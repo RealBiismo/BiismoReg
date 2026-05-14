@@ -49,15 +49,20 @@ body{
 
 /* NAV */
 .nav {
+  width: 100%;
   display: flex;
+  justify-content: center; /* centers horizontally */
   align-items: center;
-  padding: 15px 30px;
+  padding: 20px 0;
 }
 
 .logo {
-  height: 50px; /* adjust size */
-  width: auto;
+  width: 260px;
+  max-width: 80%;
+  height: auto;
   object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 0 12px rgba(0, 170, 255, 0.25));
 }
 
 /* HERO */
