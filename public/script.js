@@ -57,6 +57,30 @@ function getTaxDate(d){
   return d.taxDueDate || d.taxExpiryDate || d.vehicleTax?.expiryDate || null;
 }
 
+/* MILEAGE ANOMALY DETECTION */
+function getMileageWarnings(history){
+  if(!history || !history.length) return [];
+  let warnings = [];
+  let last = null;
+
+  history.forEach((m, idx)=>{
+    const raw = (m.mileage || "").toString().replace(/[^\d]/g,"");
+    const val = parseInt(raw,10);
+    if(isNaN(val)) return;
+
+    if(last !== null){
+      if(val < last){
+        warnings.push(`Mileage decreased between test ${idx} and ${idx+1}. Possible rollback.`);
+      }else if(val - last > 60000){
+        warnings.push(`Unusually high mileage jump between test ${idx} and ${idx+1}.`);
+      }
+    }
+    last = val;
+  });
+
+  return [...new Set(warnings)];
+}
+
 /* DEFECT GROUPS */
 function buildDefects(defects){
   if(!defects || !defects.length){
@@ -105,8 +129,15 @@ async function checkVehicle(){
     const mot = firstMot || getStatus(d.motExpiryDate);
     const tax = getStatus(getTaxDate(d));
 
+    const imageUrl =
+      `https://source.unsplash.com/800x400/?car,${encodeURIComponent(d.make || "car")},${encodeURIComponent(d.model || "vehicle")}`;
+
+    const mileageWarnings = getMileageWarnings(d.motHistory || []);
+
     document.getElementById("result").innerHTML = `
       <div class="result-card glass">
+
+        <img src="${imageUrl}" alt="${d.make || ""} ${d.model || ""}" class="car-image" onerror="this.style.display='none';" />
 
         <div class="result-plate">
           <div class="gb">GB</div>
@@ -139,7 +170,6 @@ async function checkVehicle(){
           </div>
         </div>
 
-        <!-- EXTRA DETAILS -->
         <div class="grid">
           <div class="info-box"><div class="info-title">CO₂ Emissions</div><div class="info-value">${d.co2Emissions || "N/A"}</div></div>
           <div class="info-box"><div class="info-title">Euro Status</div><div class="info-value">${d.euroStatus || "N/A"}</div></div>
@@ -152,7 +182,16 @@ async function checkVehicle(){
           <div class="info-box"><div class="info-title">Export Marker</div><div class="info-value">${d.exportMarker ? "Yes" : "No"}</div></div>
         </div>
 
-        <button id="motBtn" onclick="toggleMot()">Show MOT History</button>
+        ${
+          mileageWarnings.length
+            ? `<div class="mileage-warning">⚠️ ${mileageWarnings.join("<br>")}</div>`
+            : ""
+        }
+
+        <div class="actions-row">
+          <button id="motBtn" onclick="toggleMot()">Show MOT History</button>
+          <button class="print-only" onclick="window.print()">Print Report</button>
+        </div>
 
         <div id="motContainer">
           ${
