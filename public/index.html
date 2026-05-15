@@ -8,23 +8,19 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-PNK5M2HDGM');
 </script>
-<meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
-/>
-  <link rel="manifest" href="/manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1d4ed8">
 
 <title>BIISMO REG</title>
 
 <link rel="stylesheet" href="style.css"/>
 <link rel="icon" href="https://files.catbox.moe/ulokbl.png">
-  
 
 </head>
 
@@ -42,26 +38,18 @@
 
   <div class="glass search-card">
 
-    <h1>
-      UK Vehicle Check
-    </h1>
+    <h1>UK Vehicle Check</h1>
 
-    <p>
-      MOT • TAX • HISTORY
-    </p>
+    <p>MOT • TAX • HISTORY</p>
 
     <div class="plate">
-
-      <div class="gb">
-        GB
-      </div>
+      <div class="gb">GB</div>
 
       <input
         id="regInput"
         placeholder="PA55MGN"
         maxlength="8"
       />
-
     </div>
 
     <button onclick="checkVehicle()">
@@ -71,6 +59,7 @@
   </div>
 
 </div>
+
 <div class="disclaimer">
   <div class="disclaimer-title">
     We do not store searches or personal data.
@@ -78,19 +67,21 @@
 
   <div class="disclaimer-text">
     Vehicle data is provided using official DVLA & DVSA. 
-  <p style="color: #89CFF0;">
-  Created By 
-  <a href="https://instagram.com/realbiismo" target="_blank" style="color: #89CFF0; text-decoration: none;">
-    RealBiismo
-  </a>
-</p>
+    <p style="color: #89CFF0;">
+      Created By 
+      <a href="https://instagram.com/realbiismo" target="_blank" style="color: #89CFF0; text-decoration: none;">
+        RealBiismo
+      </a>
+    </p>
   </div>
 </div>
-  
+
+<!-- RESULTS WILL BE INJECTED HERE -->
 <div id="result"></div>
 
 <script src="script.js"></script>
-  <script>
+
+<script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js")
