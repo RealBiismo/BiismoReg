@@ -172,6 +172,7 @@ button:hover{
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
   gap:20px;
   margin-top:26px;
+  position:relative;
 }
 
 /* INFO BOX */
@@ -201,7 +202,7 @@ button:hover{
 .tax-green{color:#4ade80;}
 .tax-red{color:#f87171;}
 
-/* MOT BUTTONS WRAP */
+/* ACTION BUTTONS */
 .actions-row{
   display:flex;
   flex-wrap:wrap;
@@ -268,31 +269,15 @@ button:hover{
   line-height:1.5;
 }
 
-/* MOBILE — HORIZONTAL SWIPE INFO BOXES */
-@media(max-width:700px){
-
-  /* Turn grids into swipe carousels */
-  .grid {
-    display:flex;
-    overflow-x:auto;
-    gap:16px;
-    padding-bottom:10px;
-    scroll-snap-type:x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Each info box becomes a swipe card */
-  .info-box {
-    min-width:240px;
-    flex:0 0 auto;
-    scroll-snap-align:start;
-  }
-
-  /* Improve spacing for mobile */
-  .search-card h1{font-size:34px;}
-  .result-reg{font-size:28px;}
-  .car-title{font-size:26px;}
-  .plate input{font-size:30px;letter-spacing:4px;}
+/* SCROLL HINT */
+.scroll-hint{
+  text-align:center;
+  font-size:14px;
+  color:#60a5fa;
+  opacity:0.8;
+  margin-top:6px;
+  display:none;
+  animation:fadeInHint 1.2s ease forwards, pulseHint 2.5s ease-in-out infinite;
 }
 
 /* ANIMATIONS */
@@ -304,8 +289,16 @@ button:hover{
   from{opacity:0;}
   to{opacity:1;}
 }
+@keyframes fadeInHint{
+  from{opacity:0;transform:translateY(4px);}
+  to{opacity:0.8;transform:translateY(0);}
+}
+@keyframes pulseHint{
+  0%,100%{opacity:0.6;}
+  50%{opacity:1;}
+}
 
-/* PRINT STYLES */
+/* PRINT MODE */
 @media print{
   body{
     background:#fff;
@@ -329,8 +322,44 @@ button:hover{
   }
 }
 
-/* MOBILE */
+/* MOBILE SWIPE */
 @media(max-width:700px){
+
+  .grid{
+    display:flex;
+    overflow-x:auto;
+    gap:16px;
+    padding-bottom:10px;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .info-box{
+    min-width:240px;
+    flex:0 0 auto;
+    scroll-snap-align:start;
+  }
+
+  .scroll-hint{
+    display:block;
+  }
+
+  .grid::-webkit-scrollbar{
+    display:none;
+  }
+
+  .grid::after{
+    content:"";
+    position:absolute;
+    right:0;
+    top:0;
+    width:40px;
+    height:100%;
+    background:linear-gradient(to right, transparent, rgba(0,0,0,0.6));
+    pointer-events:none;
+    display:block;
+  }
+
   .search-card h1{font-size:34px;}
   .result-reg{font-size:28px;}
   .car-title{font-size:26px;}
