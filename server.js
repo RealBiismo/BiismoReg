@@ -307,6 +307,21 @@ app.post("/api/check", async (req, res) => {
 
     res.json({
 
+
+      co2Emissions: dvla.co2Emissions || null,
+      euroStatus: dvla.euroStatus || "Unknown",
+      realDrivingEmissions: dvla.realDrivingEmissions || "Unknown",
+
+      typeApproval: dvla.typeApproval || "Unknown",
+      wheelplan: dvla.wheelplan || "Unknown",
+      revenueWeight: dvla.revenueWeight || "Unknown",
+
+      exportMarker: dvla.exportMarker || false,
+      dateOfLastV5CIssued: dvla.dateOfLastV5CIssued || null,
+
+      monthOfFirstRegistration: dvla.monthOfFirstRegistration || "Unknown",
+
+       
       registration:
         reg,
 
