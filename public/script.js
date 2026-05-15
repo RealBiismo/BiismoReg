@@ -2,8 +2,7 @@ function daysLeft(dateStr) {
   if (!dateStr) return null;
   const now = new Date();
   const target = new Date(dateStr);
-  const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
-  return diff;
+  return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
 }
 
 /* =========================
@@ -28,6 +27,29 @@ function getStatus(dateStr) {
     text: `${days} days left`,
     class: "tax-green"
   };
+}
+
+/* =========================
+   FIRST MOT CHECK
+========================= */
+function getFirstMotStatus(d) {
+  if (!d.monthOfFirstRegistration) return null;
+
+  const firstReg = new Date(d.monthOfFirstRegistration);
+  const firstMot = new Date(firstReg);
+  firstMot.setFullYear(firstMot.getFullYear() + 3);
+
+  const now = new Date();
+
+  if (now < firstMot) {
+    return {
+      date: firstMot.toLocaleDateString("en-GB"),
+      text: "Not yet due",
+      class: "tax-green"
+    };
+  }
+
+  return null;
 }
 
 /* =========================
@@ -60,11 +82,9 @@ function buildDefects(defects) {
 
   defects.forEach(d => {
     const type = (d.type || "ADVISORY").toUpperCase();
-    if (groups[type]) {
-      groups[type].push(d.text || d.description || d.comment);
-    } else {
-      groups.ADVISORY.push(d.text || d.description || d.comment);
-    }
+    const text = d.text || d.description || d.comment || "Issue found";
+    if (groups[type]) groups[type].push(text);
+    else groups.ADVISORY.push(text);
   });
 
   return Object.entries(groups)
@@ -85,10 +105,7 @@ function buildDefects(defects) {
 ========================= */
 async function checkVehicle() {
   const reg = document.getElementById("regInput").value.trim().toUpperCase().replace(/\s/g, "");
-  if (!reg) {
-    alert("Enter registration");
-    return;
-  }
+  if (!reg) return alert("Enter registration");
 
   document.getElementById("result").innerHTML = `
     <div class="result-card glass">Loading...</div>
@@ -102,7 +119,9 @@ async function checkVehicle() {
     });
 
     const d = await res.json();
-    const mot = getStatus(d.motExpiryDate);
+
+    const firstMot = getFirstMotStatus(d);
+    const mot = firstMot || getStatus(d.motExpiryDate);
     const tax = getStatus(getTaxDate(d));
 
     document.getElementById("result").innerHTML = `
@@ -141,50 +160,15 @@ async function checkVehicle() {
 
         <!-- NEW DETAILS SECTION -->
         <div class="grid">
-          <div class="info-box">
-            <div class="info-title">CO₂ Emissions</div>
-            <div class="info-value">${d.co2Emissions || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Euro Status</div>
-            <div class="info-value">${d.euroStatus || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">RDE</div>
-            <div class="info-value">${d.realDrivingEmissions || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Type Approval</div>
-            <div class="info-value">${d.typeApproval || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Wheelplan</div>
-            <div class="info-value">${d.wheelplan || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Revenue Weight</div>
-            <div class="info-value">${d.revenueWeight || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">First Registered</div>
-            <div class="info-value">${d.monthOfFirstRegistration || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">V5C Issued</div>
-            <div class="info-value">${d.dateOfLastV5CIssued || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Export Marker</div>
-            <div class="info-value">${d.exportMarker ? "Yes" : "No"}</div>
-          </div>
+          <div class="info-box"><div class="info-title">CO₂ Emissions</div><div class="info-value">${d.co2Emissions || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Euro Status</div><div class="info-value">${d.euroStatus || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">RDE</div><div class="info-value">${d.realDrivingEmissions || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Type Approval</div><div class="info-value">${d.typeApproval || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Wheelplan</div><div class="info-value">${d.wheelplan || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Revenue Weight</div><div class="info-value">${d.revenueWeight || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">First Registered</div><div class="info-value">${d.monthOfFirstRegistration || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">V5C Issued</div><div class="info-value">${d.dateOfLastV5CIssued || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Export Marker</div><div class="info-value">${d.exportMarker ? "Yes" : "No"}</div></div>
         </div>
 
         <button id="motBtn" onclick="toggleMot()">Show MOT History</button>
