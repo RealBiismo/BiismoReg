@@ -2,94 +2,50 @@
 <html lang="en">
 
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-PNK5M2HDGM"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-PNK5M2HDGM');
-</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIISMO REG</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1d4ed8">
-
-<title>BIISMO REG</title>
-
-<link rel="stylesheet" href="style.css"/>
-<link rel="icon" href="https://files.catbox.moe/ulokbl.png">
-
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="https://files.catbox.moe/ulokbl.png">
 </head>
 
 <body>
 
-<nav class="nav">
-  <img 
-    src="https://files.catbox.moe/tvw8fb.png" 
-    alt="" 
-    class="logo"
-  >
-</nav>
+  <nav class="nav">
+    <img src="https://files.catbox.moe/tvw8fb.png" alt="" class="logo">
+  </nav>
 
-<div class="hero">
+  <div class="hero">
+    <div class="glass search-card">
+      <h1>UK Vehicle Check</h1>
+      <p>MOT • TAX • HISTORY</p>
 
-  <div class="glass search-card">
+      <div class="plate">
+        <div class="gb">GB</div>
+        <input id="regInput" placeholder="PA55MGN" maxlength="8" />
+      </div>
 
-    <h1>UK Vehicle Check</h1>
-
-    <p>MOT • TAX • HISTORY</p>
-
-    <div class="plate">
-      <div class="gb">GB</div>
-
-      <input
-        id="regInput"
-        placeholder="PA55MGN"
-        maxlength="8"
-      />
+      <button onclick="checkVehicle()">SEARCH</button>
     </div>
-
-    <button onclick="checkVehicle()">
-      SEARCH
-    </button>
-
   </div>
 
-</div>
-
-<div class="disclaimer">
-  <div class="disclaimer-title">
-    We do not store searches or personal data.
+  <div class="disclaimer">
+    <div class="disclaimer-title">We do not store searches or personal data.</div>
+    <div class="disclaimer-text">
+      Vehicle data is provided using official DVLA & DVSA.
+      <p style="color:#89CFF0;">
+        Created By
+        <a href="https://instagram.com/realbiismo" target="_blank" style="color:#89CFF0;text-decoration:none;">
+          RealBiismo
+        </a>
+      </p>
+    </div>
   </div>
 
-  <div class="disclaimer-text">
-    Vehicle data is provided using official DVLA & DVSA. 
-    <p style="color: #89CFF0;">
-      Created By 
-      <a href="https://instagram.com/realbiismo" target="_blank" style="color: #89CFF0; text-decoration: none;">
-        RealBiismo
-      </a>
-    </p>
-  </div>
-</div>
+  <div id="result"></div>
 
-<!-- RESULTS WILL BE INJECTED HERE -->
-<div id="result"></div>
-
-<script src="script.js"></script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js")
-      .then(() => console.log("SW registered 🚀"))
-      .catch(err => console.log("SW failed", err));
-  });
-}
-</script>
+  <script src="script.js"></script>
 
 </body>
 </html>
