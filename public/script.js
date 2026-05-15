@@ -130,7 +130,7 @@ async function checkVehicle(){
     const tax = getStatus(getTaxDate(d));
 
     const imageUrl =
-      \`https://source.unsplash.com/800x400/?car,\${encodeURIComponent(d.make || "car")},\${encodeURIComponent(d.model || "vehicle")}\`;
+      `https://source.unsplash.com/800x400/?car,${encodeURIComponent(d.make || "car")},${encodeURIComponent(d.model || "vehicle")}`;
 
     const mileageWarnings = getMileageWarnings(d.motHistory || []);
 
@@ -146,7 +146,7 @@ async function checkVehicle(){
 
         <div class="car-title">${d.make || ""} ${d.model || ""}</div>
 
-        <div class="grid swipe-grid">
+        <div class="grid">
           <div class="info-box">
             <div class="info-title">MOT</div>
             <div class="info-value">${mot.date}</div>
@@ -170,48 +170,17 @@ async function checkVehicle(){
           </div>
         </div>
 
-        <div class="scroll-hint">← Swipe for more →</div>
-
-        <div class="grid swipe-grid">
-          <div class="info-box">
-            <div class="info-title">CO₂ Emissions</div>
-            <div class="info-value">${d.co2Emissions || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">Euro Status</div>
-            <div class="info-value">${d.euroStatus || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">RDE</div>
-            <div class="info-value">${d.realDrivingEmissions || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">Type Approval</div>
-            <div class="info-value">${d.typeApproval || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">Wheelplan</div>
-            <div class="info-value">${d.wheelplan || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">Revenue Weight</div>
-            <div class="info-value">${d.revenueWeight || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">First Registered</div>
-            <div class="info-value">${d.monthOfFirstRegistration || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">V5C Issued</div>
-            <div class="info-value">${d.dateOfLastV5CIssued || "N/A"}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">Export Marker</div>
-            <div class="info-value">${d.exportMarker ? "Yes" : "No"}</div>
-          </div>
+        <div class="grid">
+          <div class="info-box"><div class="info-title">CO₂ Emissions</div><div class="info-value">${d.co2Emissions || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Euro Status</div><div class="info-value">${d.euroStatus || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">RDE</div><div class="info-value">${d.realDrivingEmissions || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Type Approval</div><div class="info-value">${d.typeApproval || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Wheelplan</div><div class="info-value">${d.wheelplan || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Revenue Weight</div><div class="info-value">${d.revenueWeight || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">First Registered</div><div class="info-value">${d.monthOfFirstRegistration || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">V5C Issued</div><div class="info-value">${d.dateOfLastV5CIssued || "N/A"}</div></div>
+          <div class="info-box"><div class="info-title">Export Marker</div><div class="info-value">${d.exportMarker ? "Yes" : "No"}</div></div>
         </div>
-
-        <div class="scroll-hint">← Swipe for more →</div>
 
         ${
           mileageWarnings.length
