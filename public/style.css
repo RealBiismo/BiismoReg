@@ -1,67 +1,24 @@
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
-.disclaimer{
-  text-align:center;
-  margin-top:18px;
-  font-size:13px;
-  line-height:1.6;
-}
-
-.disclaimer-title{
-  color:#f87171;
-  font-weight:800;
-}
-
-.disclaimer-text{
-  color:#aaa;
-  margin-top:4px;
-}
-
-.biis{
-  color:white;
-  font-size:34px;
-  font-weight:900;
-}
-
-.mo{
-  color:#60a5fa;
-  font-size:34px;
-  font-weight:900;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float{
-  0%,100%{transform:translateY(0);}
-  50%{transform:translateY(-3px);}
-}
+*{margin:0;padding:0;box-sizing:border-box;}
 
 body{
   font-family:Inter, Arial, sans-serif;
-  background:#000 !important;
+  background:#000;
   color:#fff;
   min-height:100vh;
   overflow-x:hidden;
 }
 
 /* NAV */
-.nav {
-  width: 100%;
-  display: flex;
-  justify-content: center; /* centers horizontally */
-  align-items: center;
-  padding: 20px 0;
+.nav{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  padding:20px 0;
 }
-
-.logo {
-  width: 260px;
-  max-width: 80%;
-  height: auto;
-  object-fit: contain;
-  display: block;
+.logo{
+  width:260px;
+  max-width:80%;
+  height:auto;
 }
 
 /* HERO */
@@ -86,14 +43,16 @@ body{
   border-radius:28px;
   text-align:center;
 }
-
 .search-card h1{
   font-size:48px;
   font-weight:900;
 }
+.search-card p{
+  color:#aaa;
+  margin-top:8px;
+}
 
-/* ===== UK PLATE INPUT FIX ===== */
-
+/* PLATE */
 .plate{
   display:flex;
   overflow:hidden;
@@ -101,7 +60,6 @@ body{
   margin:22px 0;
   height:78px;
 }
-
 .gb{
   background:#003399;
   color:#fff;
@@ -112,38 +70,19 @@ body{
   font-weight:800;
   font-size:18px;
 }
-
-/* REAL UK PLATE LOOK */
 .plate input{
   flex:1;
-
   border:none;
   outline:none;
-
   background:#ffd800;
   color:#000;
-
   font-size:40px;
   font-weight:900;
-
   letter-spacing:6px;
   text-transform:uppercase;
-
-  /* TRUE CENTER FIX */
   text-align:center;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
   line-height:78px;
-
-  font-family:
-    "Charles Wright",
-    "UKNumberPlate",
-    "FE-Schrift",
-    Arial,
-    sans-serif;
+  font-family:"Charles Wright","UKNumberPlate","FE-Schrift",Arial,sans-serif;
 }
 
 /* BUTTON */
@@ -157,9 +96,29 @@ button{
   font-size:18px;
   font-weight:800;
   cursor:pointer;
+  transition:0.3s;
+}
+button:hover{
+  background:linear-gradient(135deg,#1d4ed8,#2563eb);
 }
 
-/* RESULT */
+/* DISCLAIMER */
+.disclaimer{
+  text-align:center;
+  margin-top:18px;
+  font-size:13px;
+  line-height:1.6;
+}
+.disclaimer-title{
+  color:#f87171;
+  font-weight:800;
+}
+.disclaimer-text{
+  color:#aaa;
+  margin-top:4px;
+}
+
+/* RESULT CARD */
 .result-card{
   width:100%;
   max-width:1200px;
@@ -176,7 +135,6 @@ button{
   border-radius:12px;
   overflow:hidden;
 }
-
 .result-reg{
   background:#ffd800;
   color:#000;
@@ -189,16 +147,17 @@ button{
 /* TITLE */
 .car-title{
   text-align:center;
-  margin-top:18px;
-  font-size:34px;
+  margin-top:24px;
+  font-size:38px;
   font-weight:900;
+  letter-spacing:1px;
 }
 
 /* GRID */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:16px;
+  gap:20px;
   margin-top:26px;
 }
 
@@ -207,33 +166,37 @@ button{
   background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.08);
   border-radius:20px;
-  padding:20px;
+  padding:24px;
+  transition:0.2s;
 }
-
+.info-box:hover{
+  transform:translateY(-3px);
+  background:rgba(255,255,255,0.06);
+}
 .info-title{
-  color:#a0a0a0;
+  color:#8b8b8b;
+  font-size:14px;
+  text-transform:uppercase;
   margin-bottom:8px;
 }
-
 .info-value{
   font-size:24px;
   font-weight:800;
 }
 
-/* TAX */
-.tax-green{ color:#4ade80; }
-.tax-red{ color:#f87171; }
+/* TAX COLORS */
+.tax-green{color:#4ade80;}
+.tax-red{color:#f87171;}
 
 /* MOT BUTTON */
-.mot-button{
-  margin-top:22px;
+#motBtn{
+  margin-top:28px;
 }
 
 /* MOT CONTAINER */
 #motContainer{
   display:none;
   margin-top:22px;
-  background:#000 !important;
 }
 
 /* MOT CARD */
@@ -249,26 +212,22 @@ button{
 .pass{color:#4ade80;font-weight:900;}
 .fail{color:#f87171;font-weight:900;}
 
-/* DEFECT GROUPS */
+/* DEFECTS */
 .defect-group{
   margin-top:14px;
   padding:16px;
   border-radius:16px;
 }
-
 .defect-item{
   background:rgba(255,255,255,0.04);
   padding:12px;
   margin-top:10px;
   border-radius:12px;
 }
-
 .advisory{border:1px solid rgba(250,204,21,0.3);}
 .major{border:1px solid rgba(249,115,22,0.3);}
 .minor{border:1px solid rgba(59,130,246,0.3);}
 .dangerous{border:1px solid rgba(239,68,68,0.3);}
-
-/* CLEAN PASS */
 .clean-pass{
   color:#4ade80;
   padding:14px;
@@ -276,57 +235,10 @@ button{
   border-radius:12px;
 }
 
-/* SECTION TITLES */
-.info-section-title {
-  font-weight: 700;
-  margin-top: 24px;
-  color: #60a5fa;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* NEW GRID SPACING FOR EXTRA DETAILS */
-.grid + .grid {
-  margin-top: 20px;
-}
-
-/* INFO VALUE SMALLER FOR SECOND ROW */
-.grid:nth-of-type(2) .info-value {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-/* SECTION TITLES */
-.info-section-title {
-  font-weight: 700;
-  margin-top: 24px;
-  color: #60a5fa;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* NEW GRID SPACING FOR EXTRA DETAILS */
-.grid + .grid {
-  margin-top: 20px;
-}
-
-/* INFO VALUE SMALLER FOR SECOND ROW */
-.grid:nth-of-type(2) .info-value {
-  font-size: 20px;
-  font-weight: 700;
-}
-
 /* MOBILE */
 @media(max-width:700px){
-
   .search-card h1{font-size:34px;}
-
   .result-reg{font-size:28px;}
-
   .car-title{font-size:26px;}
-
-  .plate input{
-    font-size:30px;
-    letter-spacing:4px;
-  }
+  .plate input{font-size:30px;letter-spacing:4px;}
 }
