@@ -146,7 +146,7 @@ async function checkVehicle(){
 
         <div class="car-title">${d.make || ""} ${d.model || ""}</div>
 
-        <div class="grid">
+        <div class="grid swipe-grid">
           <div class="info-box">
             <div class="info-title">MOT</div>
             <div class="info-value">${mot.date}</div>
@@ -170,50 +170,10 @@ async function checkVehicle(){
           </div>
         </div>
 
-        <div class="grid">
+        <div class="scroll-hint">← Swipe for more →</div>
+
+        <div class="grid swipe-grid">
           <div class="info-box"><div class="info-title">CO₂ Emissions</div><div class="info-value">${d.co2Emissions || "N/A"}</div></div>
           <div class="info-box"><div class="info-title">Euro Status</div><div class="info-value">${d.euroStatus || "N/A"}</div></div>
           <div class="info-box"><div class="info-title">RDE</div><div class="info-value">${d.realDrivingEmissions || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Type Approval</div><div class="info-value">${d.typeApproval || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Wheelplan</div><div class="info-value">${d.wheelplan || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Revenue Weight</div><div class="info-value">${d.revenueWeight || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">First Registered</div><div class="info-value">${d.monthOfFirstRegistration || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">V5C Issued</div><div class="info-value">${d.dateOfLastV5CIssued || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Export Marker</div><div class="info-value">${d.exportMarker ? "Yes" : "No"}</div></div>
-        </div>
-
-        ${
-          mileageWarnings.length
-            ? `<div class="mileage-warning">⚠️ ${mileageWarnings.join("<br>")}</div>`
-            : ""
-        }
-
-        <div class="actions-row">
-          <button id="motBtn" onclick="toggleMot()">Show MOT History</button>
-          <button class="print-only" onclick="window.print()">Print Report</button>
-        </div>
-
-        <div id="motContainer">
-          ${
-            d.motHistory?.length
-              ? d.motHistory.map(m=>`
-                <div class="mot-card">
-                  <div class="${m.result === "PASSED" ? "pass" : "fail"}">${m.result}</div>
-                  <div>${m.completedDate ? new Date(m.completedDate).toLocaleDateString("en-GB") : "Unknown"}</div>
-                  <div>${m.mileage || "N/A"}</div>
-                  ${buildDefects(m.defects || [])}
-                </div>
-              `).join("")
-              : `<div class="mot-card">No MOT history found</div>`
-          }
-        </div>
-
-      </div>
-    `;
-
-  }catch(e){
-    document.getElementById("result").innerHTML = `
-      <div class="result-card glass">Error: ${e.message}</div>
-    `;
-  }
-}
+          <div class="info-box"><div class="info-title">Type Approval</div
