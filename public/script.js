@@ -132,7 +132,18 @@ async function checkVehicle(){
     const imageUrl =
       `https://source.unsplash.com/800x400/?car,${encodeURIComponent(d.make || "car")},${encodeURIComponent(d.model || "vehicle")}`;
 
-    const mileageWarnings = getMileageWarnings(d.motHistory || []);
+    // Reverse MOT history so oldest → newest
+    const motHistory = [...(d.motHistory || [])].reverse();
+    const mileageWarnings = getMileageWarnings(motHistory);
+
+    // Calculate mileage stats
+    const mileages = motHistory.map(m => parseInt((m.mileage || "").replace(/[^\d]/g,"")));
+    const lastMileage = mileages[mileages.length - 1] || null;
+    const firstMileage = mileages[0] || null;
+    const yearsBetween = motHistory.length > 1
+      ? (new Date(motHistory[motHistory.length - 1].completedDate) - new Date(motHistory[0].completedDate)) / (1000*60*60*24*365)
+      : 1;
+    const avgMileage = lastMileage && firstMileage ? Math.round((lastMileage - firstMileage) / yearsBetween) : null;
 
     document.getElementById("result").innerHTML = `
       <div class="result-card glass">
@@ -168,7 +179,19 @@ async function checkVehicle(){
             <div class="info-title">Fuel</div>
             <div class="info-value">${d.fuelType || "N/A"}</div>
           </div>
+
+          <div class="info-box">
+            <div class="info-title">Avg Annual Mileage</div>
+            <div class="info-value">${avgMileage || "N/A"} mi</div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">Last Known Mileage</div>
+            <div class="info-value">${lastMileage || "N/A"} mi</div>
+          </div>
         </div>
+
+        <div class="scroll-hint">← Swipe for more →</div>
 
         <div class="grid">
           <div class="info-box"><div class="info-title">CO₂ Emissions</div><div class="info-value">${d.co2Emissions || "N/A"}</div></div>
@@ -181,6 +204,8 @@ async function checkVehicle(){
           <div class="info-box"><div class="info-title">V5C Issued</div><div class="info-value">${d.dateOfLastV5CIssued || "N/A"}</div></div>
           <div class="info-box"><div class="info-title">Export Marker</div><div class="info-value">${d.exportMarker ? "Yes" : "No"}</div></div>
         </div>
+
+        <div class="scroll-hint">← Swipe for more →</div>
 
         ${
           mileageWarnings.length
@@ -195,8 +220,8 @@ async function checkVehicle(){
 
         <div id="motContainer">
           ${
-            d.motHistory?.length
-              ? d.motHistory.map(m=>`
+            motHistory.length
+              ? motHistory.map(m=>`
                 <div class="mot-card">
                   <div class="${m.result === "PASSED" ? "pass" : "fail"}">${m.result}</div>
                   <div>${m.completedDate ? new Date(m.completedDate).toLocaleDateString("en-GB") : "Unknown"}</div>
