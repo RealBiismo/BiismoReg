@@ -305,67 +305,41 @@ app.post("/api/check", async (req, res) => {
        RESPONSE
     ========================= */
 
-    res.json({
+res.json({
 
+  // Basic identity
+  registration: reg,
+  make: dvla.make || vehicle?.make || "Unknown",
+  model: dvla.model || vehicle?.model || "Unknown",
+  colour: dvla.colour || "Unknown",
+  fuelType: dvla.fuelType || "Unknown",
+  engineCapacity: dvla.engineCapacity || "Unknown",
+  year: dvla.yearOfManufacture || "Unknown",
+  monthOfFirstRegistration: dvla.monthOfFirstRegistration || "Unknown",
 
-      co2Emissions: dvla.co2Emissions || null,
-      euroStatus: dvla.euroStatus || "Unknown",
-      realDrivingEmissions: dvla.realDrivingEmissions || "Unknown",
+  // Tax & MOT
+  taxStatus: dvla.taxStatus || "Unknown",
+  taxDueDate: dvla.taxDueDate || null,
+  motExpiryDate: dvla.motExpiryDate || null,
 
-      typeApproval: dvla.typeApproval || "Unknown",
-      wheelplan: dvla.wheelplan || "Unknown",
-      revenueWeight: dvla.revenueWeight || "Unknown",
+  // Environmental
+  co2Emissions: dvla.co2Emissions || null,
+  euroStatus: dvla.euroStatus || "Unknown",
+  realDrivingEmissions: dvla.realDrivingEmissions || "Unknown",
 
-      exportMarker: dvla.exportMarker || false,
-      dateOfLastV5CIssued: dvla.dateOfLastV5CIssued || null,
+  // Technical
+  typeApproval: dvla.typeApproval || "Unknown",
+  wheelplan: dvla.wheelplan || "Unknown",
+  revenueWeight: dvla.revenueWeight || "Unknown",
 
-      monthOfFirstRegistration: dvla.monthOfFirstRegistration || "Unknown",
+  // V5C / Export
+  exportMarker: dvla.exportMarker || false,
+  dateOfLastV5CIssued: dvla.dateOfLastV5CIssued || null,
 
-       
-      registration:
-        reg,
+  // MOT history
+  motHistory
 
-      make:
-        dvla.make ||
-        vehicle?.make ||
-        "Unknown",
-
-      model:
-        dvla.model ||
-        vehicle?.model ||
-        "Unknown",
-
-      colour:
-        dvla.colour ||
-        "Unknown",
-
-      fuelType:
-        dvla.fuelType ||
-        "Unknown",
-
-      engineCapacity:
-        dvla.engineCapacity ||
-        "Unknown",
-
-      year:
-        dvla.yearOfManufacture ||
-        "Unknown",
-
-      taxStatus:
-        dvla.taxStatus ||
-        "Unknown",
-
-      taxDueDate:
-        dvla.taxDueDate ||
-        null,
-
-      motExpiryDate:
-        dvla.motExpiryDate ||
-        null,
-
-      motHistory
-
-    });
+});
 
   } catch (err) {
 
