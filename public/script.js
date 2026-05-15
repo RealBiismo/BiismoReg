@@ -107,6 +107,20 @@ function buildDefects(defects){
   }).join("");
 }
 
+/* ESTIMATED VALUE */
+function estimateValue(make, model, age, mileage) {
+  let base = 12000;
+
+  if (["BMW","Mercedes","Audi","Lexus","Jaguar","Range Rover"].includes(make)) {
+    base += 6000;
+  }
+
+  base -= age * 600;
+  base -= (mileage / 10000) * 400;
+
+  return Math.max(500, Math.round(base));
+}
+
 /* MAIN */
 async function checkVehicle(){
   const reg = document.getElementById("regInput").value.trim().toUpperCase().replace(/\s/g,"");
@@ -136,7 +150,7 @@ async function checkVehicle(){
     const motHistory = [...(d.motHistory || [])].reverse();
     const mileageWarnings = getMileageWarnings(motHistory);
 
-    // Calculate mileage stats
+    // Mileage stats
     const mileages = motHistory.map(m => parseInt((m.mileage || "").replace(/[^\d]/g,"")));
     const lastMileage = mileages[mileages.length - 1] || null;
     const firstMileage = mileages[0] || null;
@@ -144,6 +158,28 @@ async function checkVehicle(){
       ? (new Date(motHistory[motHistory.length - 1].completedDate) - new Date(motHistory[0].completedDate)) / (1000*60*60*24*365)
       : 1;
     const avgMileage = lastMileage && firstMileage ? Math.round((lastMileage - firstMileage) / yearsBetween) : null;
+
+    // Vehicle age
+    const vehicleAge = d.monthOfFirstRegistration
+      ? new Date().getFullYear() - new Date(d.monthOfFirstRegistration).getFullYear()
+      : null;
+
+    // ULEZ
+    let ulez = "Unknown";
+    if (d.fuelType && d.euroStatus) {
+      const euro = parseInt(d.euroStatus.replace(/\D/g, ""));
+      if (d.fuelType.toLowerCase().includes("petrol") && euro >= 4) ulez = "Yes";
+      if (d.fuelType.toLowerCase().includes("diesel") && euro >= 6) ulez = "Yes";
+      if (ulez === "Unknown") ulez = "No";
+    }
+
+    // Estimated value
+    const estimatedValue = estimateValue(
+      d.make || "",
+      d.model || "",
+      vehicleAge || 0,
+      lastMileage || 0
+    );
 
     document.getElementById("result").innerHTML = `
       <div class="result-card glass">
@@ -188,6 +224,21 @@ async function checkVehicle(){
           <div class="info-box">
             <div class="info-title">Last Known Mileage</div>
             <div class="info-value">${lastMileage || "N/A"} mi</div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">Vehicle Age</div>
+            <div class="info-value">${vehicleAge || "N/A"} yrs</div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">ULEZ Compliant</div>
+            <div class="info-value">${ulez}</div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">Estimated Value</div>
+            <div class="info-value">£${estimatedValue.toLocaleString()}</div>
           </div>
         </div>
 
@@ -242,3 +293,19 @@ async function checkVehicle(){
     `;
   }
 }
+
+/* HIDE SCROLL HINT AFTER FIRST SWIPE */
+document.addEventListener("DOMContentLoaded", () => {
+  let hint = document.querySelector(".scroll-hint");
+  let grids = document.querySelectorAll(".grid");
+
+  grids.forEach(grid => {
+    grid.addEventListener("scroll", () => {
+      if (hint) {
+        hint.style.opacity = "0";
+        hint.style.transition = "0.6s ease";
+        setTimeout(() => hint.style.display = "none", 600);
+      }
+    }, { once: true });
+  });
+});
