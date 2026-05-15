@@ -296,6 +296,26 @@ button{
   font-weight: 700;
 }
 
+/* SECTION TITLES */
+.info-section-title {
+  font-weight: 700;
+  margin-top: 24px;
+  color: #60a5fa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* NEW GRID SPACING FOR EXTRA DETAILS */
+.grid + .grid {
+  margin-top: 20px;
+}
+
+/* INFO VALUE SMALLER FOR SECOND ROW */
+.grid:nth-of-type(2) .info-value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
 /* MOBILE */
 @media(max-width:700px){
 
