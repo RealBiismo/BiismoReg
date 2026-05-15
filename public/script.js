@@ -146,11 +146,13 @@ async function checkVehicle(){
     const imageUrl =
       `https://source.unsplash.com/800x400/?car,${encodeURIComponent(d.make || "car")},${encodeURIComponent(d.model || "vehicle")}`;
 
-    // Reverse MOT history so oldest → newest
-    const motHistory = [...(d.motHistory || [])].reverse();
+    /* MOT HISTORY HANDLING */
+    const motHistoryDisplay = d.motHistory || []; // newest → oldest
+    const motHistory = [...motHistoryDisplay].reverse(); // oldest → newest for mileage logic
+
     const mileageWarnings = getMileageWarnings(motHistory);
 
-    // Mileage stats
+    /* Mileage stats */
     const mileages = motHistory.map(m => parseInt((m.mileage || "").replace(/[^\d]/g,"")));
     const lastMileage = mileages[mileages.length - 1] || null;
     const firstMileage = mileages[0] || null;
@@ -159,12 +161,12 @@ async function checkVehicle(){
       : 1;
     const avgMileage = lastMileage && firstMileage ? Math.round((lastMileage - firstMileage) / yearsBetween) : null;
 
-    // Vehicle age
+    /* Vehicle age */
     const vehicleAge = d.monthOfFirstRegistration
       ? new Date().getFullYear() - new Date(d.monthOfFirstRegistration).getFullYear()
       : null;
 
-    // ULEZ
+    /* ULEZ */
     let ulez = "Unknown";
     if (d.fuelType && d.euroStatus) {
       const euro = parseInt(d.euroStatus.replace(/\D/g, ""));
@@ -173,7 +175,7 @@ async function checkVehicle(){
       if (ulez === "Unknown") ulez = "No";
     }
 
-    // Estimated value
+    /* Estimated value */
     const estimatedValue = estimateValue(
       d.make || "",
       d.model || "",
@@ -271,8 +273,8 @@ async function checkVehicle(){
 
         <div id="motContainer">
           ${
-            motHistory.length
-              ? motHistory.map(m=>`
+            motHistoryDisplay.length
+              ? motHistoryDisplay.map(m=>`
                 <div class="mot-card">
                   <div class="${m.result === "PASSED" ? "pass" : "fail"}">${m.result}</div>
                   <div>${m.completedDate ? new Date(m.completedDate).toLocaleDateString("en-GB") : "Unknown"}</div>
