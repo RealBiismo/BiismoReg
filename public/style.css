@@ -125,6 +125,19 @@ button:hover{
   margin:20px auto;
   border-radius:30px;
   padding:30px 18px;
+  animation:fadeInUp 0.4s ease;
+}
+
+/* VEHICLE IMAGE */
+.car-image{
+  width:100%;
+  max-width:900px;
+  height:260px;
+  object-fit:cover;
+  border-radius:22px;
+  margin:0 auto 20px;
+  display:block;
+  opacity:0.95;
 }
 
 /* RESULT PLATE */
@@ -188,9 +201,16 @@ button:hover{
 .tax-green{color:#4ade80;}
 .tax-red{color:#f87171;}
 
-/* MOT BUTTON */
-#motBtn{
+/* MOT BUTTONS WRAP */
+.actions-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
   margin-top:28px;
+}
+.actions-row button{
+  width:auto;
+  flex:1 1 180px;
 }
 
 /* MOT CONTAINER */
@@ -206,6 +226,7 @@ button:hover{
   border-radius:22px;
   padding:22px;
   margin-bottom:16px;
+  animation:fadeIn 0.3s ease;
 }
 
 /* PASS FAIL */
@@ -233,6 +254,52 @@ button:hover{
   padding:14px;
   background:rgba(34,197,94,0.08);
   border-radius:12px;
+}
+
+/* MILEAGE WARNING */
+.mileage-warning{
+  margin-top:20px;
+  padding:14px 16px;
+  border-radius:14px;
+  background:rgba(250,204,21,0.08);
+  border:1px solid rgba(250,204,21,0.4);
+  color:#facc15;
+  font-size:14px;
+  line-height:1.5;
+}
+
+/* ANIMATIONS */
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes fadeIn{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+/* PRINT STYLES */
+@media print{
+  body{
+    background:#fff;
+    color:#000;
+  }
+  .nav,
+  .hero,
+  .disclaimer,
+  .actions-row button:not(.print-only){
+    display:none !important;
+  }
+  .result-card{
+    box-shadow:none;
+    border:none;
+    max-width:100%;
+    margin:0;
+    padding:0;
+  }
+  .car-image{
+    border-radius:0;
+  }
 }
 
 /* MOBILE */
