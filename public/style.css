@@ -856,3 +856,89 @@ section {
     }
 }
 
+/* ------------------------------
+   LOGIN MODAL
+------------------------------ */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: #fff;
+    width: 90%;
+    max-width: 420px;
+    margin: 120px auto;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+}
+
+.modal-content h2 {
+    margin-bottom: 10px;
+}
+
+.modal-content input {
+    width: 90%;
+    padding: 14px;
+    margin-top: 15px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.modal-content button {
+    width: 90%;
+    padding: 14px;
+    margin-top: 15px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#sendLoginLinkBtn {
+    background: #007AFF;
+    color: white;
+}
+
+.close-btn {
+    background: #ccc;
+}
+
+.status-message {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #007AFF;
+}
+
+/* DARK MODE */
+@media (prefers-color-scheme: dark) {
+    .modal-content {
+        background: #111;
+        color: #fff;
+        box-shadow: 0 4px 30px rgba(255,255,255,0.1);
+    }
+
+    .modal-content input {
+        background: #222;
+        border: 1px solid #444;
+        color: #fff;
+    }
+
+    .close-btn {
+        background: #333;
+        color: #fff;
+    }
+}
+
+
