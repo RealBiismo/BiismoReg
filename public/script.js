@@ -311,3 +311,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }, { once: true });
   });
 });
+
+// OPEN LOGIN MODAL
+document.getElementById("loginBtn")?.addEventListener("click", () => {
+    document.getElementById("loginModal").style.display = "block";
+});
+
+// CLOSE LOGIN MODAL
+document.getElementById("closeModalBtn")?.addEventListener("click", () => {
+    document.getElementById("loginModal").style.display = "none";
+});
+
+// SEND LOGIN LINK (frontend only for now)
+document.getElementById("sendLoginLinkBtn")?.addEventListener("click", async () => {
+    const email = document.getElementById("loginEmail").value;
+    const status = document.getElementById("loginStatus");
+
+    if (!email) {
+        status.textContent = "Please enter an email.";
+        return;
+    }
+
+    status.textContent = "Sending login link...";
+
+    // This will call the backend endpoint we build next
+    const res = await fetch("/auth/send-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+    status.textContent = data.message;
+});
