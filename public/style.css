@@ -547,3 +547,248 @@ button:hover{
   0%,100% { opacity:0.6; }
   50% { opacity:1; }
 }
+
+/* ------------------------------
+   GLOBAL STYLES
+------------------------------ */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background: #F5F5F7;
+    color: #1C1C1E;
+}
+
+h1, h2 {
+    font-weight: 600;
+    margin: 0 0 20px 0;
+}
+
+section {
+    width: 90%;
+    max-width: 1100px;
+    margin: 40px auto;
+}
+
+/* ------------------------------
+   HEADER
+------------------------------ */
+
+.account-header {
+    text-align: center;
+    padding: 60px 20px 40px;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    border-radius: 0 0 20px 20px;
+}
+
+.account-header h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.tier-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    margin-bottom: 25px;
+    color: white;
+}
+
+.tier-badge.free { background: #A1A1A1; }
+.tier-badge.premium { background: #007AFF; }
+.tier-badge.platinum { background: #8A4FFF; }
+
+.account-search {
+    width: 60%;
+    max-width: 500px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: none;
+    font-size: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    outline: none;
+}
+
+/* ------------------------------
+   MY GARAGE
+------------------------------ */
+
+.garage-section h2 {
+    font-size: 24px;
+}
+
+.garage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.garage-card {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    transition: transform 0.15s ease;
+}
+
+.garage-card:hover {
+    transform: translateY(-3px);
+}
+
+.garage-card .reg {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.garage-card .model {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 12px;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.status-green { background: #34C759; }
+.status-red { background: #FF3B30; }
+
+/* ------------------------------
+   REMINDERS
+------------------------------ */
+
+.reminders-section {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.add-reminder-btn {
+    margin-top: 15px;
+    padding: 12px 18px;
+    background: #007AFF;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.add-reminder-btn:hover {
+    background: #0063CC;
+}
+
+/* ------------------------------
+   RECENTLY VIEWED
+------------------------------ */
+
+.recent-section {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.recent-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #E5E5EA;
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+}
+
+.recent-item:last-child {
+    border-bottom: none;
+}
+
+/* ------------------------------
+   AI TOOLS
+------------------------------ */
+
+.ai-tools-section {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.ai-tool {
+    padding: 14px 0;
+    border-bottom: 1px solid #E5E5EA;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.ai-tool:last-child {
+    border-bottom: none;
+}
+
+.ai-tool.locked {
+    filter: blur(3px);
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* ------------------------------
+   SUBSCRIPTION PANEL
+------------------------------ */
+
+.subscription-panel {
+    background: linear-gradient(135deg, #FFFFFF, #F0F0F5);
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.upgrade-btn, .see-platinum-btn {
+    padding: 12px 20px;
+    margin: 10px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.upgrade-btn {
+    background: #007AFF;
+    color: white;
+}
+
+.see-platinum-btn {
+    background: #8A4FFF;
+    color: white;
+}
+
+/* ------------------------------
+   SETTINGS
+------------------------------ */
+
+.settings-section {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.settings-section a {
+    display: block;
+    padding: 10px 0;
+    color: #007AFF;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.settings-section a:hover {
+    text-decoration: underline;
+}
+
