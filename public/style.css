@@ -792,3 +792,67 @@ section {
     text-decoration: underline;
 }
 
+/* -----------------------------------------
+   AUTOMATIC DARK MODE (Apple-style)
+----------------------------------------- */
+@media (prefers-color-scheme: dark) {
+
+    body {
+        background: #000;
+        color: #fff;
+    }
+
+    /* Header */
+    .account-header {
+        background: #111;
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(255,255,255,0.05);
+    }
+
+    .account-search {
+        background: #222;
+        color: #fff;
+        box-shadow: none;
+    }
+
+    /* Sections */
+    section,
+    .reminders-section,
+    .recent-section,
+    .ai-tools-section,
+    .subscription-panel,
+    .settings-section {
+        background: #111;
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(255,255,255,0.05);
+    }
+
+    /* Garage cards */
+    .garage-card {
+        background: #1a1a1a;
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(255,255,255,0.05);
+    }
+
+    /* AI tools */
+    .ai-tool {
+        border-bottom: 1px solid #333;
+    }
+
+    /* Subscription buttons */
+    .upgrade-btn {
+        background: #007AFF;
+        color: #fff;
+    }
+
+    .see-platinum-btn {
+        background: #8A4FFF;
+        color: #fff;
+    }
+
+    /* Settings links */
+    .settings-section a {
+        color: #4DA3FF;
+    }
+}
+
