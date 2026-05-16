@@ -1,1 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Account</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="account.js"></script>
+</head>
+<body>
 
+    <!-- HEADER -->
+    <header class="account-header">
+        <h1 id="welcomeText">Welcome back</h1>
+        <span id="tierBadge" class="tier-badge">Free</span>
+
+        <input type="text" id="accountSearch" class="account-search" placeholder="Search for a vehicle...">
+    </header>
+
+    <!-- MY GARAGE -->
+    <section class="garage-section">
+        <h2>My Garage</h2>
+        <div class="garage-grid" id="garageGrid"></div>
+    </section>
+
+    <!-- REMINDERS -->
+    <section class="reminders-section">
+        <h2>Reminders</h2>
+        <div id="remindersList"></div>
+        <button class="add-reminder-btn">Add Reminder</button>
+    </section>
+
+    <!-- RECENTLY VIEWED -->
+    <section class="recent-section">
+        <h2>Recently Viewed</h2>
+        <div id="recentList"></div>
+    </section>
+
+    <!-- AI TOOLS -->
+    <section class="ai-tools-section">
+        <h2>AI Tools</h2>
+
+        <div class="ai-tool">AI Vehicle Summary</div>
+        <div class="ai-tool">AI MOT Explanation</div>
+        <div class="ai-tool">AI Buying Advice</div>
+        <div class="ai-tool">AI Negotiation Tips</div>
+        <div class="ai-tool">AI Comparison</div>
+        <div class="ai-tool">Maintenance Plan</div>
+        <div class="ai-tool">Buyer Checklist</div>
+        <div class="ai-tool">Seller Checklist</div>
+    </section>
+
+    <!-- SUBSCRIPTION PANEL -->
+    <section class="subscription-panel">
+        <h2 id="planTitle">Your Plan: Free</h2>
+        <p id="planDescription">Upgrade to unlock AI insights, reports, comparisons, and more.</p>
+
+        <button class="upgrade-btn">Upgrade to Premium</button>
+        <button class="see-platinum-btn">See Platinum</button>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="settings-section">
+        <h2>Settings</h2>
+        <a href="/settings">Manage Subscription</a>
+        <a href="/settings">Change Email</a>
+        <a href="/logout">Logout</a>
+    </section>
+
+</body>
+</html>
