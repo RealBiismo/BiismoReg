@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#07090f">
+  <meta name="theme-color" content="#000000">
   <meta name="description" content="Check official UK vehicle, tax and MOT information.">
   <title>BIISMO REG — UK Vehicle Check</title>
 
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="classic.css">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
 </head>
@@ -22,9 +23,8 @@
   <main>
     <section class="hero-shell">
       <div class="hero-copy">
-        <span class="eyebrow">Official UK vehicle data</span>
-        <h1>Know the car<br>before you commit.</h1>
-        <p>Instant tax, MOT, mileage and vehicle details using official DVLA and DVSA records.</p>
+        <h1>UK Vehicle Check</h1>
+        <p>MOT • TAX • HISTORY</p>
       </div>
 
       <form id="vehicleForm" class="search-panel" novalidate>
@@ -38,6 +38,7 @@
           <div class="gb" aria-hidden="true"><small>GB</small></div>
           <input
             id="regInput"
+            type="text"
             name="registrationNumber"
             placeholder="PA55 MGN"
             maxlength="8"
@@ -67,7 +68,7 @@
         <strong>Government-sourced records</strong>
         <p>Official vehicle information is combined with clearly labelled calculated insights.</p>
       </div>
-      <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">Built by RealBiismo</a>
+      <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">Created by RealBiismo</a>
     </section>
 
     <div id="result" aria-live="polite"></div>
