@@ -10,19 +10,34 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - Printable reports and installable web-app groundwork
 - Registration validation, upstream timeouts and API rate limiting
 - Server-side API credentials with no token or vehicle-response logging
+- Verified email/password accounts and Google sign-in through Supabase Auth
+- A private saved-vehicle garage protected with Row Level Security
 
 ## Requirements
 
 - Node.js 18.17 or newer
 - DVLA Vehicle Enquiry API credentials
 - DVSA MOT History API credentials
+- A Supabase project for authentication and saved vehicles
 
 ## Local setup
 
 1. Run `npm install`.
 2. Copy `.env.example` to `.env` and enter the API credentials.
-3. Run `npm start`.
-4. Open `http://localhost:3000`.
+3. Create a Supabase project and run `database/schema.sql` in its SQL editor.
+4. Add the project URL and public anon/publishable key to `.env`.
+5. In Supabase Auth settings, keep email confirmation enabled and add your production URL plus `http://localhost:3000/**` to the redirect allow list.
+6. To enable Google login, create a Google web OAuth client and add its client ID and secret to the Supabase Google provider settings.
+7. Run `npm start`.
+8. Open `http://localhost:3000`.
+
+Supabase setup references:
+
+- [Email signup](https://supabase.com/docs/reference/javascript/auth-signup)
+- [Google login](https://supabase.com/docs/guides/auth/social-login/auth-google)
+- [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
+
+The Supabase anon/publishable key is designed for browser use. Never expose a Supabase service-role key in this app.
 
 Do not commit `.env`; it is ignored by Git.
 

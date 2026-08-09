@@ -1,70 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Your Account</title>
-    <link rel="stylesheet" href="styles.css">
-    <script defer src="account.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07090f">
+  <meta name="description" content="Your saved vehicles and BIISMO REG account.">
+  <title>My Garage — BIISMO REG</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
 </head>
-<body>
+<body class="account-page">
+  <header class="site-header account-header">
+    <a class="back-link" href="/" aria-label="Back to vehicle checker">
+      <span aria-hidden="true">←</span>
+      Back to checker
+    </a>
+    <a class="brand compact-brand" href="/" aria-label="BIISMO REG home">
+      <img src="https://files.catbox.moe/tvw8fb.png" alt="BIISMO REG">
+    </a>
+    <button id="signOutButton" class="header-action" type="button">Sign out</button>
+  </header>
 
-    <!-- HEADER -->
-    <header class="account-header">
-        <h1 id="welcomeText">Welcome back</h1>
-        <span id="tierBadge" class="tier-badge">Free</span>
-
-        <input type="text" id="accountSearch" class="account-search" placeholder="Search for a vehicle...">
-    </header>
-
-    <!-- MY GARAGE -->
-    <section class="garage-section">
-        <h2>My Garage</h2>
-        <div class="garage-grid" id="garageGrid"></div>
+  <main class="account-main">
+    <section class="account-hero">
+      <div>
+        <span class="eyebrow">PRIVATE GARAGE</span>
+        <h1>Your saved vehicles.</h1>
+        <p id="accountEmail">Loading your account…</p>
+      </div>
+      <form id="garageSearchForm" class="garage-search">
+        <label class="sr-only" for="garageRegInput">Search another registration</label>
+        <input id="garageRegInput" maxlength="8" placeholder="Enter another reg" autocomplete="off">
+        <button class="primary-button" type="submit">Check vehicle</button>
+      </form>
     </section>
 
-    <!-- REMINDERS -->
-    <section class="reminders-section">
-        <h2>Reminders</h2>
-        <div id="remindersList"></div>
-        <button class="add-reminder-btn">Add Reminder</button>
+    <section class="garage-section" aria-labelledby="garageTitle">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">COLLECTION</span>
+          <h2 id="garageTitle">Saved vehicles</h2>
+        </div>
+        <span id="vehicleCount" class="count-badge">0 vehicles</span>
+      </div>
+
+      <p id="garageStatus" class="garage-status" role="status"></p>
+      <div id="garageGrid" class="garage-grid"></div>
     </section>
+  </main>
 
-    <!-- RECENTLY VIEWED -->
-    <section class="recent-section">
-        <h2>Recently Viewed</h2>
-        <div id="recentList"></div>
-    </section>
+  <div id="loadingOverlay" class="loading-overlay is-visible" role="status" aria-live="polite" aria-hidden="false">
+    <div class="loader-card">
+      <div class="progress-wheel" aria-hidden="true"></div>
+      <strong>Opening your garage</strong>
+      <span>Loading your securely saved vehicles…</span>
+    </div>
+  </div>
 
-    <!-- AI TOOLS -->
-    <section class="ai-tools-section">
-        <h2>AI Tools</h2>
-
-        <div class="ai-tool">AI Vehicle Summary</div>
-        <div class="ai-tool">AI MOT Explanation</div>
-        <div class="ai-tool">AI Buying Advice</div>
-        <div class="ai-tool">AI Negotiation Tips</div>
-        <div class="ai-tool">AI Comparison</div>
-        <div class="ai-tool">Maintenance Plan</div>
-        <div class="ai-tool">Buyer Checklist</div>
-        <div class="ai-tool">Seller Checklist</div>
-    </section>
-
-    <!-- SUBSCRIPTION PANEL -->
-    <section class="subscription-panel">
-        <h2 id="planTitle">Your Plan: Free</h2>
-        <p id="planDescription">Upgrade to unlock AI insights, reports, comparisons, and more.</p>
-
-        <button class="upgrade-btn">Upgrade to Premium</button>
-        <button class="see-platinum-btn">See Platinum</button>
-    </section>
-
-    <!-- SETTINGS -->
-    <section class="settings-section">
-        <h2>Settings</h2>
-        <a href="/settings">Manage Subscription</a>
-        <a href="/settings">Change Email</a>
-        <a href="/logout">Logout</a>
-    </section>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="account.js" defer></script>
 </body>
 </html>

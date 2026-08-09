@@ -22,6 +22,11 @@ const config = {
   motTokenUrl: process.env.MOT_TOKEN_URL,
 };
 
+const authConfig = {
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+};
+
 let cachedMotToken = null;
 let motTokenExpiry = 0;
 
@@ -34,7 +39,7 @@ app.use((req, res, next) => {
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: https://files.catbox.moe; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    "default-src 'self'; img-src 'self' data: https://files.catbox.moe https://*.googleusercontent.com; style-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'"
   );
   next();
 });
@@ -201,6 +206,18 @@ async function fetchMotHistory(registration) {
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+app.get("/api/config", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+
+  if (!authConfig.supabaseUrl || !authConfig.supabaseAnonKey) {
+    return res.status(503).json({
+      error: "Account services have not been configured yet.",
+    });
+  }
+
+  return res.json(authConfig);
 });
 
 app.post("/api/check", vehicleCheckLimiter, async (req, res) => {

@@ -76,4 +76,10 @@ test("serves health status and rejects unsafe input", async (context) => {
   assert.deepEqual(await invalidResponse.json(), {
     error: "Enter a valid UK registration number.",
   });
+
+  const configResponse = await fetch(`${baseUrl}/api/config`);
+  assert.equal(configResponse.status, 503);
+  assert.deepEqual(await configResponse.json(), {
+    error: "Account services have not been configured yet.",
+  });
 });

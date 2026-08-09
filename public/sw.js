@@ -1,9 +1,12 @@
-const CACHE_NAME = "biismo-reg-v2";
+const CACHE_NAME = "biismo-reg-v3";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/style.css",
   "/script.js",
+  "/auth.js",
+  "/account.html",
+  "/account.js",
   "/manifest.json",
   "/icon.svg",
 ];
