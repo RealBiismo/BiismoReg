@@ -1,346 +1,369 @@
-function daysLeft(dateStr){
-  if(!dateStr) return null;
-  const now = new Date();
-  const target = new Date(dateStr);
-  return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+const vehicleForm = document.getElementById("vehicleForm");
+const regInput = document.getElementById("regInput");
+const searchButton = document.getElementById("searchButton");
+const formError = document.getElementById("formError");
+const result = document.getElementById("result");
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function getStatus(dateStr){
-  if(!dateStr){
-    return { date:"N/A", text:"EXPIRED", class:"tax-red" };
+function displayValue(value, suffix = "") {
+  if (value === null || value === undefined || value === "" || value === "Unknown") {
+    return "N/A";
   }
-  const days = daysLeft(dateStr);
-  if(isNaN(days) || days < 0){
-    return {
-      date:new Date(dateStr).toLocaleDateString("en-GB"),
-      text:"EXPIRED",
-      class:"tax-red"
-    };
+
+  return `${escapeHtml(value)}${suffix}`;
+}
+
+function normalizeRegistration(value) {
+  return value.toUpperCase().replace(/[\s-]/g, "");
+}
+
+function isValidRegistration(registration) {
+  return (
+    /^[A-Z0-9]{2,8}$/.test(registration) &&
+    /[A-Z]/.test(registration) &&
+    /[0-9]/.test(registration)
+  );
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return "N/A";
+  const date = new Date(dateValue);
+  return Number.isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString("en-GB");
+}
+
+function daysUntil(dateValue) {
+  const target = new Date(dateValue);
+  if (Number.isNaN(target.getTime())) return null;
+  return Math.ceil((target.getTime() - Date.now()) / 86_400_000);
+}
+
+function dateStatus(dateValue, activeLabel, expiredLabel) {
+  const days = daysUntil(dateValue);
+
+  if (days === null) {
+    return { date: "N/A", text: "Status unavailable", className: "tax-amber" };
   }
+
+  if (days < 0) {
+    return { date: formatDate(dateValue), text: expiredLabel, className: "tax-red" };
+  }
+
+  const remaining = days === 0 ? "due today" : `${days} days left`;
   return {
-    date:new Date(dateStr).toLocaleDateString("en-GB"),
-    text:`${days} days left`,
-    class:"tax-green"
+    date: formatDate(dateValue),
+    text: `${activeLabel} • ${remaining}`,
+    className: days <= 30 ? "tax-amber" : "tax-green",
   };
 }
 
-/* FIRST MOT CHECK */
-function getFirstMotStatus(d){
-  if(!d.monthOfFirstRegistration) return null;
-
-  const firstReg = new Date(d.monthOfFirstRegistration);
-  const firstMot = new Date(firstReg);
-  firstMot.setFullYear(firstMot.getFullYear() + 3);
-
-  const now = new Date();
-  if(now < firstMot){
-    return {
-      date:firstMot.toLocaleDateString("en-GB"),
-      text:"Not yet due",
-      class:"tax-green"
-    };
+function getMotStatus(vehicle) {
+  if (vehicle.motExpiryDate) {
+    return dateStatus(vehicle.motExpiryDate, "Valid", "Expired");
   }
-  return null;
-}
 
-/* TOGGLE MOT */
-function toggleMot(){
-  const el = document.getElementById("motContainer");
-  const btn = document.getElementById("motBtn");
-  const open = el.style.display === "block";
-  el.style.display = open ? "none" : "block";
-  btn.innerText = open ? "Show MOT History" : "Hide MOT History";
-}
-
-/* TAX DATE NORMALISER */
-function getTaxDate(d){
-  return d.taxDueDate || d.taxExpiryDate || d.vehicleTax?.expiryDate || null;
-}
-
-/* MILEAGE ANOMALY DETECTION */
-function getMileageWarnings(history){
-  if(!history || !history.length) return [];
-  let warnings = [];
-  let last = null;
-
-  history.forEach((m, idx)=>{
-    const raw = (m.mileage || "").toString().replace(/[^\d]/g,"");
-    const val = parseInt(raw,10);
-    if(isNaN(val)) return;
-
-    if(last !== null){
-      if(val < last){
-        warnings.push(`Mileage decreased between test ${idx} and ${idx+1}. Possible rollback.`);
-      }else if(val - last > 60000){
-        warnings.push(`Unusually high mileage jump between test ${idx} and ${idx+1}.`);
+  if (vehicle.monthOfFirstRegistration) {
+    const firstRegistration = new Date(`${vehicle.monthOfFirstRegistration}-01`);
+    if (!Number.isNaN(firstRegistration.getTime())) {
+      const firstMotDate = new Date(firstRegistration);
+      firstMotDate.setFullYear(firstMotDate.getFullYear() + 3);
+      if (firstMotDate > new Date()) {
+        return {
+          date: firstMotDate.toLocaleDateString("en-GB"),
+          text: "First MOT normally due by this date",
+          className: "tax-green",
+        };
       }
     }
-    last = val;
-  });
-
-  return [...new Set(warnings)];
-}
-
-/* DEFECT GROUPS */
-function buildDefects(defects){
-  if(!defects || !defects.length){
-    return `<div class="clean-pass">No advisories or defects</div>`;
   }
 
-  const groups = { DANGEROUS:[], MAJOR:[], MINOR:[], ADVISORY:[] };
+  const officialStatus = String(vehicle.motStatus || "").toLowerCase();
+  if (officialStatus.includes("not valid") || officialStatus.includes("expired")) {
+    return { date: "N/A", text: "Not valid", className: "tax-red" };
+  }
 
-  defects.forEach(d=>{
-    const type = (d.type || "ADVISORY").toUpperCase();
-    const text = d.text || d.description || d.comment || "Issue found";
-    if(groups[type]) groups[type].push(text);
-    else groups.ADVISORY.push(text);
-  });
+  return { date: "N/A", text: "Status unavailable", className: "tax-amber" };
+}
 
-  return Object.entries(groups).map(([type,items])=>{
-    if(!items.length) return "";
-    return `
-      <div class="defect-group ${type.toLowerCase()}">
-        <b>${type}</b>
-        ${items.map(i=>`<div class="defect-item">${i}</div>`).join("")}
+function getTaxStatus(vehicle) {
+  const officialStatus = String(vehicle.taxStatus || "Unknown");
+  const normalizedStatus = officialStatus.toLowerCase();
+
+  if (normalizedStatus === "taxed" && vehicle.taxDueDate) {
+    return dateStatus(vehicle.taxDueDate, "Taxed", "Tax expired");
+  }
+
+  if (normalizedStatus.includes("sorn")) {
+    return { date: "N/A", text: officialStatus, className: "tax-amber" };
+  }
+
+  if (normalizedStatus.includes("untaxed") || normalizedStatus.includes("expired")) {
+    return { date: formatDate(vehicle.taxDueDate), text: officialStatus, className: "tax-red" };
+  }
+
+  return {
+    date: formatDate(vehicle.taxDueDate),
+    text: officialStatus,
+    className: "tax-amber",
+  };
+}
+
+function getMileageInsights(history) {
+  const readings = (history || [])
+    .map((test) => ({
+      date: new Date(test.completedDate),
+      mileage: Number.parseInt(String(test.mileage ?? "").replace(/[^\d]/g, ""), 10),
+    }))
+    .filter((reading) => !Number.isNaN(reading.date.getTime()) && Number.isFinite(reading.mileage))
+    .sort((a, b) => a.date - b.date);
+
+  const warnings = [];
+  for (let index = 1; index < readings.length; index += 1) {
+    const previous = readings[index - 1];
+    const current = readings[index];
+
+    if (current.mileage < previous.mileage) {
+      warnings.push(
+        `Recorded mileage fell from ${previous.mileage.toLocaleString()} to ${current.mileage.toLocaleString()} miles.`
+      );
+    }
+  }
+
+  const first = readings[0];
+  const latest = readings.at(-1);
+  let averageAnnualMileage = null;
+
+  if (first && latest && first !== latest && latest.mileage >= first.mileage) {
+    const years = (latest.date - first.date) / 31_557_600_000;
+    if (years > 0) {
+      averageAnnualMileage = Math.round((latest.mileage - first.mileage) / years);
+    }
+  }
+
+  return {
+    warnings: [...new Set(warnings)],
+    latestMileage: latest?.mileage ?? null,
+    averageAnnualMileage,
+  };
+}
+
+function estimateUlez(vehicle) {
+  if (String(vehicle.fuelType).toLowerCase().includes("electric")) {
+    return "Likely compliant";
+  }
+
+  const euroNumber = Number.parseInt(String(vehicle.euroStatus).replace(/\D/g, ""), 10);
+  if (!Number.isFinite(euroNumber)) return "Unknown";
+
+  const fuel = String(vehicle.fuelType).toLowerCase();
+  if (fuel.includes("petrol")) return euroNumber >= 4 ? "Likely compliant" : "Likely non-compliant";
+  if (fuel.includes("diesel")) return euroNumber >= 6 ? "Likely compliant" : "Likely non-compliant";
+
+  return "Unknown";
+}
+
+function buildDefects(defects) {
+  if (!Array.isArray(defects) || defects.length === 0) {
+    return '<div class="clean-pass">No advisories or defects recorded</div>';
+  }
+
+  const groups = { DANGEROUS: [], MAJOR: [], MINOR: [], ADVISORY: [] };
+
+  for (const defect of defects) {
+    const type = String(defect.type || "ADVISORY").toUpperCase();
+    const group = groups[type] || groups.ADVISORY;
+    group.push(defect.text || "Issue found");
+  }
+
+  return Object.entries(groups)
+    .map(([type, items]) => {
+      if (items.length === 0) return "";
+      return `
+        <div class="defect-group ${type.toLowerCase()}">
+          <b>${type}</b>
+          ${items.map((item) => `<div class="defect-item">${escapeHtml(item)}</div>`).join("")}
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function vehicleAge(vehicle) {
+  const year = Number.parseInt(vehicle.year, 10);
+  return Number.isFinite(year) ? Math.max(new Date().getFullYear() - year, 0) : null;
+}
+
+function renderVehicle(vehicle) {
+  const mot = getMotStatus(vehicle);
+  const tax = getTaxStatus(vehicle);
+  const mileage = getMileageInsights(vehicle.motHistory);
+  const ulezEstimate = estimateUlez(vehicle);
+  const motHistory = [...(vehicle.motHistory || [])].sort(
+    (a, b) => new Date(b.completedDate) - new Date(a.completedDate)
+  );
+
+  result.innerHTML = `
+    <section class="result-card glass">
+      <div class="result-plate">
+        <div class="gb" aria-hidden="true">GB</div>
+        <div class="result-reg">${escapeHtml(vehicle.registration)}</div>
       </div>
-    `;
-  }).join("");
-}
 
-/* ESTIMATED VALUE */
-function estimateValue(make, model, age, mileage) {
-  let base = 12000;
+      <h2 class="car-title">${escapeHtml(vehicle.make)} ${escapeHtml(vehicle.model)}</h2>
 
-  if (["BMW","Mercedes","Audi","Lexus","Jaguar","Range Rover"].includes(make)) {
-    base += 6000;
-  }
+      <div class="grid">
+        <div class="info-box">
+          <div class="info-title">MOT</div>
+          <div class="info-value">${escapeHtml(mot.date)}</div>
+          <div class="${mot.className}">${escapeHtml(mot.text)}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-title">Tax</div>
+          <div class="info-value">${escapeHtml(tax.date)}</div>
+          <div class="${tax.className}">${escapeHtml(tax.text)}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-title">Engine</div>
+          <div class="info-value">${displayValue(vehicle.engineCapacity, vehicle.engineCapacity ? "cc" : "")}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-title">Fuel</div>
+          <div class="info-value">${displayValue(vehicle.fuelType)}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-title">Average annual mileage</div>
+          <div class="info-value">${mileage.averageAnnualMileage === null ? "N/A" : `${mileage.averageAnnualMileage.toLocaleString()} mi`}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-title">Last recorded mileage</div>
+          <div class="info-value">${mileage.latestMileage === null ? "N/A" : `${mileage.latestMileage.toLocaleString()} mi`}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-title">Vehicle age</div>
+          <div class="info-value">${vehicleAge(vehicle) === null ? "N/A" : `${vehicleAge(vehicle)} yrs`}</div>
+        </div>
+        <div class="info-box calculated-field">
+          <div class="info-title">ULEZ estimate</div>
+          <div class="info-value">${escapeHtml(ulezEstimate)}</div>
+        </div>
+      </div>
 
-  base -= age * 600;
-  base -= (mileage / 10000) * 400;
+      <div class="scroll-hint">← Swipe for more →</div>
 
-  return Math.max(500, Math.round(base));
-}
+      <div class="grid">
+        <div class="info-box"><div class="info-title">Colour</div><div class="info-value">${displayValue(vehicle.colour)}</div></div>
+        <div class="info-box"><div class="info-title">CO₂ emissions</div><div class="info-value">${displayValue(vehicle.co2Emissions)}</div></div>
+        <div class="info-box"><div class="info-title">Euro status</div><div class="info-value">${displayValue(vehicle.euroStatus)}</div></div>
+        <div class="info-box"><div class="info-title">RDE</div><div class="info-value">${displayValue(vehicle.realDrivingEmissions)}</div></div>
+        <div class="info-box"><div class="info-title">Type approval</div><div class="info-value">${displayValue(vehicle.typeApproval)}</div></div>
+        <div class="info-box"><div class="info-title">Wheelplan</div><div class="info-value">${displayValue(vehicle.wheelplan)}</div></div>
+        <div class="info-box"><div class="info-title">Revenue weight</div><div class="info-value">${displayValue(vehicle.revenueWeight, vehicle.revenueWeight ? " kg" : "")}</div></div>
+        <div class="info-box"><div class="info-title">First registered</div><div class="info-value">${displayValue(vehicle.monthOfFirstRegistration)}</div></div>
+        <div class="info-box"><div class="info-title">V5C issued</div><div class="info-value">${escapeHtml(formatDate(vehicle.dateOfLastV5CIssued))}</div></div>
+        <div class="info-box"><div class="info-title">Export marker</div><div class="info-value">${vehicle.exportMarker ? "Yes" : "No"}</div></div>
+      </div>
 
-/* MAIN */
-async function checkVehicle(){
-  const reg = document.getElementById("regInput").value.trim().toUpperCase().replace(/\s/g,"");
-  if(!reg) return alert("Enter registration");
+      <div class="scroll-hint">← Swipe for more →</div>
 
-  document.getElementById("result").innerHTML = `
-    <div class="result-card glass">Loading...</div>
+      <p class="derived-notice">
+        ULEZ and mileage insights are estimates based on the supplied vehicle records. Confirm ULEZ status with Transport for London before travelling.
+      </p>
+
+      ${
+        mileage.warnings.length
+          ? `<div class="mileage-warning">⚠️ ${mileage.warnings.map(escapeHtml).join("<br>")}</div>`
+          : ""
+      }
+
+      <div class="actions-row">
+        <button id="motButton" type="button">Show MOT history</button>
+        <button class="print-only" type="button" id="printButton">Print report</button>
+      </div>
+
+      <div id="motContainer">
+        ${
+          motHistory.length
+            ? motHistory
+                .map(
+                  (test) => `
+                    <div class="mot-card">
+                      <div class="${test.result === "PASSED" ? "pass" : "fail"}">${escapeHtml(test.result)}</div>
+                      <div>${escapeHtml(formatDate(test.completedDate))}</div>
+                      <div>${displayValue(test.mileage, test.mileage ? ` ${escapeHtml(test.mileageUnit || "mi")}` : "")}</div>
+                      ${buildDefects(test.defects)}
+                    </div>
+                  `
+                )
+                .join("")
+            : '<div class="mot-card">No MOT history found</div>'
+        }
+      </div>
+    </section>
   `;
 
-  try{
-    const res = await fetch("/api/check",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ registrationNumber:reg })
+  const motContainer = document.getElementById("motContainer");
+  const motButton = document.getElementById("motButton");
+  motButton.addEventListener("click", () => {
+    const isOpen = motContainer.classList.toggle("is-open");
+    motButton.textContent = isOpen ? "Hide MOT history" : "Show MOT history";
+  });
+  document.getElementById("printButton").addEventListener("click", () => window.print());
+}
+
+async function checkVehicle(event) {
+  event.preventDefault();
+  formError.textContent = "";
+
+  const registration = normalizeRegistration(regInput.value.trim());
+  if (!isValidRegistration(registration)) {
+    formError.textContent = "Enter a valid UK registration number.";
+    regInput.focus();
+    return;
+  }
+
+  searchButton.disabled = true;
+  searchButton.textContent = "CHECKING…";
+  result.innerHTML = '<div class="result-card glass loading-state">Checking official vehicle records…</div>';
+
+  try {
+    const response = await fetch("/api/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ registrationNumber: registration }),
     });
+    const data = await response.json();
 
-    const d = await res.json();
-
-    const firstMot = getFirstMotStatus(d);
-    const mot = firstMot || getStatus(d.motExpiryDate);
-    const tax = getStatus(getTaxDate(d));
-
-    const imageUrl =
-      `https://source.unsplash.com/800x400/?car,${encodeURIComponent(d.make || "car")},${encodeURIComponent(d.model || "vehicle")}`;
-
-    /* MOT HISTORY HANDLING */
-    const motHistoryDisplay = d.motHistory || []; // newest → oldest
-    const motHistory = [...motHistoryDisplay].reverse(); // oldest → newest for mileage logic
-
-    const mileageWarnings = getMileageWarnings(motHistory);
-
-    /* Mileage stats */
-    const mileages = motHistory.map(m => parseInt((m.mileage || "").replace(/[^\d]/g,"")));
-    const lastMileage = mileages[mileages.length - 1] || null;
-    const firstMileage = mileages[0] || null;
-    const yearsBetween = motHistory.length > 1
-      ? (new Date(motHistory[motHistory.length - 1].completedDate) - new Date(motHistory[0].completedDate)) / (1000*60*60*24*365)
-      : 1;
-    const avgMileage = lastMileage && firstMileage ? Math.round((lastMileage - firstMileage) / yearsBetween) : null;
-
-    /* Vehicle age */
-    const vehicleAge = d.monthOfFirstRegistration
-      ? new Date().getFullYear() - new Date(d.monthOfFirstRegistration).getFullYear()
-      : null;
-
-    /* ULEZ */
-    let ulez = "Unknown";
-    if (d.fuelType && d.euroStatus) {
-      const euro = parseInt(d.euroStatus.replace(/\D/g, ""));
-      if (d.fuelType.toLowerCase().includes("petrol") && euro >= 4) ulez = "Yes";
-      if (d.fuelType.toLowerCase().includes("diesel") && euro >= 6) ulez = "Yes";
-      if (ulez === "Unknown") ulez = "No";
+    if (!response.ok) {
+      throw new Error(data.error || "Vehicle check failed. Please try again.");
     }
 
-    /* Estimated value */
-    const estimatedValue = estimateValue(
-      d.make || "",
-      d.model || "",
-      vehicleAge || 0,
-      lastMileage || 0
-    );
-
-    document.getElementById("result").innerHTML = `
-      <div class="result-card glass">
-
-        <img src="${imageUrl}" alt="${d.make || ""} ${d.model || ""}" class="car-image" onerror="this.style.display='none';" />
-
-        <div class="result-plate">
-          <div class="gb">GB</div>
-          <div class="result-reg">${d.registration || reg}</div>
-        </div>
-
-        <div class="car-title">${d.make || ""} ${d.model || ""}</div>
-
-        <div class="grid">
-          <div class="info-box">
-            <div class="info-title">MOT</div>
-            <div class="info-value">${mot.date}</div>
-            <div class="${mot.class}">MOT • ${mot.text}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">TAX</div>
-            <div class="info-value">${tax.date}</div>
-            <div class="${tax.class}">TAX • ${tax.text}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Engine</div>
-            <div class="info-value">${d.engineCapacity || "N/A"}cc</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Fuel</div>
-            <div class="info-value">${d.fuelType || "N/A"}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Avg Annual Mileage</div>
-            <div class="info-value">${avgMileage || "N/A"} mi</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Last Known Mileage</div>
-            <div class="info-value">${lastMileage || "N/A"} mi</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Vehicle Age</div>
-            <div class="info-value">${vehicleAge || "N/A"} yrs</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">ULEZ Compliant</div>
-            <div class="info-value">${ulez}</div>
-          </div>
-
-          <div class="info-box">
-            <div class="info-title">Estimated Value</div>
-            <div class="info-value">£${estimatedValue.toLocaleString()}</div>
-          </div>
-        </div>
-
-        <div class="scroll-hint">← Swipe for more →</div>
-
-        <div class="grid">
-          <div class="info-box"><div class="info-title">CO₂ Emissions</div><div class="info-value">${d.co2Emissions || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Euro Status</div><div class="info-value">${d.euroStatus || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">RDE</div><div class="info-value">${d.realDrivingEmissions || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Type Approval</div><div class="info-value">${d.typeApproval || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Wheelplan</div><div class="info-value">${d.wheelplan || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Revenue Weight</div><div class="info-value">${d.revenueWeight || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">First Registered</div><div class="info-value">${d.monthOfFirstRegistration || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">V5C Issued</div><div class="info-value">${d.dateOfLastV5CIssued || "N/A"}</div></div>
-          <div class="info-box"><div class="info-title">Export Marker</div><div class="info-value">${d.exportMarker ? "Yes" : "No"}</div></div>
-        </div>
-
-        <div class="scroll-hint">← Swipe for more →</div>
-
-        ${
-          mileageWarnings.length
-            ? `<div class="mileage-warning">⚠️ ${mileageWarnings.join("<br>")}</div>`
-            : ""
-        }
-
-        <div class="actions-row">
-          <button id="motBtn" onclick="toggleMot()">Show MOT History</button>
-          <button class="print-only" onclick="window.print()">Print Report</button>
-        </div>
-
-        <div id="motContainer">
-          ${
-            motHistoryDisplay.length
-              ? motHistoryDisplay.map(m=>`
-                <div class="mot-card">
-                  <div class="${m.result === "PASSED" ? "pass" : "fail"}">${m.result}</div>
-                  <div>${m.completedDate ? new Date(m.completedDate).toLocaleDateString("en-GB") : "Unknown"}</div>
-                  <div>${m.mileage || "N/A"}</div>
-                  ${buildDefects(m.defects || [])}
-                </div>
-              `).join("")
-              : `<div class="mot-card">No MOT history found</div>`
-          }
-        </div>
-
+    renderVehicle(data);
+  } catch (error) {
+    result.innerHTML = `
+      <div class="result-card glass error-state">
+        <strong>We couldn't complete that check.</strong>
+        <p>${escapeHtml(error.message || "Please try again shortly.")}</p>
       </div>
     `;
-
-  }catch(e){
-    document.getElementById("result").innerHTML = `
-      <div class="result-card glass">Error: ${e.message}</div>
-    `;
+  } finally {
+    searchButton.disabled = false;
+    searchButton.textContent = "SEARCH";
   }
 }
 
-/* HIDE SCROLL HINT AFTER FIRST SWIPE */
-document.addEventListener("DOMContentLoaded", () => {
-  let hint = document.querySelector(".scroll-hint");
-  let grids = document.querySelectorAll(".grid");
+vehicleForm.addEventListener("submit", checkVehicle);
 
-  grids.forEach(grid => {
-    grid.addEventListener("scroll", () => {
-      if (hint) {
-        hint.style.opacity = "0";
-        hint.style.transition = "0.6s ease";
-        setTimeout(() => hint.style.display = "none", 600);
-      }
-    }, { once: true });
-  });
-});
-
-// OPEN LOGIN MODAL
-document.getElementById("loginBtn")?.addEventListener("click", () => {
-    document.getElementById("loginModal").style.display = "block";
-});
-
-// CLOSE LOGIN MODAL
-document.getElementById("closeModalBtn")?.addEventListener("click", () => {
-    document.getElementById("loginModal").style.display = "none";
-});
-
-// SEND LOGIN LINK (frontend only for now)
-document.getElementById("sendLoginLinkBtn")?.addEventListener("click", async () => {
-    const email = document.getElementById("loginEmail").value;
-    const status = document.getElementById("loginStatus");
-
-    if (!email) {
-        status.textContent = "Please enter an email.";
-        return;
-    }
-
-    status.textContent = "Sending login link...";
-
-    // This will call the backend endpoint we build next
-    const res = await fetch("/auth/send-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // The vehicle checker still works if offline support cannot be registered.
     });
-
-    const data = await res.json();
-    status.textContent = data.message;
-});
+  });
+}
