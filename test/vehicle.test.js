@@ -77,6 +77,26 @@ test("serves health status and rejects unsafe input", async (context) => {
     error: "Enter a valid UK registration number.",
   });
 
+  const signedOutCheckResponse = await fetch(`${baseUrl}/api/check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ registrationNumber: "PA55MGN" }),
+  });
+  assert.equal(signedOutCheckResponse.status, 401);
+  assert.deepEqual(await signedOutCheckResponse.json(), {
+    error: "Sign in to check a vehicle.",
+  });
+
+  const invalidGrantResponse = await fetch(`${baseUrl}/api/grant-credits`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "not-an-email", amount: 2 }),
+  });
+  assert.equal(invalidGrantResponse.status, 400);
+  assert.deepEqual(await invalidGrantResponse.json(), {
+    error: "Enter a complete account email address.",
+  });
+
   const configResponse = await fetch(`${baseUrl}/api/config`);
   assert.equal(configResponse.status, 503);
   assert.deepEqual(await configResponse.json(), {

@@ -4,6 +4,39 @@ const searchButton = document.getElementById("searchButton");
 const formError = document.getElementById("formError");
 const result = document.getElementById("result");
 const loadingOverlay = document.getElementById("loadingOverlay");
+const allowanceText = document.getElementById("allowanceText");
+
+function renderAllowance(allowance) {
+  if (!allowanceText) return;
+
+  if (!allowance) {
+    allowanceText.textContent = "Sign in for 5 free checks each day";
+    return;
+  }
+
+  const free = Number(allowance.freeRemaining) || 0;
+  const credits = Number(allowance.credits) || 0;
+  allowanceText.textContent = `${free} free ${free === 1 ? "check" : "checks"} left today • ${credits} ${credits === 1 ? "credit" : "credits"}`;
+}
+
+async function refreshAllowance() {
+  await window.biismoAuth.ready;
+  if (!window.biismoAuth.getUser()) {
+    renderAllowance(null);
+    return;
+  }
+
+  try {
+    const response = await window.biismoAuth.authorizedFetch("/api/allowance", {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Allowance unavailable.");
+    renderAllowance(data);
+  } catch {
+    allowanceText.textContent = "Daily allowance temporarily unavailable";
+  }
+}
 
 function setLoading(visible) {
   loadingOverlay.classList.toggle("is-visible", visible);
@@ -360,12 +393,19 @@ async function checkVehicle(event) {
     return;
   }
 
+  await window.biismoAuth.ready;
+  if (!window.biismoAuth.getUser()) {
+    formError.textContent = "Sign in to use your 5 free daily vehicle checks.";
+    window.biismoAuth.openAuthDialog("signin");
+    return;
+  }
+
   searchButton.disabled = true;
   searchButton.textContent = "Checking…";
   setLoading(true);
 
   try {
-    const response = await fetch("/api/check", {
+    const response = await window.biismoAuth.authorizedFetch("/api/check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ registrationNumber: registration }),
@@ -373,9 +413,11 @@ async function checkVehicle(event) {
     const data = await response.json();
 
     if (!response.ok) {
+      if (data.allowance) renderAllowance(data.allowance);
       throw new Error(data.error || "Vehicle check failed. Please try again.");
     }
 
+    renderAllowance(data.allowance);
     renderVehicle(data);
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
@@ -393,6 +435,9 @@ async function checkVehicle(event) {
 }
 
 vehicleForm.addEventListener("submit", checkVehicle);
+
+window.biismoAuth.ready.then(refreshAllowance);
+window.addEventListener("biismo-auth-change", refreshAllowance);
 
 const requestedRegistration = new URLSearchParams(window.location.search).get("reg");
 if (requestedRegistration) {

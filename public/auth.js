@@ -121,6 +121,21 @@
     return client;
   }
 
+  async function authorizedFetch(url, options = {}) {
+    const supabaseClient = requireClient();
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) throw error;
+    if (!data.session?.access_token) throw new Error("Sign in to continue.");
+
+    const headers = new Headers(options.headers || {});
+    headers.set("Authorization", `Bearer ${data.session.access_token}`);
+
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  }
+
   async function signIn(email, password) {
     const supabaseClient = requireClient();
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
@@ -303,6 +318,7 @@
     isConfigured: () => Boolean(client),
     openAuthDialog,
     signOut,
+    authorizedFetch,
     saveVehicle,
     listSavedVehicles,
     removeSavedVehicle,

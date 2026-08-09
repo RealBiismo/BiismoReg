@@ -3,6 +3,12 @@ const garageStatus = document.getElementById("garageStatus");
 const vehicleCount = document.getElementById("vehicleCount");
 const accountEmail = document.getElementById("accountEmail");
 const loadingOverlay = document.getElementById("loadingOverlay");
+const freeSearchesRemaining = document.getElementById("freeSearchesRemaining");
+const creditBalance = document.getElementById("creditBalance");
+const adminCreditPanel = document.getElementById("adminCreditPanel");
+const creditGrantForm = document.getElementById("creditGrantForm");
+const creditGrantStatus = document.getElementById("creditGrantStatus");
+const grantCreditsButton = document.getElementById("grantCreditsButton");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -24,6 +30,29 @@ function setLoading(visible, title = "Opening your garage", message = "Loading y
   loadingOverlay.setAttribute("aria-hidden", String(!visible));
   loadingOverlay.querySelector("strong").textContent = title;
   loadingOverlay.querySelector("span").textContent = message;
+}
+
+function renderAllowance(allowance) {
+  const free = Number(allowance.freeRemaining) || 0;
+  const credits = Number(allowance.credits) || 0;
+  freeSearchesRemaining.textContent = String(free);
+  creditBalance.textContent = String(credits);
+  adminCreditPanel.hidden = !allowance.isAdmin;
+}
+
+async function loadAllowance() {
+  try {
+    const response = await window.biismoAuth.authorizedFetch("/api/allowance", {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Your allowance could not be loaded.");
+    renderAllowance(data);
+  } catch (error) {
+    freeSearchesRemaining.textContent = "—";
+    creditBalance.textContent = "—";
+    garageStatus.textContent = error.message || "Your allowance could not be loaded.";
+  }
 }
 
 function renderEmptyGarage() {
@@ -124,6 +153,7 @@ async function loadGarage() {
   }
 
   accountEmail.textContent = user.email || "Signed in securely";
+  loadAllowance();
 
   try {
     const vehicles = await window.biismoAuth.listSavedVehicles();
@@ -135,6 +165,52 @@ async function loadGarage() {
     setLoading(false);
   }
 }
+
+creditGrantForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  creditGrantStatus.textContent = "";
+  creditGrantStatus.className = "credit-grant-status";
+
+  const emailInput = document.getElementById("creditEmail");
+  const amountInput = document.getElementById("creditAmount");
+  const email = emailInput.value.trim().toLowerCase();
+  const amount = Number(amountInput.value);
+
+  if (!emailInput.validity.valid || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    creditGrantStatus.textContent = "Enter a complete account email address.";
+    creditGrantStatus.classList.add("is-error");
+    return;
+  }
+  if (!Number.isInteger(amount) || amount < 1 || amount > 100000) {
+    creditGrantStatus.textContent = "Enter a whole number between 1 and 100,000.";
+    creditGrantStatus.classList.add("is-error");
+    return;
+  }
+
+  grantCreditsButton.disabled = true;
+  grantCreditsButton.textContent = "Sending…";
+
+  try {
+    const response = await window.biismoAuth.authorizedFetch("/api/grant-credits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, amount }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Credits could not be sent.");
+
+    creditGrantStatus.textContent = `${data.granted} credits sent to ${data.email}. Their balance is now ${data.credits}.`;
+    creditGrantStatus.classList.add("is-success");
+    creditGrantForm.reset();
+    await loadAllowance();
+  } catch (error) {
+    creditGrantStatus.textContent = error.message || "Credits could not be sent.";
+    creditGrantStatus.classList.add("is-error");
+  } finally {
+    grantCreditsButton.disabled = false;
+    grantCreditsButton.textContent = "Send credits";
+  }
+});
 
 document.getElementById("garageSearchForm").addEventListener("submit", (event) => {
   event.preventDefault();
