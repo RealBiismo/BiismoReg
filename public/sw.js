@@ -1,14 +1,20 @@
-const CACHE_NAME = "biismo-reg-v3";
+const CACHE_NAME = "biismo-reg-v4";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/style.css",
+  "/classic.css",
+  "/pwa-install.css",
   "/script.js",
   "/auth.js",
+  "/pwa.js",
   "/account.html",
   "/account.js",
   "/manifest.json",
   "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
