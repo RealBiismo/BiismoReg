@@ -3,6 +3,13 @@ const regInput = document.getElementById("regInput");
 const searchButton = document.getElementById("searchButton");
 const formError = document.getElementById("formError");
 const result = document.getElementById("result");
+const loadingOverlay = document.getElementById("loadingOverlay");
+
+function setLoading(visible) {
+  loadingOverlay.classList.toggle("is-visible", visible);
+  loadingOverlay.setAttribute("aria-hidden", String(!visible));
+  document.body.classList.toggle("is-loading", visible);
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -210,15 +217,19 @@ function renderVehicle(vehicle) {
   );
 
   result.innerHTML = `
-    <section class="result-card glass">
-      <div class="result-plate">
-        <div class="gb" aria-hidden="true">GB</div>
-        <div class="result-reg">${escapeHtml(vehicle.registration)}</div>
+    <section class="result-card">
+      <div class="result-heading">
+        <div>
+          <span class="eyebrow">VEHICLE REPORT</span>
+          <h2 class="car-title">${escapeHtml(vehicle.make)} ${escapeHtml(vehicle.model)}</h2>
+        </div>
+        <div class="result-plate">
+          <div class="gb" aria-hidden="true">GB</div>
+          <div class="result-reg">${escapeHtml(vehicle.registration)}</div>
+        </div>
       </div>
 
-      <h2 class="car-title">${escapeHtml(vehicle.make)} ${escapeHtml(vehicle.model)}</h2>
-
-      <div class="grid">
+      <div class="vehicle-grid primary-grid">
         <div class="info-box">
           <div class="info-title">MOT</div>
           <div class="info-value">${escapeHtml(mot.date)}</div>
@@ -255,9 +266,7 @@ function renderVehicle(vehicle) {
         </div>
       </div>
 
-      <div class="scroll-hint">← Swipe for more →</div>
-
-      <div class="grid">
+      <div class="vehicle-grid detail-grid">
         <div class="info-box"><div class="info-title">Colour</div><div class="info-value">${displayValue(vehicle.colour)}</div></div>
         <div class="info-box"><div class="info-title">CO₂ emissions</div><div class="info-value">${displayValue(vehicle.co2Emissions)}</div></div>
         <div class="info-box"><div class="info-title">Euro status</div><div class="info-value">${displayValue(vehicle.euroStatus)}</div></div>
@@ -270,8 +279,6 @@ function renderVehicle(vehicle) {
         <div class="info-box"><div class="info-title">Export marker</div><div class="info-value">${vehicle.exportMarker ? "Yes" : "No"}</div></div>
       </div>
 
-      <div class="scroll-hint">← Swipe for more →</div>
-
       <p class="derived-notice">
         ULEZ and mileage insights are estimates based on the supplied vehicle records. Confirm ULEZ status with Transport for London before travelling.
       </p>
@@ -283,8 +290,9 @@ function renderVehicle(vehicle) {
       }
 
       <div class="actions-row">
-        <button id="motButton" type="button">Show MOT history</button>
-        <button class="print-only" type="button" id="printButton">Print report</button>
+        <button id="saveVehicleButton" class="primary-button" type="button">Save to garage</button>
+        <button id="motButton" class="secondary-button" type="button">Show MOT history</button>
+        <button class="secondary-button print-only" type="button" id="printButton">Print report</button>
       </div>
 
       <div id="motContainer">
@@ -315,6 +323,30 @@ function renderVehicle(vehicle) {
     motButton.textContent = isOpen ? "Hide MOT history" : "Show MOT history";
   });
   document.getElementById("printButton").addEventListener("click", () => window.print());
+
+  const saveButton = document.getElementById("saveVehicleButton");
+  window.biismoAuth.ready.then(() => {
+    if (!window.biismoAuth.getUser()) saveButton.textContent = "Sign in to save";
+  });
+  saveButton.addEventListener("click", async () => {
+    await window.biismoAuth.ready;
+    if (!window.biismoAuth.getUser()) {
+      window.biismoAuth.openAuthDialog("signin");
+      return;
+    }
+
+    saveButton.disabled = true;
+    saveButton.textContent = "Saving…";
+    try {
+      await window.biismoAuth.saveVehicle(vehicle);
+      saveButton.textContent = "Saved to garage ✓";
+      saveButton.classList.add("is-saved");
+    } catch (error) {
+      saveButton.textContent = "Try saving again";
+      formError.textContent = error.message || "The vehicle could not be saved.";
+      saveButton.disabled = false;
+    }
+  });
 }
 
 async function checkVehicle(event) {
@@ -329,8 +361,8 @@ async function checkVehicle(event) {
   }
 
   searchButton.disabled = true;
-  searchButton.textContent = "CHECKING…";
-  result.innerHTML = '<div class="result-card glass loading-state">Checking official vehicle records…</div>';
+  searchButton.textContent = "Checking…";
+  setLoading(true);
 
   try {
     const response = await fetch("/api/check", {
@@ -345,20 +377,28 @@ async function checkVehicle(event) {
     }
 
     renderVehicle(data);
+    result.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     result.innerHTML = `
-      <div class="result-card glass error-state">
+      <div class="result-card error-state">
         <strong>We couldn't complete that check.</strong>
         <p>${escapeHtml(error.message || "Please try again shortly.")}</p>
       </div>
     `;
   } finally {
+    setLoading(false);
     searchButton.disabled = false;
-    searchButton.textContent = "SEARCH";
+    searchButton.textContent = "Check vehicle →";
   }
 }
 
 vehicleForm.addEventListener("submit", checkVehicle);
+
+const requestedRegistration = new URLSearchParams(window.location.search).get("reg");
+if (requestedRegistration) {
+  regInput.value = requestedRegistration;
+  vehicleForm.requestSubmit();
+}
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
