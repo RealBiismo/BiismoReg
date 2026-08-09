@@ -820,6 +820,33 @@ main {
   padding-bottom: 90px;
 }
 
+.account-menu {
+  width: fit-content;
+  margin: 28px auto 0;
+  padding: 5px;
+  display: flex;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.account-menu-button {
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.account-menu-button.is-active {
+  background: var(--blue);
+  color: #fff;
+}
+
 .account-hero {
   padding: 72px 0 56px;
   display: grid;
@@ -859,8 +886,7 @@ main {
   gap: 14px;
 }
 
-.credit-card,
-.admin-credit-panel {
+.credit-card {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.035);
 }
@@ -884,77 +910,150 @@ main {
   font-size: 34px;
 }
 
-.admin-credit-panel {
-  margin-top: 20px;
-  padding: 22px;
-  border-color: rgba(74, 222, 128, 0.24);
-  border-radius: 20px;
+.admin-hero {
+  padding: 64px 0 46px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
 }
 
-.admin-credit-panel h3 {
-  margin-top: 5px;
-  font-size: 22px;
+.admin-hero h1 {
+  margin-top: 8px;
+  font-size: clamp(46px, 6vw, 72px);
 }
 
-.admin-credit-panel p {
-  margin-top: 7px;
+.admin-hero p {
+  margin-top: 12px;
   color: var(--muted);
-  font-size: 13px;
 }
 
-.credit-grant-form {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) 150px 170px;
-  grid-template-areas:
-    "email-label amount-label button-space"
-    "email amount button";
-  gap: 7px 10px;
-  align-items: end;
+.admin-console {
+  padding-top: 48px;
 }
 
-.credit-grant-form label {
+.admin-user-search {
+  margin-top: 22px;
+}
+
+.admin-user-search > label,
+.admin-credit-controls > label {
+  display: block;
+  margin-bottom: 7px;
   color: #b7bfcd;
   font-size: 12px;
   font-weight: 750;
 }
 
-.credit-grant-form label[for="creditEmail"] { grid-area: email-label; }
-.credit-grant-form label[for="creditAmount"] { grid-area: amount-label; }
-#creditEmail { grid-area: email; }
-#creditAmount { grid-area: amount; }
-#grantCreditsButton { grid-area: button; }
+.admin-user-search > div {
+  display: grid;
+  grid-template-columns: 1fr 170px;
+  gap: 10px;
+}
 
-.credit-grant-form input {
+.admin-user-search input,
+.admin-credit-controls input {
   width: 100%;
   min-height: 52px;
   padding: 0 15px;
   border: 1px solid var(--line-strong);
   border-radius: 12px;
   outline: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
 }
 
-.credit-grant-form input:focus {
+.admin-user-search input:focus,
+.admin-credit-controls input:focus {
   border-color: var(--blue);
 }
 
-.credit-grant-form .primary-button {
-  min-width: 0;
+.admin-user-search .primary-button {
   margin: 0;
   justify-content: center;
 }
 
-.credit-grant-status {
-  min-height: 20px;
+.admin-status {
+  min-height: 22px;
   margin-top: 12px;
   color: var(--muted);
   font-size: 13px;
 }
 
-.credit-grant-status.is-success { color: var(--green); }
-.credit-grant-status.is-error { color: #ff9aa4; }
+.admin-status.is-success { color: var(--green); }
+.admin-status.is-error { color: #ff9aa4; }
+
+.admin-user-result {
+  margin-top: 18px;
+  padding: 24px;
+  border: 1px solid rgba(79, 124, 255, 0.25);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.admin-user-heading span,
+.admin-user-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-user-heading strong {
+  display: block;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 22px;
+}
+
+.admin-user-stats {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-user-stats article {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.admin-user-stats strong {
+  display: block;
+  margin-top: 7px;
+  font-size: 29px;
+}
+
+.admin-credit-controls {
+  margin-top: 22px;
+}
+
+.admin-action-buttons {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-action-buttons .primary-button,
+.admin-action-buttons .secondary-button,
+.danger-button {
+  width: 100%;
+  min-height: 50px;
+  margin: 0;
+  justify-content: center;
+}
+
+.danger-button {
+  border: 1px solid rgba(248, 113, 113, 0.34);
+  border-radius: 14px;
+  background: rgba(248, 113, 113, 0.1);
+  color: #ffb0b0;
+  font-weight: 800;
+  cursor: pointer;
+}
 
 .garage-search {
   display: grid;
@@ -1306,14 +1405,22 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .credit-grant-form {
+  .admin-hero {
+    padding: 48px 0 38px;
+  }
+
+  .admin-console .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-user-search > div,
+  .admin-action-buttons {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "email-label"
-      "email"
-      "amount-label"
-      "amount"
-      "button";
+  }
+
+  .admin-user-stats {
+    grid-template-columns: 1fr;
   }
 
   .garage-search {

@@ -29,69 +29,121 @@
   </header>
 
   <main class="account-main">
-    <section class="account-hero">
-      <div>
-        <span class="eyebrow">PRIVATE GARAGE</span>
-        <h1>Your saved vehicles.</h1>
-        <p id="accountEmail">Loading your account…</p>
-      </div>
-      <form id="garageSearchForm" class="garage-search">
-        <label class="sr-only" for="garageRegInput">Search another registration</label>
-        <input id="garageRegInput" type="text" maxlength="8" placeholder="Enter another reg" autocomplete="off">
-        <button class="primary-button" type="submit">Check vehicle</button>
-      </form>
-    </section>
+    <nav id="accountMenu" class="account-menu" aria-label="Account sections" hidden>
+      <button id="garageMenuButton" class="account-menu-button is-active" type="button" aria-controls="garageView" aria-selected="true">Garage</button>
+      <button id="adminMenuButton" class="account-menu-button" type="button" aria-controls="adminView" aria-selected="false">Admin menu</button>
+    </nav>
 
-    <section class="credits-section" aria-labelledby="creditsTitle">
-      <div class="section-heading">
+    <section id="garageView" class="account-view" aria-labelledby="garageMenuButton">
+      <section class="account-hero">
         <div>
-          <span class="eyebrow">SEARCH ACCESS</span>
-          <h2 id="creditsTitle">Daily checks &amp; credits</h2>
+          <span class="eyebrow">PRIVATE GARAGE</span>
+          <h1>Your saved vehicles.</h1>
+          <p id="accountEmail">Loading your account…</p>
         </div>
-        <span class="credit-rate">2 credits = 1 extra check</span>
-      </div>
-
-      <div class="credit-summary">
-        <article class="credit-card">
-          <span>Free checks remaining today</span>
-          <strong id="freeSearchesRemaining">—</strong>
-          <small>Resets at midnight UK time</small>
-        </article>
-        <article class="credit-card">
-          <span>Credit balance</span>
-          <strong id="creditBalance">—</strong>
-          <small>Extra checks cost 2 credits</small>
-        </article>
-      </div>
-
-      <section id="adminCreditPanel" class="admin-credit-panel" aria-labelledby="adminCreditTitle" hidden>
-        <div>
-          <span class="eyebrow">ADMIN ONLY</span>
-          <h3 id="adminCreditTitle">Send credits to a user</h3>
-          <p>Enter the verified email address used for their BIISMO REG account.</p>
-        </div>
-        <form id="creditGrantForm" class="credit-grant-form" novalidate>
-          <label for="creditEmail">User email</label>
-          <input id="creditEmail" type="email" autocomplete="off" placeholder="user@example.com" required>
-          <label for="creditAmount">Credits</label>
-          <input id="creditAmount" type="number" min="1" max="100000" step="1" placeholder="10" required>
-          <button id="grantCreditsButton" class="primary-button" type="submit">Send credits</button>
+        <form id="garageSearchForm" class="garage-search">
+          <label class="sr-only" for="garageRegInput">Search another registration</label>
+          <input id="garageRegInput" type="text" maxlength="8" placeholder="Enter another reg" autocomplete="off">
+          <button class="primary-button" type="submit">Check vehicle</button>
         </form>
-        <p id="creditGrantStatus" class="credit-grant-status" role="status"></p>
+      </section>
+
+      <section class="credits-section" aria-labelledby="creditsTitle">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">SEARCH ACCESS</span>
+            <h2 id="creditsTitle">Daily checks &amp; credits</h2>
+          </div>
+          <span class="credit-rate">2 credits = 1 extra check</span>
+        </div>
+
+        <div class="credit-summary">
+          <article class="credit-card">
+            <span>Free checks remaining today</span>
+            <strong id="freeSearchesRemaining">—</strong>
+            <small>Resets at midnight UK time</small>
+          </article>
+          <article class="credit-card">
+            <span>Credit balance</span>
+            <strong id="creditBalance">—</strong>
+            <small>Extra checks cost 2 credits</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="garage-section" aria-labelledby="garageTitle">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">COLLECTION</span>
+            <h2 id="garageTitle">Saved vehicles</h2>
+          </div>
+          <span id="vehicleCount" class="count-badge">0 vehicles</span>
+        </div>
+
+        <p id="garageStatus" class="garage-status" role="status"></p>
+        <div id="garageGrid" class="garage-grid"></div>
       </section>
     </section>
 
-    <section class="garage-section" aria-labelledby="garageTitle">
-      <div class="section-heading">
-        <div>
-          <span class="eyebrow">COLLECTION</span>
-          <h2 id="garageTitle">Saved vehicles</h2>
-        </div>
-        <span id="vehicleCount" class="count-badge">0 vehicles</span>
-      </div>
+    <section id="adminView" class="account-view" aria-labelledby="adminMenuButton" hidden>
+      <section class="admin-hero">
+        <span class="eyebrow">ADMIN ONLY</span>
+        <h1>Admin menu.</h1>
+        <p>Find a verified user by email, then view or manage their credits.</p>
+      </section>
 
-      <p id="garageStatus" class="garage-status" role="status"></p>
-      <div id="garageGrid" class="garage-grid"></div>
+      <section class="admin-console" aria-labelledby="adminUserSearchTitle">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">USER LOOKUP</span>
+            <h2 id="adminUserSearchTitle">Search user credits</h2>
+          </div>
+          <span class="credit-rate">All changes are audited</span>
+        </div>
+
+        <form id="adminUserSearchForm" class="admin-user-search" novalidate>
+          <label for="adminUserEmail">Verified account email</label>
+          <div>
+            <input id="adminUserEmail" type="email" autocomplete="off" placeholder="user@example.com" required>
+            <button id="adminUserSearchButton" class="primary-button" type="submit">Search user</button>
+          </div>
+        </form>
+        <p id="adminStatus" class="admin-status" role="status"></p>
+
+        <section id="adminUserResult" class="admin-user-result" aria-live="polite" hidden>
+          <div class="admin-user-heading">
+            <div>
+              <span>Selected account</span>
+              <strong id="selectedUserEmail">—</strong>
+            </div>
+          </div>
+
+          <div class="admin-user-stats">
+            <article>
+              <span>Credits</span>
+              <strong id="selectedUserCredits">0</strong>
+            </article>
+            <article>
+              <span>Free checks left</span>
+              <strong id="selectedUserFreeRemaining">5</strong>
+            </article>
+            <article>
+              <span>Checks used today</span>
+              <strong id="selectedUserFreeUsed">0</strong>
+            </article>
+          </div>
+
+          <div class="admin-credit-controls">
+            <label for="adminCreditAmount">Credit amount</label>
+            <input id="adminCreditAmount" type="number" min="0" max="100000" step="1" placeholder="10">
+            <div class="admin-action-buttons">
+              <button id="adminAddCreditsButton" class="primary-button" type="button">Add credits</button>
+              <button id="adminSetCreditsButton" class="secondary-button" type="button">Set exact balance</button>
+              <button id="adminResetCreditsButton" class="danger-button" type="button">Reset to 0</button>
+            </div>
+          </div>
+        </section>
+      </section>
     </section>
   </main>
 
