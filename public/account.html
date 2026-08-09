@@ -17,6 +17,13 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body class="account-page">
+  <div id="appSplash" class="app-splash" role="status" aria-label="Loading BIISMO REG">
+    <div class="app-splash-logo">
+      <img src="/icon-512.png" alt="">
+    </div>
+    <p>MOT <span>•</span> TAX <span>•</span> HISTORY</p>
+  </div>
+
   <header class="site-header account-header">
     <a class="back-link" href="/" aria-label="Back to vehicle checker">
       <span aria-hidden="true">←</span>
@@ -230,6 +237,7 @@
     </div>
   </div>
 
+  <script src="splash.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js" defer></script>
   <script src="auth.js" defer></script>
   <script src="pwa.js" defer></script>
