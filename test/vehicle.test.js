@@ -117,6 +117,38 @@ test("serves health status and rejects unsafe input", async (context) => {
     error: "Enter a credit balance between 0 and 100,000.",
   });
 
+  const invalidPushResponse = await fetch(`${baseUrl}/api/push/subscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription: { endpoint: "javascript:bad" } }),
+  });
+  assert.equal(invalidPushResponse.status, 400);
+  assert.deepEqual(await invalidPushResponse.json(), {
+    error: "That notification subscription is invalid.",
+  });
+
+  const invalidPushDeleteResponse = await fetch(`${baseUrl}/api/push/subscribe`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint: "http://not-secure.example" }),
+  });
+  assert.equal(invalidPushDeleteResponse.status, 400);
+  assert.deepEqual(await invalidPushDeleteResponse.json(), {
+    error: "That notification subscription is invalid.",
+  });
+
+  const pushKeyResponse = await fetch(`${baseUrl}/api/push/public-key`);
+  assert.equal(pushKeyResponse.status, 503);
+  assert.deepEqual(await pushKeyResponse.json(), {
+    error: "Vehicle reminders are not configured yet.",
+  });
+
+  const cronResponse = await fetch(`${baseUrl}/api/cron/reminders`, { method: "POST" });
+  assert.equal(cronResponse.status, 503);
+  assert.deepEqual(await cronResponse.json(), {
+    error: "Vehicle reminders are not configured yet.",
+  });
+
   const configResponse = await fetch(`${baseUrl}/api/config`);
   assert.equal(configResponse.status, 503);
   assert.deepEqual(await configResponse.json(), {

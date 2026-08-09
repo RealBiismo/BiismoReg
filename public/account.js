@@ -19,6 +19,8 @@ const adminCreditAmount = document.getElementById("adminCreditAmount");
 const adminAddCreditsButton = document.getElementById("adminAddCreditsButton");
 const adminSetCreditsButton = document.getElementById("adminSetCreditsButton");
 const adminResetCreditsButton = document.getElementById("adminResetCreditsButton");
+const reminderStatus = document.getElementById("reminderStatus");
+const reminderToggleButton = document.getElementById("reminderToggleButton");
 
 let hasAdminAccess = false;
 let selectedAdminEmail = null;
@@ -36,6 +38,42 @@ function formatDate(value) {
   if (!value) return "Not available";
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime()) ? "Not available" : date.toLocaleDateString("en-GB");
+}
+
+function londonTodayUtc() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day));
+}
+
+function expiryDetails(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) {
+    return { label: "Date unavailable", tone: "neutral" };
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const dueUtc = Date.UTC(year, month - 1, day);
+  const days = Math.round((dueUtc - londonTodayUtc()) / 86400000);
+
+  if (days < 0) {
+    const elapsed = Math.abs(days);
+    return { label: `Expired ${elapsed} ${elapsed === 1 ? "day" : "days"} ago`, tone: "bad" };
+  }
+  if (days === 0) return { label: "Due today", tone: "bad" };
+  if (days === 1) return { label: "Due tomorrow", tone: "bad" };
+  if (days <= 7) return { label: `Due in ${days} days`, tone: "bad" };
+  if (days <= 30) return { label: `Due in ${days} days`, tone: "warning" };
+  return { label: `Due in ${days} days`, tone: "good" };
+}
+
+function expiryBadge(value) {
+  const details = expiryDetails(value);
+  return `<span class="expiry-badge is-${details.tone}">${escapeHtml(details.label)}</span>`;
 }
 
 function setLoading(visible, title = "Opening your garage", message = "Loading your securely saved vehicles…") {
@@ -123,11 +161,13 @@ function renderVehicles(vehicles) {
             <div>
               <span>Tax</span>
               <strong class="${statusClass(vehicle.tax_status)}">${escapeHtml(vehicle.tax_status || "Unknown")}</strong>
+              ${expiryBadge(vehicle.tax_due_date)}
               <small>${escapeHtml(formatDate(vehicle.tax_due_date))}</small>
             </div>
             <div>
               <span>MOT</span>
               <strong class="${statusClass(vehicle.mot_status)}">${escapeHtml(vehicle.mot_status || "See latest check")}</strong>
+              ${expiryBadge(vehicle.mot_expiry_date)}
               <small>${escapeHtml(formatDate(vehicle.mot_expiry_date))}</small>
             </div>
           </div>
@@ -161,6 +201,112 @@ function renderVehicles(vehicles) {
   });
 }
 
+function setReminderStatus(message, type = "") {
+  reminderStatus.textContent = message;
+  reminderStatus.className = `reminder-status ${type ? `is-${type}` : ""}`.trim();
+}
+
+function base64UrlToUint8Array(value) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replaceAll("-", "+").replaceAll("_", "/");
+  const decoded = window.atob(base64);
+  return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+}
+
+async function savePushSubscription(subscription) {
+  const response = await window.biismoAuth.authorizedFetch("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription: subscription.toJSON() }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Reminders could not be enabled.");
+  return data;
+}
+
+async function initializeReminders() {
+  const iosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const installed = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    setReminderStatus("Push reminders are not supported by this browser.", "error");
+    return;
+  }
+  if (iosDevice && !installed) {
+    setReminderStatus("On iPhone, add BIISMO REG to your Home Screen before enabling reminders.");
+    return;
+  }
+  if (Notification.permission === "denied") {
+    setReminderStatus("Notifications are blocked. Allow them in your device settings to enable reminders.", "error");
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      await savePushSubscription(subscription);
+      reminderToggleButton.textContent = "Disable reminders";
+      reminderToggleButton.dataset.enabled = "true";
+      setReminderStatus("Reminders are enabled on this device.", "success");
+    } else {
+      reminderToggleButton.textContent = "Enable reminders";
+      reminderToggleButton.dataset.enabled = "false";
+      setReminderStatus("Reminders are currently off on this device.");
+    }
+    reminderToggleButton.disabled = false;
+  } catch (error) {
+    setReminderStatus(error.message || "Reminder settings could not be loaded.", "error");
+  }
+}
+
+reminderToggleButton.addEventListener("click", async () => {
+  reminderToggleButton.disabled = true;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+
+    if (existing) {
+      const response = await window.biismoAuth.authorizedFetch("/api/push/subscribe", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: existing.endpoint }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Reminders could not be disabled.");
+      await existing.unsubscribe();
+      reminderToggleButton.textContent = "Enable reminders";
+      reminderToggleButton.dataset.enabled = "false";
+      setReminderStatus("Reminders are off on this device.", "success");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      throw new Error("Notification permission was not granted.");
+    }
+
+    const keyResponse = await fetch("/api/push/public-key", { cache: "no-store" });
+    const keyData = await keyResponse.json();
+    if (!keyResponse.ok || !keyData.publicKey) {
+      throw new Error(keyData.error || "Vehicle reminders are not available yet.");
+    }
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(keyData.publicKey),
+    });
+    await savePushSubscription(subscription);
+    reminderToggleButton.textContent = "Disable reminders";
+    reminderToggleButton.dataset.enabled = "true";
+    setReminderStatus("Reminders are enabled on this device.", "success");
+  } catch (error) {
+    setReminderStatus(error.message || "Reminder settings could not be changed.", "error");
+  } finally {
+    reminderToggleButton.disabled = false;
+  }
+});
+
 async function loadGarage() {
   await window.biismoAuth.ready;
 
@@ -180,6 +326,7 @@ async function loadGarage() {
 
   accountEmail.textContent = user.email || "Signed in securely";
   loadAllowance();
+  initializeReminders();
 
   try {
     const vehicles = await window.biismoAuth.listSavedVehicles();

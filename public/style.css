@@ -910,6 +910,46 @@ main {
   font-size: 34px;
 }
 
+.reminder-section {
+  padding: 34px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  border-bottom: 1px solid var(--line);
+}
+
+.reminder-copy {
+  max-width: 670px;
+}
+
+.reminder-copy h2 {
+  font-size: 28px;
+  letter-spacing: -0.035em;
+}
+
+.reminder-copy > p:not(.reminder-status) {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.reminder-status {
+  min-height: 20px;
+  margin-top: 10px;
+  color: #b9c8f5;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.reminder-status.is-success { color: var(--green); }
+.reminder-status.is-error { color: #ff9aa4; }
+
+.reminder-toggle {
+  min-width: 180px;
+  flex: 0 0 auto;
+}
+
 .admin-hero {
   padding: 64px 0 46px;
   border-bottom: 1px solid var(--line);
@@ -1183,6 +1223,22 @@ main {
   font-size: 13px;
 }
 
+.garage-status-grid .expiry-badge {
+  width: fit-content;
+  margin: 7px 0 5px;
+  padding: 4px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.expiry-badge.is-good { color: var(--green); }
+.expiry-badge.is-warning { color: var(--amber); }
+.expiry-badge.is-bad { color: var(--red); }
+.expiry-badge.is-neutral { color: var(--muted); }
+
 .card-action {
   width: 100%;
   min-height: 46px;
@@ -1403,6 +1459,16 @@ main {
 
   .credit-summary {
     grid-template-columns: 1fr;
+  }
+
+  .reminder-section {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .reminder-toggle {
+    width: 100%;
   }
 
   .admin-hero {
