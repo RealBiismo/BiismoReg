@@ -25,7 +25,12 @@
     <a class="brand compact-brand" href="/" aria-label="BIISMO REG home">
       <img src="https://files.catbox.moe/tvw8fb.png" alt="BIISMO REG">
     </a>
-    <button id="signOutButton" class="header-action" type="button">Sign out</button>
+    <div class="account-header-actions">
+      <button id="notificationBellButton" class="notification-bell" type="button" aria-label="Open notifications" aria-controls="notificationDrawer" aria-expanded="false">
+        <span aria-hidden="true">♢</span><strong id="notificationBadge" hidden>0</strong>
+      </button>
+      <button id="signOutButton" class="header-action" type="button">Sign out</button>
+    </div>
   </header>
 
   <main class="account-main">
@@ -179,9 +184,30 @@
           <button id="adminSendNotificationButton" class="primary-button" type="button" disabled>Send to all opted-in accounts</button>
           <p id="adminNotificationStatus" class="admin-status" role="status"></p>
         </section>
+
+        <section class="admin-notification-controls" aria-labelledby="broadcastHistoryTitle">
+          <div class="notification-list-heading">
+            <div><span class="eyebrow">AUDIT LOG</span><h2 id="broadcastHistoryTitle">Broadcast history</h2></div>
+            <button id="refreshBroadcastHistoryButton" class="secondary-button compact-button" type="button">Refresh</button>
+          </div>
+          <div id="broadcastHistoryList" class="broadcast-history-list"><p class="notification-empty">No broadcasts yet.</p></div>
+        </section>
       </section>
     </section>
   </main>
+
+  <div id="notificationDrawer" class="notification-drawer" hidden>
+    <button id="notificationDrawerBackdrop" class="notification-drawer-backdrop" type="button" aria-label="Close notifications"></button>
+    <aside class="notification-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="notificationDrawerTitle">
+      <div class="notification-list-heading">
+        <div><span class="eyebrow">YOUR UPDATES</span><h2 id="notificationDrawerTitle">Notifications</h2></div>
+        <button id="closeNotificationDrawerButton" class="drawer-close" type="button" aria-label="Close notifications">×</button>
+      </div>
+      <button id="markAllNotificationsReadButton" class="notification-mark-all" type="button">Mark all as read</button>
+      <p id="notificationDrawerStatus" class="admin-status" role="status"></p>
+      <div id="notificationList" class="notification-list"></div>
+    </aside>
+  </div>
 
   <div id="notificationConsentModal" class="notification-consent" role="dialog" aria-modal="true" aria-labelledby="notificationConsentTitle" hidden>
     <div class="notification-consent-card">

@@ -207,10 +207,19 @@ test("serves health status and rejects unsafe input", async (context) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title: "BIISMO REG", message: "Test broadcast" }),
   });
-  assert.equal(unconfiguredBroadcastResponse.status, 503);
+  assert.equal(unconfiguredBroadcastResponse.status, 401);
   assert.deepEqual(await unconfiguredBroadcastResponse.json(), {
-    error: "Push notifications are not configured yet.",
+    error: "Sign in to check a vehicle.",
   });
+
+  const signedOutNotificationsResponse = await fetch(`${baseUrl}/api/notifications`);
+  assert.equal(signedOutNotificationsResponse.status, 401);
+
+  const invalidNotificationResponse = await fetch(`${baseUrl}/api/notifications/not-a-uuid`, { method: "DELETE" });
+  assert.equal(invalidNotificationResponse.status, 400);
+
+  const privateExportResponse = await fetch(`${baseUrl}/api/account-export/not-the-secret.csv`);
+  assert.equal(privateExportResponse.status, 404);
 
   const configResponse = await fetch(`${baseUrl}/api/config`);
   assert.equal(configResponse.status, 503);

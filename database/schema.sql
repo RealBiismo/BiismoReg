@@ -140,6 +140,19 @@ create table if not exists private.admin_push_notifications (
   completed_at timestamptz
 );
 
+create table if not exists private.user_notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  notification_type text not null check (notification_type in ('broadcast', 'mot', 'tax')),
+  source_key text not null,
+  title text not null check (length(title) between 1 and 100),
+  message text not null check (length(message) between 1 and 500),
+  url text not null default '/account.html' check (url like '/%'),
+  created_at timestamptz not null default now(),
+  read_at timestamptz,
+  unique (user_id, source_key)
+);
+
 alter table private.admin_push_notifications
   alter column target_user_id drop not null;
 
@@ -155,6 +168,7 @@ alter table private.push_subscriptions enable row level security;
 alter table private.push_reminder_deliveries enable row level security;
 alter table private.vehicle_reminder_preferences enable row level security;
 alter table private.admin_push_notifications enable row level security;
+alter table private.user_notifications enable row level security;
 
 revoke all on all tables in schema private from public, anon, authenticated;
 revoke all on all sequences in schema private from public, anon, authenticated;
@@ -187,6 +201,13 @@ on private.admin_push_notifications (admin_id);
 
 create index if not exists admin_push_notifications_target_user_id_idx
 on private.admin_push_notifications (target_user_id);
+
+create index if not exists user_notifications_user_created_idx
+on private.user_notifications (user_id, created_at desc);
+
+create index if not exists user_notifications_unread_idx
+on private.user_notifications (user_id)
+where read_at is null;
 
 -- Assign administrators only through a trusted database migration after their
 -- verified auth.users UUID is known. Never use browser-editable user metadata.
@@ -725,6 +746,7 @@ declare
   v_admin_id uuid := auth.uid();
   v_accounts integer;
   v_devices integer;
+  v_recipients integer;
 begin
   if v_admin_id is null or not exists (
     select 1 from private.app_admins where user_id = v_admin_id
@@ -737,9 +759,13 @@ begin
   from private.push_subscriptions
   where enabled;
 
+  select count(*)::integer into v_recipients
+  from auth.users where email_confirmed_at is not null;
+
   return jsonb_build_object(
     'accounts', v_accounts,
-    'devices', v_devices
+    'devices', v_devices,
+    'recipients', v_recipients
   );
 end;
 $$;
@@ -760,6 +786,7 @@ declare
   v_notification_id uuid;
   v_subscriptions jsonb;
   v_account_count integer;
+  v_recipient_count integer;
   v_device_count integer;
 begin
   if v_admin_id is null or not exists (
@@ -791,6 +818,11 @@ begin
 
   v_device_count := jsonb_array_length(v_subscriptions);
 
+  select count(*)::integer
+  into v_recipient_count
+  from auth.users
+  where email_confirmed_at is not null;
+
   insert into private.admin_push_notifications (
     admin_id,
     target_user_id,
@@ -804,18 +836,33 @@ begin
     v_admin_id,
     null,
     true,
-    v_account_count,
+    v_recipient_count,
     v_title,
     v_message,
     v_device_count
   )
   returning id into v_notification_id;
 
+  insert into private.user_notifications (
+    user_id, notification_type, source_key, title, message, url
+  )
+  select
+    id,
+    'broadcast',
+    'broadcast:' || v_notification_id::text,
+    v_title,
+    v_message,
+    '/account.html?notifications=1'
+  from auth.users
+  where email_confirmed_at is not null
+  on conflict (user_id, source_key) do nothing;
+
   return jsonb_build_object(
     'notificationId', v_notification_id,
     'title', v_title,
     'message', v_message,
     'accountCount', v_account_count,
+    'recipientAccountCount', v_recipient_count,
     'deviceCount', v_device_count,
     'subscriptions', v_subscriptions
   );
@@ -1110,6 +1157,11 @@ set search_path = ''
 as $$
 declare
   v_expected_secret text;
+  v_user_id uuid;
+  v_registration text;
+  v_vehicle_name text;
+  v_days integer;
+  v_due_text text;
 begin
   select decrypted_secret
   into v_expected_secret
@@ -1150,6 +1202,36 @@ begin
       error_message = excluded.error_message,
       attempted_at = now();
 
+  if p_success then
+    select subscription.user_id, vehicle.registration,
+           trim(concat_ws(' ', vehicle.make, vehicle.model))
+    into v_user_id, v_registration, v_vehicle_name
+    from private.push_subscriptions as subscription
+    join public.saved_vehicles as vehicle
+      on vehicle.id = p_vehicle_id and vehicle.user_id = subscription.user_id
+    where subscription.id = p_subscription_id;
+
+    if v_user_id is not null then
+      v_days := p_due_date - timezone('Europe/London', now())::date;
+      v_due_text := case
+        when v_days = 0 then 'is due today'
+        when v_days = 1 then 'is due tomorrow'
+        else 'is due in ' || v_days || ' days'
+      end;
+
+      insert into private.user_notifications (
+        user_id, notification_type, source_key, title, message, url
+      ) values (
+        v_user_id,
+        p_reminder_type,
+        'reminder:' || p_vehicle_id::text || ':' || p_reminder_type || ':' || p_due_date::text,
+        upper(p_reminder_type) || ' reminder · ' || v_registration,
+        coalesce(nullif(v_vehicle_name, ''), 'Your vehicle') || ' ' || upper(p_reminder_type) || ' ' || v_due_text || '.',
+        '/account.html?vehicle=' || v_registration
+      ) on conflict (user_id, source_key) do nothing;
+    end if;
+  end if;
+
   if p_disable_subscription then
     update private.push_subscriptions
     set enabled = false,
@@ -1158,6 +1240,114 @@ begin
   end if;
 
   return jsonb_build_object('recorded', found);
+end;
+$$;
+
+create or replace function public.get_user_notifications(p_limit integer default 50)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_limit integer := least(greatest(coalesce(p_limit, 50), 1), 100);
+  v_items jsonb;
+  v_unread integer;
+begin
+  if v_user_id is null then
+    raise insufficient_privilege using message = 'Sign in to view notifications.';
+  end if;
+
+  select coalesce(jsonb_agg(to_jsonb(item) order by item.created_at desc), '[]'::jsonb)
+  into v_items
+  from (
+    select id, notification_type as type, title, message, url, created_at, read_at
+    from private.user_notifications
+    where user_id = v_user_id
+    order by created_at desc
+    limit v_limit
+  ) as item;
+
+  select count(*)::integer into v_unread
+  from private.user_notifications
+  where user_id = v_user_id and read_at is null;
+
+  return jsonb_build_object('notifications', v_items, 'unreadCount', v_unread);
+end;
+$$;
+
+create or replace function public.set_user_notification_read(p_notification_id uuid, p_read boolean default true)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then raise insufficient_privilege using message = 'Sign in to update notifications.'; end if;
+  update private.user_notifications
+  set read_at = case when coalesce(p_read, true) then now() else null end
+  where id = p_notification_id and user_id = v_user_id;
+  if not found then raise no_data_found using message = 'That notification was not found.'; end if;
+  return jsonb_build_object('updated', true);
+end;
+$$;
+
+create or replace function public.mark_all_user_notifications_read()
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_user_id uuid := auth.uid(); v_count integer;
+begin
+  if v_user_id is null then raise insufficient_privilege using message = 'Sign in to update notifications.'; end if;
+  update private.user_notifications set read_at = now()
+  where user_id = v_user_id and read_at is null;
+  get diagnostics v_count = row_count;
+  return jsonb_build_object('updated', v_count);
+end;
+$$;
+
+create or replace function public.delete_user_notification(p_notification_id uuid)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then raise insufficient_privilege using message = 'Sign in to delete notifications.'; end if;
+  delete from private.user_notifications where id = p_notification_id and user_id = v_user_id;
+  if not found then raise no_data_found using message = 'That notification was not found.'; end if;
+  return jsonb_build_object('deleted', true);
+end;
+$$;
+
+create or replace function public.admin_get_broadcast_history(p_limit integer default 25)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_admin_id uuid := auth.uid(); v_items jsonb;
+begin
+  if v_admin_id is null or not exists (select 1 from private.app_admins where user_id = v_admin_id) then
+    raise insufficient_privilege using message = 'Only the BIISMO REG admin can view broadcast history.';
+  end if;
+  select coalesce(jsonb_agg(to_jsonb(item) order by item.created_at desc), '[]'::jsonb)
+  into v_items from (
+    select id, title, message, recipient_user_count as recipients, device_count as devices,
+           sent_count as sent, failed_count as failed, created_at, completed_at
+    from private.admin_push_notifications
+    where is_broadcast
+    order by created_at desc
+    limit least(greatest(coalesce(p_limit, 25), 1), 100)
+  ) item;
+  return jsonb_build_object('broadcasts', v_items);
+end;
+$$;
+
+create or replace function public.export_account_emails(p_export_secret text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_expected_secret text; v_accounts jsonb;
+begin
+  select decrypted_secret into v_expected_secret
+  from vault.decrypted_secrets where name = 'biismo_email_export_secret' limit 1;
+  if v_expected_secret is null or p_export_secret is distinct from v_expected_secret then
+    raise insufficient_privilege using message = 'Invalid email export credentials.';
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'email', lower(email), 'createdAt', created_at,
+    'confirmed', email_confirmed_at is not null
+  ) order by created_at), '[]'::jsonb)
+  into v_accounts from auth.users where email is not null;
+  return jsonb_build_object('accounts', v_accounts, 'generatedAt', now());
 end;
 $$;
 
@@ -1217,6 +1407,12 @@ revoke all on function public.get_vehicle_reminder_preferences() from public, an
 revoke all on function public.set_vehicle_reminder_preference(uuid, boolean) from public, anon;
 revoke all on function public.get_due_push_reminders(text) from public, authenticated;
 revoke all on function public.record_push_reminder(text, uuid, uuid, text, date, boolean, boolean, text) from public, authenticated;
+revoke all on function public.get_user_notifications(integer) from public, anon;
+revoke all on function public.set_user_notification_read(uuid, boolean) from public, anon;
+revoke all on function public.mark_all_user_notifications_read() from public, anon;
+revoke all on function public.delete_user_notification(uuid) from public, anon;
+revoke all on function public.admin_get_broadcast_history(integer) from public, anon;
+revoke all on function public.export_account_emails(text) from public, authenticated;
 revoke all on function private.dispatch_due_push_reminders() from public, anon, authenticated;
 
 grant execute on function public.get_search_allowance() to authenticated;
@@ -1236,3 +1432,9 @@ grant execute on function public.get_vehicle_reminder_preferences() to authentic
 grant execute on function public.set_vehicle_reminder_preference(uuid, boolean) to authenticated;
 grant execute on function public.get_due_push_reminders(text) to anon;
 grant execute on function public.record_push_reminder(text, uuid, uuid, text, date, boolean, boolean, text) to anon;
+grant execute on function public.get_user_notifications(integer) to authenticated;
+grant execute on function public.set_user_notification_read(uuid, boolean) to authenticated;
+grant execute on function public.mark_all_user_notifications_read() to authenticated;
+grant execute on function public.delete_user_notification(uuid) to authenticated;
+grant execute on function public.admin_get_broadcast_history(integer) to authenticated;
+grant execute on function public.export_account_emails(text) to anon;
