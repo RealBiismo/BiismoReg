@@ -985,6 +985,193 @@ main {
   font-size: 34px;
 }
 
+.credit-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.buy-credits-link {
+  width: auto;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.credit-store-main {
+  padding-bottom: 80px;
+}
+
+.credit-store-hero {
+  position: relative;
+  padding: 72px 190px 52px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.credit-store-hero h1 {
+  margin-top: 8px;
+  font-size: clamp(46px, 7vw, 76px);
+  letter-spacing: -0.05em;
+}
+
+.credit-store-hero > p {
+  max-width: 620px;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.store-balance {
+  position: absolute;
+  right: 0;
+  bottom: 52px;
+  width: 150px;
+  padding: 18px;
+  border: 1px solid rgba(79, 124, 255, 0.35);
+  border-radius: 20px;
+  background: rgba(37, 99, 235, 0.12);
+  text-align: center;
+}
+
+.store-balance span,
+.store-balance small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.store-balance strong {
+  display: block;
+  margin: 4px 0;
+  font-size: 38px;
+}
+
+.purchase-status {
+  min-height: 24px;
+  margin: 24px 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.purchase-status.is-success { color: var(--green); }
+.purchase-status.is-error { color: var(--red); }
+
+.secure-checkout-label {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credit-pack-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.credit-pack {
+  position: relative;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.credit-pack.is-featured {
+  border-color: rgba(79, 124, 255, 0.58);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.credit-pack-label {
+  display: inline-block;
+  color: #b9c8f5;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credit-pack > strong {
+  display: block;
+  margin-top: 18px;
+  font-size: 42px;
+}
+
+.credit-pack > strong small {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.credit-pack p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.credit-pack-price {
+  margin-top: 24px;
+  font-size: 28px;
+  font-weight: 850;
+}
+
+.credit-pack .primary-button {
+  width: 100%;
+}
+
+.credit-pack .primary-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: 0.58;
+}
+
+.credit-store-note {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.purchase-history {
+  margin-top: 54px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+}
+
+.purchase-history-list {
+  margin-top: 20px;
+}
+
+.purchase-history-list > p,
+.credit-store-loading {
+  color: var(--muted);
+}
+
+.purchase-history-item {
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.purchase-history-item div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.purchase-history-item span,
+.purchase-history-item time {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .reminder-section {
   padding: 34px 0;
   border-bottom: 1px solid var(--line);
@@ -1743,6 +1930,37 @@ main {
   .credits-section .section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .credit-section-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .buy-credits-link {
+    justify-content: center;
+  }
+
+  .credit-store-hero {
+    padding: 46px 0 34px;
+  }
+
+  .store-balance {
+    position: static;
+    width: 100%;
+    margin-top: 24px;
+  }
+
+  .credit-pack-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-history-item,
+  .purchase-history-item div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
   }
 
   .credit-summary {

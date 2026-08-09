@@ -14,6 +14,7 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - A private saved-vehicle garage protected with Row Level Security
 - Five free successful vehicle checks per account each UK calendar day
 - Credit-funded extra checks and an audited admin console for lookups, grants, exact balances and resets
+- One-off Stripe credit packs with signed-webhook fulfilment and duplicate-payment protection
 - Colour-coded MOT and tax countdowns in the saved-vehicle garage
 - Free opt-in push reminders for chosen garage registrations 30, 14, 7 and 1 day before expiry, plus the due date
 - Confirmed admin broadcast push notifications to every opted-in account, with a private delivery audit record
@@ -28,6 +29,7 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - DVLA Vehicle Enquiry API credentials
 - DVSA MOT History API credentials
 - A Supabase project for authentication and saved vehicles
+- A Stripe account to accept credit-pack payments
 
 ## Local setup
 
@@ -62,7 +64,15 @@ Supabase setup references:
 - [Google login](https://supabase.com/docs/guides/auth/social-login/auth-google)
 - [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
 
-The Supabase anon/publishable key is designed for browser use. Never expose a Supabase service-role key in this app.
+The Supabase anon/publishable key is designed for browser use. Never expose a Supabase secret/service-role key in browser code; keep it only in Render's server environment.
+
+## Stripe credit-store setup
+
+The store uses Stripe-hosted Checkout. Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SUPABASE_SECRET_KEY` and `APP_BASE_URL` only in the Render service environment. The Supabase secret key must never be placed in browser code or a public environment variable.
+
+In Stripe Workbench, add a webhook destination for `https://your-domain.example/api/stripe/webhook` and subscribe to `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Start with Stripe test-mode keys and a test-mode webhook secret. After a successful test purchase confirms that the balance and purchase history update exactly once, replace both Stripe values with live-mode credentials.
+
+The packs and their verified database values are £1.99/10 credits, £4.99/30 credits and £9.99/70 credits. Stripe metadata is never trusted on its own: the signed event, authenticated account UUID, paid amount, currency and active database product must all match before credits are granted.
 
 The Google Sheets `Accounts` tab uses `IMPORTDATA` against the private `/api/account-export/:secret.csv` feed. Keep the matching `EMAIL_EXPORT_SECRET` only in Render and Supabase Vault (`biismo_email_export_secret`). Google controls external-data refresh timing, so new signups appear automatically but may not be immediate.
 

@@ -215,6 +215,40 @@ test("serves health status and rejects unsafe input", async (context) => {
   const signedOutNotificationsResponse = await fetch(`${baseUrl}/api/notifications`);
   assert.equal(signedOutNotificationsResponse.status, 401);
 
+  const creditStoreResponse = await fetch(`${baseUrl}/api/credits/store`);
+  assert.equal(creditStoreResponse.status, 200);
+  const creditStore = await creditStoreResponse.json();
+  assert.equal(creditStore.enabled, false);
+  assert.deepEqual(
+    creditStore.bundles.map(({ id, credits, amountPence, searches }) => ({ id, credits, amountPence, searches })),
+    [
+      { id: "starter", credits: 10, amountPence: 199, searches: 5 },
+      { id: "popular", credits: 30, amountPence: 499, searches: 15 },
+      { id: "best_value", credits: 70, amountPence: 999, searches: 35 },
+    ]
+  );
+
+  const invalidCheckoutResponse = await fetch(`${baseUrl}/api/credits/checkout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bundleId: "made-up-pack" }),
+  });
+  assert.equal(invalidCheckoutResponse.status, 400);
+  assert.deepEqual(await invalidCheckoutResponse.json(), { error: "Choose a valid credit pack." });
+
+  const signedOutPurchasesResponse = await fetch(`${baseUrl}/api/credits/purchases`);
+  assert.equal(signedOutPurchasesResponse.status, 401);
+
+  const unconfiguredWebhookResponse = await fetch(`${baseUrl}/api/stripe/webhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  assert.equal(unconfiguredWebhookResponse.status, 503);
+  assert.deepEqual(await unconfiguredWebhookResponse.json(), {
+    error: "Credit purchases are not configured yet.",
+  });
+
   const invalidNotificationResponse = await fetch(`${baseUrl}/api/notifications/not-a-uuid`, { method: "DELETE" });
   assert.equal(invalidNotificationResponse.status, 400);
 
