@@ -18,6 +18,9 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - Free opt-in push reminders for chosen garage registrations 30, 14, 7 and 1 day before expiry, plus the due date
 - Confirmed admin broadcast push notifications to every opted-in account, with a private delivery audit record
 - A branded notification consent prompt before the browser permission request
+- A private in-app notification centre with unread counts, mark-read controls and retained MOT/tax and broadcast history
+- Admin broadcast history with recipient, device, sent and failed totals
+- A private Google Sheets account export that refreshes automatically
 
 ## Requirements
 
@@ -60,6 +63,8 @@ Supabase setup references:
 - [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
 
 The Supabase anon/publishable key is designed for browser use. Never expose a Supabase service-role key in this app.
+
+The Google Sheets `Accounts` tab uses `IMPORTDATA` against the private `/api/account-export/:secret.csv` feed. Keep the matching `EMAIL_EXPORT_SECRET` only in Render and Supabase Vault (`biismo_email_export_secret`). Google controls external-data refresh timing, so new signups appear automatically but may not be immediate.
 
 Do not commit `.env`; it is ignored by Git.
 
