@@ -195,6 +195,10 @@ async function callSupabaseRpc(token, functionName, parameters = {}) {
     if (message.includes("No verified BIISMO REG account")) error.statusCode = 404;
     if (message.includes("credit amount")) error.statusCode = 400;
     if (message.includes("credit balance")) error.statusCode = 400;
+    if (message.includes("notification title")) error.statusCode = 400;
+    if (message.includes("notification message")) error.statusCode = 400;
+    if (message.includes("delivery totals")) error.statusCode = 400;
+    if (message.includes("saved vehicle was not found")) error.statusCode = 404;
     throw error;
   }
 
@@ -203,6 +207,10 @@ async function callSupabaseRpc(token, functionName, parameters = {}) {
 
 function pushIsConfigured() {
   return Boolean(pushConfig.publicKey && pushConfig.privateKey && pushConfig.cronSecret);
+}
+
+function pushKeysAreConfigured() {
+  return Boolean(pushConfig.publicKey && pushConfig.privateKey);
 }
 
 function secretsMatch(received, expected) {
@@ -296,6 +304,52 @@ async function dispatchDueReminders() {
   }
 
   return { checked: items.length, sent, failed };
+}
+
+async function sendAdminPushNotification(token, email, title, message) {
+  const prepared = await callSupabaseRpc(token, "admin_prepare_push_notification", {
+    p_target_email: email,
+    p_title: title,
+    p_message: message,
+  });
+  const subscriptions = Array.isArray(prepared.subscriptions) ? prepared.subscriptions : [];
+  let sent = 0;
+  let failed = 0;
+
+  for (const subscription of subscriptions) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.authKey },
+        },
+        JSON.stringify({
+          title: prepared.title,
+          body: prepared.message,
+          tag: `biismo-admin-${prepared.notificationId}`,
+          url: "/account.html",
+        }),
+        { TTL: 60 * 60 * 24 }
+      );
+      sent += 1;
+    } catch (error) {
+      failed += 1;
+      console.error(`Admin push notification failed (${error?.statusCode || "unknown"}).`);
+    }
+  }
+
+  await callSupabaseRpc(token, "admin_complete_push_notification", {
+    p_notification_id: prepared.notificationId,
+    p_sent: sent,
+    p_failed: failed,
+  });
+
+  return {
+    email: prepared.email,
+    devices: Number(prepared.deviceCount) || 0,
+    sent,
+    failed,
+  };
 }
 
 async function safelyCancelReservation(token, reservationId) {
@@ -517,6 +571,49 @@ app.delete("/api/push/subscribe", pushActionLimiter, async (req, res) => {
   }
 });
 
+app.get("/api/reminders/preferences", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "get_vehicle_reminder_preferences"));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "Vehicle reminder choices could not be loaded." : error.message,
+    });
+  }
+});
+
+app.post("/api/reminders/preferences", pushActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const vehicleId = String(req.body?.vehicleId || "");
+  const enabled = req.body?.enabled;
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vehicleId)) {
+    return res.status(400).json({ error: "Choose a valid saved vehicle." });
+  }
+  if (typeof enabled !== "boolean") {
+    return res.status(400).json({ error: "Choose whether reminders are enabled." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(
+      await callSupabaseRpc(token, "set_vehicle_reminder_preference", {
+        p_vehicle_id: vehicleId,
+        p_enabled: enabled,
+      })
+    );
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "That reminder choice could not be saved." : error.message,
+    });
+  }
+});
+
 app.post("/api/cron/reminders", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!pushIsConfigured()) {
@@ -611,6 +708,37 @@ app.post("/api/admin/set-credits", adminActionLimiter, async (req, res) => {
     if (statusCode >= 500) console.error(error.message);
     return res.status(statusCode).json({
       error: statusCode >= 500 ? "That credit balance could not be changed." : error.message,
+    });
+  }
+});
+
+app.post("/api/admin/send-notification", adminActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const title = String(req.body?.title || "").trim();
+  const message = String(req.body?.message || "").trim();
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return res.status(400).json({ error: "Enter a complete account email address." });
+  }
+  if (title.length < 1 || title.length > 80) {
+    return res.status(400).json({ error: "Enter a notification title between 1 and 80 characters." });
+  }
+  if (message.length < 1 || message.length > 240) {
+    return res.status(400).json({ error: "Enter a notification message between 1 and 240 characters." });
+  }
+  if (!pushKeysAreConfigured()) {
+    return res.status(503).json({ error: "Push notifications are not configured yet." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await sendAdminPushNotification(token, email, title, message));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "The push notification could not be sent." : error.message,
     });
   }
 });

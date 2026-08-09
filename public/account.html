@@ -72,13 +72,16 @@
       </section>
 
       <section class="reminder-section" aria-labelledby="reminderTitle">
-        <div class="reminder-copy">
-          <span class="eyebrow">STAY ROAD-READY</span>
-          <h2 id="reminderTitle">MOT &amp; tax reminders</h2>
-          <p>Get a notification 30, 14, 7 and 1 day before a saved vehicle is due, plus a final reminder on the day.</p>
-          <p id="reminderStatus" class="reminder-status" role="status">Checking notification support…</p>
+        <div class="reminder-topline">
+          <div class="reminder-copy">
+            <span class="eyebrow">STAY ROAD-READY</span>
+            <h2 id="reminderTitle">MOT &amp; tax reminders</h2>
+            <p>Enable notifications, then choose exactly which saved registrations should receive expiry reminders.</p>
+            <p id="reminderStatus" class="reminder-status" role="status">Checking notification support…</p>
+          </div>
+          <button id="reminderToggleButton" class="secondary-button reminder-toggle" type="button" disabled>Enable reminders</button>
         </div>
-        <button id="reminderToggleButton" class="secondary-button reminder-toggle" type="button" disabled>Enable reminders</button>
+        <div id="reminderVehicleList" class="reminder-vehicle-list" role="group" aria-label="Choose vehicles for reminders" hidden></div>
       </section>
 
       <section class="garage-section" aria-labelledby="garageTitle">
@@ -99,7 +102,7 @@
       <section class="admin-hero">
         <span class="eyebrow">ADMIN ONLY</span>
         <h1>Admin menu.</h1>
-        <p>Find a verified user by email, then view or manage their credits.</p>
+        <p>Find a verified user by email, manage their credits or send a push notification.</p>
       </section>
 
       <section class="admin-console" aria-labelledby="adminUserSearchTitle">
@@ -141,6 +144,10 @@
               <span>Checks used today</span>
               <strong id="selectedUserFreeUsed">0</strong>
             </article>
+            <article>
+              <span>Push devices</span>
+              <strong id="selectedUserPushDevices">0</strong>
+            </article>
           </div>
 
           <div class="admin-credit-controls">
@@ -151,6 +158,20 @@
               <button id="adminSetCreditsButton" class="secondary-button" type="button">Set exact balance</button>
               <button id="adminResetCreditsButton" class="danger-button" type="button">Reset to 0</button>
             </div>
+          </div>
+
+          <div class="admin-notification-controls">
+            <div>
+              <span class="eyebrow">PUSH MESSAGE</span>
+              <h3>Send notification</h3>
+              <p>This sends to every enabled device belonging to the selected account.</p>
+            </div>
+            <label for="adminNotificationTitle">Notification title</label>
+            <input id="adminNotificationTitle" type="text" maxlength="80" value="BIISMO REG" autocomplete="off">
+            <label for="adminNotificationMessage">Message</label>
+            <textarea id="adminNotificationMessage" maxlength="240" rows="4" placeholder="Type the notification message…"></textarea>
+            <button id="adminSendNotificationButton" class="primary-button" type="button">Send push notification</button>
+            <p id="adminNotificationStatus" class="admin-status" role="status"></p>
           </div>
         </section>
       </section>

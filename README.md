@@ -15,7 +15,8 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - Five free successful vehicle checks per account each UK calendar day
 - Credit-funded extra checks and an audited admin console for lookups, grants, exact balances and resets
 - Colour-coded MOT and tax countdowns in the saved-vehicle garage
-- Free opt-in push reminders 30, 14, 7 and 1 day before expiry, plus the due date
+- Free opt-in push reminders for chosen garage registrations 30, 14, 7 and 1 day before expiry, plus the due date
+- Targeted admin push notifications to a selected user's enabled devices, with a private delivery audit record
 
 ## Requirements
 
@@ -49,7 +50,7 @@ select cron.schedule(
 );
 ```
 
-Cron uses UTC, so this runs at 09:00 UTC. Reminder subscriptions and delivery records remain in the private schema and are only reachable through authenticated or secret-checked functions.
+Cron uses UTC, so this runs at 09:00 UTC. Users enable notifications per device and then choose which saved registrations receive expiry reminders. Reminder preferences, subscriptions, delivery records and admin notification audits remain in the private schema and are only reachable through authenticated or secret-checked functions.
 
 Supabase setup references:
 

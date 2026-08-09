@@ -21,9 +21,15 @@ const adminSetCreditsButton = document.getElementById("adminSetCreditsButton");
 const adminResetCreditsButton = document.getElementById("adminResetCreditsButton");
 const reminderStatus = document.getElementById("reminderStatus");
 const reminderToggleButton = document.getElementById("reminderToggleButton");
+const reminderVehicleList = document.getElementById("reminderVehicleList");
+const adminNotificationTitle = document.getElementById("adminNotificationTitle");
+const adminNotificationMessage = document.getElementById("adminNotificationMessage");
+const adminSendNotificationButton = document.getElementById("adminSendNotificationButton");
+const adminNotificationStatus = document.getElementById("adminNotificationStatus");
 
 let hasAdminAccess = false;
 let selectedAdminEmail = null;
+let selectedPushDevices = 0;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -224,6 +230,83 @@ async function savePushSubscription(subscription) {
   return data;
 }
 
+function selectedReminderCount() {
+  return reminderVehicleList.querySelectorAll('input[type="checkbox"]:checked').length;
+}
+
+function updateReminderSelectionStatus() {
+  const count = selectedReminderCount();
+  setReminderStatus(
+    count === 0
+      ? "Notifications are enabled. Choose at least one saved registration below."
+      : `Expiry reminders are active for ${count} saved ${count === 1 ? "vehicle" : "vehicles"}.`,
+    count > 0 ? "success" : ""
+  );
+}
+
+function renderReminderVehicles(vehicles) {
+  reminderVehicleList.hidden = false;
+  if (!vehicles.length) {
+    reminderVehicleList.innerHTML = '<p class="reminder-vehicle-empty">Save a vehicle to your garage before choosing reminder registrations.</p>';
+    return;
+  }
+
+  reminderVehicleList.innerHTML = vehicles
+    .map((vehicle) => {
+      const description = [vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Saved vehicle";
+      return `
+        <label class="reminder-vehicle-option">
+          <input type="checkbox" data-reminder-vehicle-id="${escapeHtml(vehicle.vehicleId)}" ${vehicle.enabled ? "checked" : ""}>
+          <span>
+            <strong>${escapeHtml(vehicle.registration)}</strong>
+            <small>${escapeHtml(description)}</small>
+          </span>
+        </label>
+      `;
+    })
+    .join("");
+
+  reminderVehicleList.querySelectorAll("[data-reminder-vehicle-id]").forEach((checkbox) => {
+    checkbox.addEventListener("change", async () => {
+      checkbox.disabled = true;
+      try {
+        const response = await window.biismoAuth.authorizedFetch("/api/reminders/preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vehicleId: checkbox.dataset.reminderVehicleId,
+            enabled: checkbox.checked,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "That reminder choice could not be saved.");
+        updateReminderSelectionStatus();
+      } catch (error) {
+        checkbox.checked = !checkbox.checked;
+        setReminderStatus(error.message || "That reminder choice could not be saved.", "error");
+      } finally {
+        checkbox.disabled = false;
+      }
+    });
+  });
+
+  updateReminderSelectionStatus();
+}
+
+async function loadReminderVehicles() {
+  try {
+    const response = await window.biismoAuth.authorizedFetch("/api/reminders/preferences", {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Vehicle reminder choices could not be loaded.");
+    renderReminderVehicles(Array.isArray(data.vehicles) ? data.vehicles : []);
+  } catch (error) {
+    reminderVehicleList.hidden = true;
+    setReminderStatus(error.message || "Vehicle reminder choices could not be loaded.", "error");
+  }
+}
+
 async function initializeReminders() {
   const iosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const installed = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
@@ -248,10 +331,11 @@ async function initializeReminders() {
       await savePushSubscription(subscription);
       reminderToggleButton.textContent = "Disable reminders";
       reminderToggleButton.dataset.enabled = "true";
-      setReminderStatus("Reminders are enabled on this device.", "success");
+      await loadReminderVehicles();
     } else {
       reminderToggleButton.textContent = "Enable reminders";
       reminderToggleButton.dataset.enabled = "false";
+      reminderVehicleList.hidden = true;
       setReminderStatus("Reminders are currently off on this device.");
     }
     reminderToggleButton.disabled = false;
@@ -277,6 +361,7 @@ reminderToggleButton.addEventListener("click", async () => {
       await existing.unsubscribe();
       reminderToggleButton.textContent = "Enable reminders";
       reminderToggleButton.dataset.enabled = "false";
+      reminderVehicleList.hidden = true;
       setReminderStatus("Reminders are off on this device.", "success");
       return;
     }
@@ -299,7 +384,7 @@ reminderToggleButton.addEventListener("click", async () => {
     await savePushSubscription(subscription);
     reminderToggleButton.textContent = "Disable reminders";
     reminderToggleButton.dataset.enabled = "true";
-    setReminderStatus("Reminders are enabled on this device.", "success");
+    await loadReminderVehicles();
   } catch (error) {
     setReminderStatus(error.message || "Reminder settings could not be changed.", "error");
   } finally {
@@ -344,19 +429,33 @@ function setAdminStatus(message, type = "") {
   adminStatus.className = `admin-status ${type ? `is-${type}` : ""}`.trim();
 }
 
+function setAdminNotificationStatus(message, type = "") {
+  adminNotificationStatus.textContent = message;
+  adminNotificationStatus.className = `admin-status ${type ? `is-${type}` : ""}`.trim();
+}
+
 function setAdminBusy(busy) {
   adminUserSearchButton.disabled = busy;
   adminAddCreditsButton.disabled = busy;
   adminSetCreditsButton.disabled = busy;
   adminResetCreditsButton.disabled = busy;
+  adminSendNotificationButton.disabled = busy || !selectedAdminEmail || selectedPushDevices === 0;
 }
 
 function renderAdminUser(account) {
   selectedAdminEmail = account.email;
+  selectedPushDevices = Number(account.pushDevices) || 0;
   document.getElementById("selectedUserEmail").textContent = account.email;
   document.getElementById("selectedUserCredits").textContent = String(Number(account.credits) || 0);
   document.getElementById("selectedUserFreeRemaining").textContent = String(Number(account.freeRemaining) || 0);
   document.getElementById("selectedUserFreeUsed").textContent = String(Number(account.freeUsed) || 0);
+  document.getElementById("selectedUserPushDevices").textContent = String(selectedPushDevices);
+  adminSendNotificationButton.disabled = selectedPushDevices === 0;
+  setAdminNotificationStatus(
+    selectedPushDevices > 0
+      ? `${selectedPushDevices} enabled ${selectedPushDevices === 1 ? "device" : "devices"} can receive this message.`
+      : "This account has no enabled push devices."
+  );
   adminUserResult.hidden = false;
 }
 
@@ -393,6 +492,8 @@ adminUserSearchForm.addEventListener("submit", async (event) => {
   setAdminBusy(true);
   adminUserResult.hidden = true;
   selectedAdminEmail = null;
+  selectedPushDevices = 0;
+  setAdminNotificationStatus("");
   try {
     await findAdminUser(email);
     setAdminStatus("User found.", "success");
@@ -463,6 +564,42 @@ adminResetCreditsButton.addEventListener("click", async () => {
     await loadAllowance();
   } catch (error) {
     setAdminStatus(error.message || "The credit balance could not be reset.", "error");
+  } finally {
+    setAdminBusy(false);
+  }
+});
+
+adminSendNotificationButton.addEventListener("click", async () => {
+  if (!selectedAdminEmail || selectedPushDevices === 0) return;
+
+  const title = adminNotificationTitle.value.trim();
+  const message = adminNotificationMessage.value.trim();
+  if (title.length < 1 || title.length > 80) {
+    setAdminNotificationStatus("Enter a notification title between 1 and 80 characters.", "error");
+    return;
+  }
+  if (message.length < 1 || message.length > 240) {
+    setAdminNotificationStatus("Enter a notification message between 1 and 240 characters.", "error");
+    return;
+  }
+  if (!window.confirm(`Send this push notification to ${selectedAdminEmail}?`)) return;
+
+  setAdminBusy(true);
+  setAdminNotificationStatus(`Sending to ${selectedPushDevices} enabled ${selectedPushDevices === 1 ? "device" : "devices"}…`);
+  try {
+    const result = await postAdminAction("/api/admin/send-notification", {
+      email: selectedAdminEmail,
+      title,
+      message,
+    });
+    adminNotificationMessage.value = "";
+    if (result.failed > 0) {
+      setAdminNotificationStatus(`Sent to ${result.sent} devices; ${result.failed} failed.`, "error");
+    } else {
+      setAdminNotificationStatus(`Notification sent to ${result.sent} ${result.sent === 1 ? "device" : "devices"}.`, "success");
+    }
+  } catch (error) {
+    setAdminNotificationStatus(error.message || "The push notification could not be sent.", "error");
   } finally {
     setAdminBusy(false);
   }
