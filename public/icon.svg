@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">BIISMO REG</title>
+  <rect width="512" height="512" rx="112" fill="#000"/>
+  <rect x="44" y="146" width="424" height="220" rx="34" fill="#ffd800"/>
+  <rect x="44" y="146" width="76" height="220" rx="34" fill="#003399"/>
+  <path d="M120 146h24v220h-24z" fill="#003399"/>
+  <text x="82" y="270" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="44" font-weight="700">GB</text>
+  <text x="294" y="285" text-anchor="middle" fill="#000" font-family="Arial, sans-serif" font-size="104" font-weight="900">B</text>
+</svg>

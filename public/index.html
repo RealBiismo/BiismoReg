@@ -1,69 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BIISMO REG</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="description" content="Check official UK vehicle, tax and MOT information.">
+  <title>BIISMO REG — UK Vehicle Check</title>
 
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
   <link rel="icon" href="https://files.catbox.moe/ulokbl.png">
 </head>
-
 <body>
-
-  <nav class="nav">
-    <img src="https://files.catbox.moe/tvw8fb.png" alt="" class="logo">
+  <nav class="nav" aria-label="Main navigation">
+    <img src="https://files.catbox.moe/tvw8fb.png" alt="BIISMO REG" class="logo">
   </nav>
-  <button id="loginBtn" class="login-btn">Login / Create Account</button>
 
+  <main>
+    <div class="hero">
+      <form id="vehicleForm" class="glass search-card" novalidate>
+        <h1>UK Vehicle Check</h1>
+        <p>MOT • TAX • HISTORY</p>
 
-  <div class="hero">
-    <div class="glass search-card">
-      <h1>UK Vehicle Check</h1>
-      <p>MOT • TAX • HISTORY</p>
+        <label class="sr-only" for="regInput">UK registration number</label>
+        <div class="plate">
+          <div class="gb" aria-hidden="true">GB</div>
+          <input
+            id="regInput"
+            name="registrationNumber"
+            placeholder="PA55MGN"
+            maxlength="8"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            required
+          >
+        </div>
 
-      <div class="plate">
-        <div class="gb">GB</div>
-        <input id="regInput" placeholder="PA55MGN" maxlength="8" />
+        <button id="searchButton" type="submit">SEARCH</button>
+        <p id="formError" class="form-error" role="alert"></p>
+      </form>
+    </div>
+
+    <div class="disclaimer">
+      <div class="disclaimer-title">Searches are not saved by BIISMO REG.</div>
+      <div class="disclaimer-text">
+        Vehicle information comes from official DVLA and DVSA services.
+        Calculated insights are clearly labelled as estimates.
+        <p class="creator-credit">
+          Created by
+          <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">RealBiismo</a>
+        </p>
       </div>
-
-      <button onclick="checkVehicle()">SEARCH</button>
     </div>
-  </div>
 
-  <div class="disclaimer">
-    <div class="disclaimer-title">We do not store searches or personal data.</div>
-    <div class="disclaimer-text">
-      Vehicle data is provided using official DVLA & DVSA.
-      <p style="color:#89CFF0;">
-        Created By
-        <a href="https://instagram.com/realbiismo" target="_blank" style="color:#89CFF0;text-decoration:none;">
-          RealBiismo
-        </a>
-      </p>
-    </div>
-  </div>
-
-  <div id="result"></div>
+    <div id="result" aria-live="polite"></div>
+  </main>
 
   <script src="script.js"></script>
-
-  <!-- LOGIN MODAL -->
-<div id="loginModal" class="modal">
-    <div class="modal-content">
-        <h2>Login / Create Account</h2>
-        <p>Enter your email to receive a login link.</p>
-
-        <input type="email" id="loginEmail" placeholder="you@example.com">
-
-        <button id="sendLoginLinkBtn">Send Login Link</button>
-        <button id="closeModalBtn" class="close-btn">Cancel</button>
-
-        <p id="loginStatus" class="status-message"></p>
-    </div>
-</div>
-
-
 </body>
 </html>
