@@ -1,4 +1,59 @@
 (() => {
+  const CANONICAL_ORIGIN = "https://biismoreg.com";
+  const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
+
+  if (LEGACY_HOSTS.has(window.location.hostname)) {
+    void (async () => {
+      let hadPushSubscription = false;
+
+      try {
+        const registration = await navigator.serviceWorker?.getRegistration("/");
+        const subscription = await registration?.pushManager?.getSubscription();
+
+        if (subscription) {
+          hadPushSubscription = true;
+
+          try {
+            await window.biismoAuth?.ready;
+            if (window.biismoAuth?.getUser?.()) {
+              await window.biismoAuth.authorizedFetch("/api/push/subscribe", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ endpoint: subscription.endpoint }),
+              });
+            }
+          } catch {
+            // Unsubscribing in the browser still invalidates the old endpoint.
+          }
+
+          try {
+            await subscription.unsubscribe();
+          } catch {
+            // Continue to the canonical domain even if cleanup is incomplete.
+          }
+        }
+
+        const registrations = await navigator.serviceWorker?.getRegistrations?.();
+        await Promise.all((registrations || []).map((registration) => registration.unregister()));
+      } catch {
+        // The canonical-domain redirect must not depend on service-worker support.
+      }
+
+      const destination = new URL(window.location.href);
+      destination.protocol = "https:";
+      destination.host = new URL(CANONICAL_ORIGIN).host;
+
+      if (hadPushSubscription) {
+        destination.pathname = "/account.html";
+        destination.search = "?pushMigration=1";
+        destination.hash = "";
+      }
+
+      window.location.replace(destination.href);
+    })();
+    return;
+  }
+
   const DISMISS_KEY = "biismo-install-dismissed-until";
   const DISMISS_FOR_MS = 14 * 24 * 60 * 60 * 1000;
   let deferredInstallPrompt = null;
