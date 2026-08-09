@@ -29,17 +29,6 @@
   opacity: 1;
 }
 
-.app-splash::before {
-  content: "";
-  position: absolute;
-  width: min(74vw, 380px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: conic-gradient(from 90deg, transparent 0 48%, rgba(0, 164, 255, 0.36) 58%, transparent 70% 88%, rgba(255, 215, 0, 0.28));
-  filter: blur(25px);
-  animation: splash-halo-spin 1.5s linear infinite;
-}
-
 .app-splash-logo {
   position: relative;
   width: min(76vw, 330px);
@@ -77,10 +66,6 @@
   100% { transform: scale(1) rotate(0); opacity: 1; }
 }
 
-@keyframes splash-halo-spin {
-  to { transform: rotate(360deg); }
-}
-
 @keyframes splash-copy-arrive {
   from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -91,7 +76,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-splash::before,
   .app-splash-logo,
   .app-splash p {
     animation: none;
