@@ -53,6 +53,14 @@ const vehicleCheckLimiter = rateLimit({
   message: { error: "Too many vehicle checks. Please try again shortly." },
 });
 
+const adminActionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Too many admin requests. Please try again shortly." },
+});
+
 function assertConfigured() {
   const missing = Object.entries(config)
     .filter(([, value]) => !value)
@@ -165,6 +173,7 @@ async function callSupabaseRpc(token, functionName, parameters = {}) {
     error.statusCode = response.status === 401 || response.status === 403 ? response.status : 502;
     if (message.includes("No verified BIISMO REG account")) error.statusCode = 404;
     if (message.includes("credit amount")) error.statusCode = 400;
+    if (message.includes("credit balance")) error.statusCode = 400;
     throw error;
   }
 
@@ -335,7 +344,7 @@ app.get("/api/allowance", async (req, res) => {
   }
 });
 
-app.post("/api/grant-credits", async (req, res) => {
+app.post("/api/grant-credits", adminActionLimiter, async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
 
   const email = String(req.body?.email || "").trim().toLowerCase();
@@ -360,6 +369,58 @@ app.post("/api/grant-credits", async (req, res) => {
     if (statusCode >= 500) console.error(error.message);
     return res.status(statusCode).json({
       error: statusCode >= 500 ? "Credits could not be granted." : error.message,
+    });
+  }
+});
+
+app.post("/api/admin/user-credits", adminActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return res.status(400).json({ error: "Enter a complete account email address." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    const account = await callSupabaseRpc(token, "admin_get_user_credits", {
+      p_target_email: email,
+    });
+    return res.json(account);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "That user could not be loaded." : error.message,
+    });
+  }
+});
+
+app.post("/api/admin/set-credits", adminActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const amount = Number(req.body?.amount);
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return res.status(400).json({ error: "Enter a complete account email address." });
+  }
+  if (!Number.isInteger(amount) || amount < 0 || amount > 100000) {
+    return res.status(400).json({ error: "Enter a credit balance between 0 and 100,000." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    const account = await callSupabaseRpc(token, "admin_set_user_credits", {
+      p_target_email: email,
+      p_amount: amount,
+    });
+    return res.json(account);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "That credit balance could not be changed." : error.message,
     });
   }
 });

@@ -5,10 +5,23 @@ const accountEmail = document.getElementById("accountEmail");
 const loadingOverlay = document.getElementById("loadingOverlay");
 const freeSearchesRemaining = document.getElementById("freeSearchesRemaining");
 const creditBalance = document.getElementById("creditBalance");
-const adminCreditPanel = document.getElementById("adminCreditPanel");
-const creditGrantForm = document.getElementById("creditGrantForm");
-const creditGrantStatus = document.getElementById("creditGrantStatus");
-const grantCreditsButton = document.getElementById("grantCreditsButton");
+const accountMenu = document.getElementById("accountMenu");
+const garageMenuButton = document.getElementById("garageMenuButton");
+const adminMenuButton = document.getElementById("adminMenuButton");
+const garageView = document.getElementById("garageView");
+const adminView = document.getElementById("adminView");
+const adminUserSearchForm = document.getElementById("adminUserSearchForm");
+const adminUserEmail = document.getElementById("adminUserEmail");
+const adminUserSearchButton = document.getElementById("adminUserSearchButton");
+const adminStatus = document.getElementById("adminStatus");
+const adminUserResult = document.getElementById("adminUserResult");
+const adminCreditAmount = document.getElementById("adminCreditAmount");
+const adminAddCreditsButton = document.getElementById("adminAddCreditsButton");
+const adminSetCreditsButton = document.getElementById("adminSetCreditsButton");
+const adminResetCreditsButton = document.getElementById("adminResetCreditsButton");
+
+let hasAdminAccess = false;
+let selectedAdminEmail = null;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -37,7 +50,20 @@ function renderAllowance(allowance) {
   const credits = Number(allowance.credits) || 0;
   freeSearchesRemaining.textContent = String(free);
   creditBalance.textContent = String(credits);
-  adminCreditPanel.hidden = !allowance.isAdmin;
+  hasAdminAccess = Boolean(allowance.isAdmin);
+  accountMenu.hidden = !hasAdminAccess;
+  if (!hasAdminAccess) switchAccountView("garage");
+}
+
+function switchAccountView(view) {
+  const showAdmin = view === "admin" && hasAdminAccess;
+  garageView.hidden = showAdmin;
+  adminView.hidden = !showAdmin;
+  garageMenuButton.classList.toggle("is-active", !showAdmin);
+  adminMenuButton.classList.toggle("is-active", showAdmin);
+  garageMenuButton.setAttribute("aria-selected", String(!showAdmin));
+  adminMenuButton.setAttribute("aria-selected", String(showAdmin));
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function loadAllowance() {
@@ -166,49 +192,132 @@ async function loadGarage() {
   }
 }
 
-creditGrantForm.addEventListener("submit", async (event) => {
+function setAdminStatus(message, type = "") {
+  adminStatus.textContent = message;
+  adminStatus.className = `admin-status ${type ? `is-${type}` : ""}`.trim();
+}
+
+function setAdminBusy(busy) {
+  adminUserSearchButton.disabled = busy;
+  adminAddCreditsButton.disabled = busy;
+  adminSetCreditsButton.disabled = busy;
+  adminResetCreditsButton.disabled = busy;
+}
+
+function renderAdminUser(account) {
+  selectedAdminEmail = account.email;
+  document.getElementById("selectedUserEmail").textContent = account.email;
+  document.getElementById("selectedUserCredits").textContent = String(Number(account.credits) || 0);
+  document.getElementById("selectedUserFreeRemaining").textContent = String(Number(account.freeRemaining) || 0);
+  document.getElementById("selectedUserFreeUsed").textContent = String(Number(account.freeUsed) || 0);
+  adminUserResult.hidden = false;
+}
+
+async function postAdminAction(url, body) {
+  const response = await window.biismoAuth.authorizedFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "The admin action could not be completed.");
+  return data;
+}
+
+async function findAdminUser(email, showLoading = true) {
+  if (showLoading) setAdminStatus("Searching verified accounts…");
+  const account = await postAdminAction("/api/admin/user-credits", { email });
+  renderAdminUser(account);
+  return account;
+}
+
+garageMenuButton.addEventListener("click", () => switchAccountView("garage"));
+adminMenuButton.addEventListener("click", () => switchAccountView("admin"));
+
+adminUserSearchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  creditGrantStatus.textContent = "";
-  creditGrantStatus.className = "credit-grant-status";
+  const email = adminUserEmail.value.trim().toLowerCase();
 
-  const emailInput = document.getElementById("creditEmail");
-  const amountInput = document.getElementById("creditAmount");
-  const email = emailInput.value.trim().toLowerCase();
-  const amount = Number(amountInput.value);
-
-  if (!emailInput.validity.valid || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    creditGrantStatus.textContent = "Enter a complete account email address.";
-    creditGrantStatus.classList.add("is-error");
-    return;
-  }
-  if (!Number.isInteger(amount) || amount < 1 || amount > 100000) {
-    creditGrantStatus.textContent = "Enter a whole number between 1 and 100,000.";
-    creditGrantStatus.classList.add("is-error");
+  if (!adminUserEmail.validity.valid || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    setAdminStatus("Enter a complete account email address.", "error");
     return;
   }
 
-  grantCreditsButton.disabled = true;
-  grantCreditsButton.textContent = "Sending…";
-
+  setAdminBusy(true);
+  adminUserResult.hidden = true;
+  selectedAdminEmail = null;
   try {
-    const response = await window.biismoAuth.authorizedFetch("/api/grant-credits", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, amount }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Credits could not be sent.");
+    await findAdminUser(email);
+    setAdminStatus("User found.", "success");
+  } catch (error) {
+    setAdminStatus(error.message || "That user could not be found.", "error");
+  } finally {
+    setAdminBusy(false);
+  }
+});
 
-    creditGrantStatus.textContent = `${data.granted} credits sent to ${data.email}. Their balance is now ${data.credits}.`;
-    creditGrantStatus.classList.add("is-success");
-    creditGrantForm.reset();
+adminAddCreditsButton.addEventListener("click", async () => {
+  const amount = Number(adminCreditAmount.value);
+  if (!selectedAdminEmail) return;
+  if (adminCreditAmount.value.trim() === "" || !Number.isInteger(amount) || amount < 1 || amount > 100000) {
+    setAdminStatus("Enter a whole number between 1 and 100,000 to add.", "error");
+    return;
+  }
+
+  setAdminBusy(true);
+  setAdminStatus(`Adding ${amount} credits…`);
+  try {
+    await postAdminAction("/api/grant-credits", { email: selectedAdminEmail, amount });
+    const account = await findAdminUser(selectedAdminEmail, false);
+    adminCreditAmount.value = "";
+    setAdminStatus(`${amount} credits added. ${account.email} now has ${account.credits}.`, "success");
     await loadAllowance();
   } catch (error) {
-    creditGrantStatus.textContent = error.message || "Credits could not be sent.";
-    creditGrantStatus.classList.add("is-error");
+    setAdminStatus(error.message || "Credits could not be added.", "error");
   } finally {
-    grantCreditsButton.disabled = false;
-    grantCreditsButton.textContent = "Send credits";
+    setAdminBusy(false);
+  }
+});
+
+adminSetCreditsButton.addEventListener("click", async () => {
+  const amount = Number(adminCreditAmount.value);
+  if (!selectedAdminEmail) return;
+  if (adminCreditAmount.value.trim() === "" || !Number.isInteger(amount) || amount < 0 || amount > 100000) {
+    setAdminStatus("Enter an exact balance between 0 and 100,000.", "error");
+    return;
+  }
+
+  setAdminBusy(true);
+  setAdminStatus(`Setting the balance to ${amount}…`);
+  try {
+    await postAdminAction("/api/admin/set-credits", { email: selectedAdminEmail, amount });
+    const account = await findAdminUser(selectedAdminEmail, false);
+    adminCreditAmount.value = "";
+    setAdminStatus(`${account.email} now has exactly ${account.credits} credits.`, "success");
+    await loadAllowance();
+  } catch (error) {
+    setAdminStatus(error.message || "The credit balance could not be changed.", "error");
+  } finally {
+    setAdminBusy(false);
+  }
+});
+
+adminResetCreditsButton.addEventListener("click", async () => {
+  if (!selectedAdminEmail) return;
+  if (!window.confirm(`Reset ${selectedAdminEmail}'s credit balance to 0?`)) return;
+
+  setAdminBusy(true);
+  setAdminStatus("Resetting the credit balance…");
+  try {
+    await postAdminAction("/api/admin/set-credits", { email: selectedAdminEmail, amount: 0 });
+    const account = await findAdminUser(selectedAdminEmail, false);
+    adminCreditAmount.value = "";
+    setAdminStatus(`${account.email}'s credits have been reset to 0.`, "success");
+    await loadAllowance();
+  } catch (error) {
+    setAdminStatus(error.message || "The credit balance could not be reset.", "error");
+  } finally {
+    setAdminBusy(false);
   }
 });
 

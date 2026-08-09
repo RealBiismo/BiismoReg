@@ -13,7 +13,7 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - Verified email/password accounts and Google sign-in through Supabase Auth
 - A private saved-vehicle garage protected with Row Level Security
 - Five free successful vehicle checks per account each UK calendar day
-- Credit-funded extra checks and an audited, database-enforced admin grant tool
+- Credit-funded extra checks and an audited admin console for lookups, grants, exact balances and resets
 
 ## Requirements
 

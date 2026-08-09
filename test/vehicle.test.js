@@ -97,6 +97,26 @@ test("serves health status and rejects unsafe input", async (context) => {
     error: "Enter a complete account email address.",
   });
 
+  const invalidAdminLookupResponse = await fetch(`${baseUrl}/api/admin/user-credits`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "missing-at-sign" }),
+  });
+  assert.equal(invalidAdminLookupResponse.status, 400);
+  assert.deepEqual(await invalidAdminLookupResponse.json(), {
+    error: "Enter a complete account email address.",
+  });
+
+  const invalidSetCreditsResponse = await fetch(`${baseUrl}/api/admin/set-credits`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "user@example.com", amount: -1 }),
+  });
+  assert.equal(invalidSetCreditsResponse.status, 400);
+  assert.deepEqual(await invalidSetCreditsResponse.json(), {
+    error: "Enter a credit balance between 0 and 100,000.",
+  });
+
   const configResponse = await fetch(`${baseUrl}/api/config`);
   assert.equal(configResponse.status, 503);
   assert.deepEqual(await configResponse.json(), {

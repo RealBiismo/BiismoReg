@@ -426,14 +426,136 @@ begin
 end;
 $$;
 
+create or replace function public.admin_get_user_credits(p_target_email text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_admin_id uuid := auth.uid();
+  v_target_id uuid;
+  v_target_email text;
+  v_credits integer;
+  v_used integer;
+  v_today date := timezone('Europe/London', now())::date;
+begin
+  if v_admin_id is null or not exists (
+    select 1 from private.app_admins where user_id = v_admin_id
+  ) then
+    raise insufficient_privilege using message = 'Only the BIISMO REG admin can view user credits.';
+  end if;
+
+  select id, lower(email)
+  into v_target_id, v_target_email
+  from auth.users
+  where lower(email) = lower(trim(p_target_email))
+    and email_confirmed_at is not null
+  limit 1;
+
+  if v_target_id is null then
+    raise no_data_found using message = 'No verified BIISMO REG account was found for that email.';
+  end if;
+
+  insert into private.user_accounts (user_id)
+  values (v_target_id)
+  on conflict (user_id) do nothing;
+
+  select credits into v_credits
+  from private.user_accounts
+  where user_id = v_target_id;
+
+  select count(*)::integer into v_used
+  from private.vehicle_searches
+  where user_id = v_target_id
+    and search_date = v_today
+    and status in ('reserved', 'completed');
+
+  return jsonb_build_object(
+    'email', v_target_email,
+    'credits', v_credits,
+    'dailyLimit', 5,
+    'freeUsed', least(v_used, 5),
+    'freeRemaining', greatest(5 - v_used, 0)
+  );
+end;
+$$;
+
+create or replace function public.admin_set_user_credits(p_target_email text, p_amount integer)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_admin_id uuid := auth.uid();
+  v_target_id uuid;
+  v_target_email text;
+  v_previous integer;
+  v_reason text;
+begin
+  if v_admin_id is null or not exists (
+    select 1 from private.app_admins where user_id = v_admin_id
+  ) then
+    raise insufficient_privilege using message = 'Only the BIISMO REG admin can set user credits.';
+  end if;
+
+  if p_amount is null or p_amount < 0 or p_amount > 100000 then
+    raise invalid_parameter_value using message = 'Enter a credit balance between 0 and 100,000.';
+  end if;
+
+  select id, lower(email)
+  into v_target_id, v_target_email
+  from auth.users
+  where lower(email) = lower(trim(p_target_email))
+    and email_confirmed_at is not null
+  limit 1;
+
+  if v_target_id is null then
+    raise no_data_found using message = 'No verified BIISMO REG account was found for that email.';
+  end if;
+
+  insert into private.user_accounts (user_id)
+  values (v_target_id)
+  on conflict (user_id) do nothing;
+
+  select credits into v_previous
+  from private.user_accounts
+  where user_id = v_target_id
+  for update;
+
+  update private.user_accounts
+  set credits = p_amount,
+      updated_at = now()
+  where user_id = v_target_id;
+
+  if p_amount <> v_previous then
+    v_reason := case when p_amount = 0 then 'admin_reset' else 'admin_set' end;
+    insert into private.credit_transactions (user_id, amount, reason, granted_by)
+    values (v_target_id, p_amount - v_previous, v_reason, v_admin_id);
+  end if;
+
+  return jsonb_build_object(
+    'email', v_target_email,
+    'previousCredits', v_previous,
+    'credits', p_amount,
+    'changedBy', p_amount - v_previous
+  );
+end;
+$$;
+
 revoke all on function public.get_search_allowance() from public, anon;
 revoke all on function public.reserve_vehicle_search(text) from public, anon;
 revoke all on function public.complete_vehicle_search(uuid) from public, anon;
 revoke all on function public.cancel_vehicle_search(uuid) from public, anon;
 revoke all on function public.admin_grant_credits(text, integer) from public, anon;
+revoke all on function public.admin_get_user_credits(text) from public, anon;
+revoke all on function public.admin_set_user_credits(text, integer) from public, anon;
 
 grant execute on function public.get_search_allowance() to authenticated;
 grant execute on function public.reserve_vehicle_search(text) to authenticated;
 grant execute on function public.complete_vehicle_search(uuid) to authenticated;
 grant execute on function public.cancel_vehicle_search(uuid) to authenticated;
 grant execute on function public.admin_grant_credits(text, integer) to authenticated;
+grant execute on function public.admin_get_user_credits(text) to authenticated;
+grant execute on function public.admin_set_user_credits(text, integer) to authenticated;
