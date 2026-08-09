@@ -1,21 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <meta name="description" content="Check official UK vehicle, tax and MOT information.">
+  <meta name="description" content="Check a UK vehicle registration for MOT status, MOT history, road tax status, mileage records and official DVLA vehicle details with BIISMO REG.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="application-name" content="BIISMO REG">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="BIISMO REG">
-  <title>BIISMO REG — UK Vehicle Check</title>
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:site_name" content="BIISMO REG">
+  <meta property="og:title" content="Free UK Reg Check, MOT History & Tax Status | BIISMO REG">
+  <meta property="og:description" content="Enter a UK registration to check MOT status, MOT history, road tax, mileage records and official vehicle details.">
+  <meta property="og:url" content="https://biismoreg.com/">
+  <meta property="og:image" content="https://biismoreg.com/icon-512.png">
+  <meta property="og:image:alt" content="BIISMO REG UK vehicle checker logo">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Free UK Reg Check, MOT History & Tax Status | BIISMO REG">
+  <meta name="twitter:description" content="Check a UK registration for MOT, tax, mileage and official vehicle details.">
+  <meta name="twitter:image" content="https://biismoreg.com/icon-512.png">
+  <link rel="canonical" href="https://biismoreg.com/">
+  <title>Free UK Reg Check, MOT History &amp; Tax Status | BIISMO REG</title>
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="pwa-install.css">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="shortcut icon" href="/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "BIISMO REG",
+    "url": "https://biismoreg.com/",
+    "applicationCategory": "AutomotiveApplication",
+    "operatingSystem": "Any",
+    "inLanguage": "en-GB",
+    "description": "A UK vehicle registration checker for MOT status, MOT history, road tax, mileage records and official DVLA vehicle details.",
+    "image": "https://biismoreg.com/icon-512.png",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "GBP",
+      "description": "Five free successful vehicle checks per account each UK calendar day."
+    },
+    "featureList": [
+      "UK registration check",
+      "MOT status and history",
+      "Road tax status",
+      "Mileage records",
+      "Official DVLA vehicle details",
+      "Saved vehicle garage",
+      "MOT and tax reminders"
+    ],
+    "publisher": {
+      "@type": "Organization",
+      "name": "BIISMO REG",
+      "url": "https://biismoreg.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://biismoreg.com/icon-512.png"
+      }
+    }
+  }
+  </script>
 </head>
 <body>
   <div id="appSplash" class="app-splash" role="status" aria-label="Loading BIISMO REG">
@@ -27,7 +81,7 @@
 
   <header class="site-header">
     <a class="brand" href="/" aria-label="BIISMO REG home">
-      <img src="/icon-512.png" alt="BIISMO REG">
+      <img src="/icon-512.png" alt="BIISMO REG UK vehicle checker">
     </a>
     <button id="accountButton" class="header-action" type="button">Sign in</button>
   </header>
@@ -35,13 +89,13 @@
   <main>
     <section class="hero-shell">
       <div class="hero-copy">
-        <h1>UK Vehicle Check</h1>
-        <p>MOT • TAX • HISTORY</p>
+        <h1>Free UK reg check</h1>
+        <p>Check MOT status, MOT history, road tax, mileage records and official DVLA vehicle details from one UK registration number.</p>
       </div>
 
       <form id="vehicleForm" class="search-panel" novalidate>
         <div class="search-heading">
-          <span>Vehicle lookup</span>
+          <span>Vehicle registration lookup</span>
           <span class="secure-label">SECURE CHECK</span>
         </div>
 
@@ -50,7 +104,7 @@
           <strong id="allowanceText">Sign in for 5 free checks each day</strong>
         </div>
 
-        <label class="sr-only" for="regInput">UK registration number</label>
+        <label class="sr-only" for="regInput">Enter a UK vehicle registration number</label>
         <div class="plate">
           <div class="gb" aria-hidden="true"><small>GB</small></div>
           <input
@@ -80,10 +134,18 @@
       </form>
     </section>
 
-    <section class="data-note">
+    <section class="data-note" aria-labelledby="ukVehicleCheckInfo">
       <div>
-        <strong>Government-sourced records</strong>
-        <p>Official vehicle information is combined with clearly labelled calculated insights.</p>
+        <strong id="ukVehicleCheckInfo">UK vehicle information in one check</strong>
+        <p>Use BIISMO REG to look up a car, van or motorcycle registration and review its MOT, tax, mileage and vehicle details before buying, selling or checking your own vehicle.</p>
+      </div>
+      <a href="#vehicleForm">Check a registration</a>
+    </section>
+
+    <section class="data-note" aria-labelledby="officialVehicleData">
+      <div>
+        <strong id="officialVehicleData">Government-sourced vehicle records</strong>
+        <p>Official DVLA and DVSA information is combined with clearly labelled calculated insights. Results depend on the records available for the registration entered.</p>
       </div>
       <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">Created by RealBiismo</a>
     </section>
