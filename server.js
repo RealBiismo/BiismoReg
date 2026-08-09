@@ -35,6 +35,7 @@ const pushConfig = {
   subject: process.env.VAPID_SUBJECT || "https://biismoreg-com.onrender.com",
   cronSecret: process.env.REMINDER_CRON_SECRET,
 };
+const emailExportSecret = process.env.EMAIL_EXPORT_SECRET;
 
 if (pushConfig.publicKey && pushConfig.privateKey) {
   webpush.setVapidDetails(pushConfig.subject, pushConfig.publicKey, pushConfig.privateKey);
@@ -223,6 +224,10 @@ function secretsMatch(received, expected) {
   );
 }
 
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
 function validPushSubscription(subscription) {
   return Boolean(
     subscription &&
@@ -391,6 +396,7 @@ async function sendAdminBroadcastNotification(token, title, message) {
 
   return {
     accounts: Number(prepared.accountCount) || 0,
+    recipients: Number(prepared.recipientAccountCount) || 0,
     devices: Number(prepared.deviceCount) || 0,
     sent,
     failed,
@@ -543,6 +549,27 @@ app.get("/api/config", (req, res) => {
   }
 
   return res.json(authConfig);
+});
+
+app.get("/api/account-export/:secret.csv", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  if (!emailExportSecret || !secretsMatch(req.params.secret, emailExportSecret)) {
+    return res.status(404).send("Not found");
+  }
+  try {
+    const data = await callSupabaseRpc(authConfig.supabaseAnonKey, "export_account_emails", {
+      p_export_secret: emailExportSecret,
+    });
+    const accounts = Array.isArray(data?.accounts) ? data.accounts : [];
+    const rows = [
+      ["Email", "Signed up (UTC)", "Email confirmed"],
+      ...accounts.map((account) => [account.email, account.createdAt, account.confirmed ? "TRUE" : "FALSE"]),
+    ];
+    res.type("text/csv").send(rows.map((row) => row.map(csvCell).join(",")).join("\n"));
+  } catch (error) {
+    console.error(`Account export failed: ${error.message}`);
+    return res.status(502).send("Export unavailable");
+  }
 });
 
 app.get("/api/allowance", async (req, res) => {
@@ -802,6 +829,75 @@ app.get("/api/admin/push-audience", adminActionLimiter, async (req, res) => {
   }
 });
 
+app.get("/api/notifications", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "get_user_notifications", { p_limit: 50 }));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "Notifications could not be loaded." : error.message });
+  }
+});
+
+app.post("/api/notifications/read-all", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "mark_all_user_notifications_read"));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "Notifications could not be updated." : error.message });
+  }
+});
+
+app.post("/api/notifications/:id/read", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) {
+    return res.status(400).json({ error: "That notification is invalid." });
+  }
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "set_user_notification_read", {
+      p_notification_id: req.params.id,
+      p_read: req.body?.read !== false,
+    }));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "That notification could not be updated." : error.message });
+  }
+});
+
+app.delete("/api/notifications/:id", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) {
+    return res.status(400).json({ error: "That notification is invalid." });
+  }
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "delete_user_notification", { p_notification_id: req.params.id }));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "That notification could not be deleted." : error.message });
+  }
+});
+
+app.get("/api/admin/broadcast-history", adminActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "admin_get_broadcast_history", { p_limit: 25 }));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "Broadcast history could not be loaded." : error.message });
+  }
+});
+
 app.post("/api/admin/send-broadcast", adminActionLimiter, async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const title = String(req.body?.title || "").trim();
@@ -813,10 +909,6 @@ app.post("/api/admin/send-broadcast", adminActionLimiter, async (req, res) => {
   if (message.length < 1 || message.length > 240) {
     return res.status(400).json({ error: "Enter a notification message between 1 and 240 characters." });
   }
-  if (!pushKeysAreConfigured()) {
-    return res.status(503).json({ error: "Push notifications are not configured yet." });
-  }
-
   try {
     const { token } = await authenticateRequest(req);
     return res.json(await sendAdminBroadcastNotification(token, title, message));
