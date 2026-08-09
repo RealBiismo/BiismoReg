@@ -1169,6 +1169,38 @@ main {
   justify-content: center;
 }
 
+.account-header-actions { justify-self: end; display: flex; align-items: center; gap: 10px; }
+.notification-bell { position: relative; width: 46px; height: 46px; border: 1px solid #333; border-radius: 50%; background: #111; color: #fff; font-size: 23px; cursor: pointer; }
+.notification-bell strong { position: absolute; top: -5px; right: -5px; min-width: 21px; height: 21px; padding: 0 5px; border-radius: 999px; background: #2563eb; color: #fff; font-size: 11px; line-height: 21px; }
+.notification-drawer { position: fixed; z-index: 1200; inset: 0; }
+.notification-drawer-backdrop { position: absolute; inset: 0; width: 100%; border: 0; background: rgba(0,0,0,.72); }
+.notification-drawer-panel { position: absolute; top: 0; right: 0; width: min(440px, 100%); height: 100%; overflow-y: auto; padding: 28px 22px; border-left: 1px solid #262626; background: #080808; box-shadow: -20px 0 60px rgba(0,0,0,.45); }
+.notification-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.notification-list-heading h2 { margin: 3px 0 0; }
+.drawer-close { width: 42px; height: 42px; border: 1px solid #333; border-radius: 50%; background: #111; color: #fff; font-size: 27px; cursor: pointer; }
+.notification-mark-all { margin: 22px 0 8px; border: 0; background: transparent; color: #89cfff; cursor: pointer; }
+.notification-mark-all:disabled { color: #666; cursor: default; }
+.notification-list, .broadcast-history-list { display: grid; gap: 12px; margin-top: 18px; }
+.notification-item, .broadcast-history-item { padding: 17px; border: 1px solid #292929; border-radius: 16px; background: #101010; }
+.notification-item.is-unread { border-color: #2563eb; background: #0c1425; }
+.notification-item-top, .broadcast-history-item > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #8b8b8b; font-size: 11px; }
+.notification-item-top span { color: #89cfff; font-weight: 800; letter-spacing: .12em; }
+.notification-item h3 { margin: 10px 0 6px; font-size: 17px; }
+.notification-item p, .broadcast-history-item p { margin: 0; color: #bbb; line-height: 1.5; }
+.notification-item-actions { display: flex; gap: 15px; margin-top: 13px; }
+.notification-item-actions button { border: 0; padding: 0; background: transparent; color: #89cfff; cursor: pointer; }
+.notification-item-actions button:last-child { color: #ff8f8f; }
+.notification-empty { padding: 26px 8px; color: #888; text-align: center; }
+.broadcast-history-item strong { color: #fff; font-size: 15px; }
+.broadcast-history-item small { display: block; margin-top: 12px; color: #888; }
+.compact-button { min-height: 38px; margin: 0; padding: 7px 13px; }
+.has-open-drawer { overflow: hidden; }
+
+@media (max-width: 680px) {
+  .account-header-actions { width: 100%; }
+  .account-header-actions .header-action { flex: 1; }
+}
+
 .admin-broadcast-stats {
   margin: 20px 0 4px;
   display: grid;
