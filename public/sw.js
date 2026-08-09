@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v15";
+const CACHE_NAME = "biismo-reg-v16";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -35,7 +35,15 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET" || new URL(event.request.url).origin !== self.location.origin) {
+  const requestUrl = new URL(event.request.url);
+  if (event.request.method !== "GET" || requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  // Authenticated responses are private to the current account. Never place them
+  // in the shared PWA cache, whose URL-only lookup could expose account data.
+  if (requestUrl.pathname.startsWith("/api/") || requestUrl.pathname.startsWith("/auth/")) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
