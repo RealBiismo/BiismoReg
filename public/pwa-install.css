@@ -1,0 +1,121 @@
+.install-prompt {
+  position: fixed;
+  z-index: 120;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  width: min(560px, calc(100% - 24px));
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(13, 13, 13, 0.96);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.62);
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 30px));
+  transition: opacity 220ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(18px);
+}
+
+.install-prompt.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.install-prompt__icon {
+  width: 58px;
+  height: 58px;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: #000;
+  object-fit: cover;
+}
+
+.install-prompt__copy {
+  min-width: 0;
+}
+
+.install-prompt__copy strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.install-prompt__copy span {
+  display: block;
+  margin-top: 3px;
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.install-prompt__actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.install-prompt button {
+  width: auto;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.install-prompt__install {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+}
+
+.install-prompt__close {
+  width: 38px !important;
+  padding: 0 !important;
+  background: rgba(255, 255, 255, 0.08);
+  color: #aaa;
+  font-size: 19px !important;
+}
+
+.install-prompt__close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+@media (max-width: 520px) {
+  .install-prompt {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .install-prompt__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 13px;
+  }
+
+  .install-prompt__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .install-prompt__install {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-prompt {
+    transition: none;
+  }
+}
