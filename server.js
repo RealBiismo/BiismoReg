@@ -2,7 +2,9 @@ import "dotenv/config";
 
 import express from "express";
 import rateLimit from "express-rate-limit";
+import { timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import webpush from "web-push";
 
 import {
   buildVehicleResponse,
@@ -26,6 +28,17 @@ const authConfig = {
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
 };
+
+const pushConfig = {
+  publicKey: process.env.VAPID_PUBLIC_KEY,
+  privateKey: process.env.VAPID_PRIVATE_KEY,
+  subject: process.env.VAPID_SUBJECT || "https://biismoreg-com.onrender.com",
+  cronSecret: process.env.REMINDER_CRON_SECRET,
+};
+
+if (pushConfig.publicKey && pushConfig.privateKey) {
+  webpush.setVapidDetails(pushConfig.subject, pushConfig.publicKey, pushConfig.privateKey);
+}
 
 let cachedMotToken = null;
 let motTokenExpiry = 0;
@@ -59,6 +72,14 @@ const adminActionLimiter = rateLimit({
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { error: "Too many admin requests. Please try again shortly." },
+});
+
+const pushActionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Too many reminder requests. Please try again shortly." },
 });
 
 function assertConfigured() {
@@ -178,6 +199,103 @@ async function callSupabaseRpc(token, functionName, parameters = {}) {
   }
 
   return Array.isArray(data) ? data[0] : data;
+}
+
+function pushIsConfigured() {
+  return Boolean(pushConfig.publicKey && pushConfig.privateKey && pushConfig.cronSecret);
+}
+
+function secretsMatch(received, expected) {
+  const receivedBuffer = Buffer.from(String(received || ""));
+  const expectedBuffer = Buffer.from(String(expected || ""));
+  return (
+    receivedBuffer.length === expectedBuffer.length &&
+    receivedBuffer.length > 0 &&
+    timingSafeEqual(receivedBuffer, expectedBuffer)
+  );
+}
+
+function validPushSubscription(subscription) {
+  return Boolean(
+    subscription &&
+      typeof subscription.endpoint === "string" &&
+      subscription.endpoint.startsWith("https://") &&
+      subscription.endpoint.length <= 2048 &&
+      typeof subscription.keys?.p256dh === "string" &&
+      subscription.keys.p256dh.length >= 40 &&
+      subscription.keys.p256dh.length <= 256 &&
+      typeof subscription.keys?.auth === "string" &&
+      subscription.keys.auth.length >= 8 &&
+      subscription.keys.auth.length <= 128
+  );
+}
+
+function reminderPayload(reminder) {
+  const days = Number(reminder.daysRemaining);
+  const dueText =
+    days === 0
+      ? "is due today"
+      : days === 1
+        ? "is due tomorrow"
+        : `is due in ${days} days`;
+  const type = String(reminder.reminderType || "vehicle").toUpperCase();
+  const vehicle = [reminder.make, reminder.model].filter(Boolean).join(" ");
+
+  return JSON.stringify({
+    title: `${type} reminder · ${reminder.registration}`,
+    body: `${vehicle || "Your vehicle"} ${type} ${dueText}.`,
+    tag: `biismo-${reminder.reminderType}-${reminder.vehicleId}-${reminder.dueDate}`,
+    url: `/account.html?vehicle=${encodeURIComponent(reminder.registration)}`,
+  });
+}
+
+async function recordReminderAttempt(reminder, success, permanentFailure = false, errorMessage = null) {
+  await callSupabaseRpc(authConfig.supabaseAnonKey, "record_push_reminder", {
+    p_cron_secret: pushConfig.cronSecret,
+    p_subscription_id: reminder.subscriptionId,
+    p_vehicle_id: reminder.vehicleId,
+    p_reminder_type: reminder.reminderType,
+    p_due_date: reminder.dueDate,
+    p_success: success,
+    p_disable_subscription: permanentFailure,
+    p_error: errorMessage ? String(errorMessage).slice(0, 500) : null,
+  });
+}
+
+async function dispatchDueReminders() {
+  const response =
+    (await callSupabaseRpc(authConfig.supabaseAnonKey, "get_due_push_reminders", {
+      p_cron_secret: pushConfig.cronSecret,
+    })) || [];
+  const items = Array.isArray(response.reminders) ? response.reminders : [];
+  let sent = 0;
+  let failed = 0;
+
+  for (const reminder of items) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: reminder.endpoint,
+          keys: { p256dh: reminder.p256dh, auth: reminder.authKey },
+        },
+        reminderPayload(reminder),
+        { TTL: 60 * 60 * 24 }
+      );
+      await recordReminderAttempt(reminder, true);
+      sent += 1;
+    } catch (error) {
+      const permanentFailure = error?.statusCode === 404 || error?.statusCode === 410;
+      try {
+        await recordReminderAttempt(reminder, false, permanentFailure, error?.message);
+      } catch (recordError) {
+        console.error(`Could not record reminder failure: ${recordError.message}`);
+      }
+      failed += 1;
+      console.error(`Push reminder failed (${error?.statusCode || "unknown"}).`);
+    }
+  }
+
+  return { checked: items.length, sent, failed };
 }
 
 async function safelyCancelReservation(token, reservationId) {
@@ -341,6 +459,78 @@ app.get("/api/allowance", async (req, res) => {
     return res.status(statusCode).json({
       error: statusCode >= 500 ? "Your allowance could not be loaded." : error.message,
     });
+  }
+});
+
+app.get("/api/push/public-key", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!pushConfig.publicKey) {
+    return res.status(503).json({ error: "Vehicle reminders are not configured yet." });
+  }
+  return res.json({ publicKey: pushConfig.publicKey });
+});
+
+app.post("/api/push/subscribe", pushActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const subscription = req.body?.subscription;
+  if (!validPushSubscription(subscription)) {
+    return res.status(400).json({ error: "That notification subscription is invalid." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    const result = await callSupabaseRpc(token, "upsert_push_subscription", {
+      p_endpoint: subscription.endpoint,
+      p_p256dh: subscription.keys.p256dh,
+      p_auth: subscription.keys.auth,
+      p_user_agent: String(req.get("user-agent") || "").slice(0, 500),
+    });
+    return res.json(result);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "Reminders could not be enabled." : error.message,
+    });
+  }
+});
+
+app.delete("/api/push/subscribe", pushActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const endpoint = String(req.body?.endpoint || "");
+  if (!endpoint.startsWith("https://") || endpoint.length > 2048) {
+    return res.status(400).json({ error: "That notification subscription is invalid." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    const result = await callSupabaseRpc(token, "delete_push_subscription", {
+      p_endpoint: endpoint,
+    });
+    return res.json(result);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "Reminders could not be disabled." : error.message,
+    });
+  }
+});
+
+app.post("/api/cron/reminders", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!pushIsConfigured()) {
+    return res.status(503).json({ error: "Vehicle reminders are not configured yet." });
+  }
+  if (!secretsMatch(req.get("x-cron-secret"), pushConfig.cronSecret)) {
+    return res.status(401).json({ error: "Invalid reminder job credentials." });
+  }
+
+  try {
+    return res.json(await dispatchDueReminders());
+  } catch (error) {
+    console.error(`Reminder dispatch failed: ${error.message}`);
+    return res.status(502).json({ error: "Vehicle reminders could not be dispatched." });
   }
 });
 

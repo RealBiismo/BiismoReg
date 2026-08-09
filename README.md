@@ -14,6 +14,8 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - A private saved-vehicle garage protected with Row Level Security
 - Five free successful vehicle checks per account each UK calendar day
 - Credit-funded extra checks and an audited admin console for lookups, grants, exact balances and resets
+- Colour-coded MOT and tax countdowns in the saved-vehicle garage
+- Free opt-in push reminders 30, 14, 7 and 1 day before expiry, plus the due date
 
 ## Requirements
 
@@ -26,12 +28,28 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 
 1. Run `npm install`.
 2. Copy `.env.example` to `.env` and enter the API credentials.
-3. Create a Supabase project and run `database/schema.sql` in its SQL editor. The script explicitly grants authenticated Data API access, applies per-user Row Level Security, and installs the private daily-search/credit functions. Assign the owner in `private.app_admins` through a trusted database migration after verifying their `auth.users` UUID; never authorize from browser-editable user metadata.
+3. Create a Supabase project and run `database/schema.sql` in its SQL editor. The script explicitly grants authenticated Data API access, applies per-user Row Level Security, and installs the private daily-search, credit and push-reminder functions. Assign the owner in `private.app_admins` through a trusted database migration after verifying their `auth.users` UUID; never authorize from browser-editable user metadata.
 4. Add the project URL and public anon/publishable key to `.env`.
 5. In Supabase Auth settings, keep email confirmation enabled and add your production URL plus `http://localhost:3000/**` to the redirect allow list.
 6. To enable Google login, create a Google web OAuth client and add its client ID and secret to the Supabase Google provider settings.
 7. Run `npm start`.
 8. Open `http://localhost:3000`.
+
+## Push reminder setup
+
+Generate one VAPID key pair and a long random reminder secret. Configure the server with `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` and `REMINDER_CRON_SECRET`. Store the same reminder secret and the dispatch URL in Supabase Vault under `biismo_reminder_cron_secret` and `biismo_reminder_dispatch_url`. The dispatch URL should end in `/api/cron/reminders`.
+
+After the Vault values exist, schedule the daily job through Supabase Cron:
+
+```sql
+select cron.schedule(
+  'biismo-daily-vehicle-reminders',
+  '0 9 * * *',
+  $$select private.dispatch_due_push_reminders();$$
+);
+```
+
+Cron uses UTC, so this runs at 09:00 UTC. Reminder subscriptions and delivery records remain in the private schema and are only reachable through authenticated or secret-checked functions.
 
 Supabase setup references:
 

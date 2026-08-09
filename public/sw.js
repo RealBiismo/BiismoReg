@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v6";
+const CACHE_NAME = "biismo-reg-v7";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -49,6 +49,41 @@ self.addEventListener("fetch", (event) => {
         .catch(() => cached);
 
       return cached || networkRequest;
+    })
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data?.json() || {};
+  } catch {
+    payload = { body: event.data?.text() || "A saved vehicle has an upcoming renewal." };
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || "BIISMO REG reminder", {
+      body: payload.body || "A saved vehicle has an upcoming renewal.",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: payload.tag || "biismo-vehicle-reminder",
+      data: { url: payload.url || "/account.html" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || "/account.html", self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
+      const existing = clients.find((client) => new URL(client.url).origin === self.location.origin);
+      if (existing) {
+        await existing.navigate(targetUrl);
+        return existing.focus();
+      }
+      return self.clients.openWindow(targetUrl);
     })
   );
 });

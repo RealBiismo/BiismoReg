@@ -1,5 +1,8 @@
 -- Run this file in the Supabase SQL editor after creating the project.
 
+create extension if not exists pg_cron;
+create extension if not exists pg_net with schema extensions;
+
 create table if not exists public.saved_vehicles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -90,10 +93,36 @@ create table if not exists private.credit_transactions (
   created_at timestamptz not null default now()
 );
 
+create table if not exists private.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique check (endpoint ~ '^https://'),
+  p256dh text not null,
+  auth_key text not null,
+  user_agent text,
+  enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists private.push_reminder_deliveries (
+  id bigint generated always as identity primary key,
+  subscription_id uuid not null references private.push_subscriptions(id) on delete cascade,
+  vehicle_id uuid not null references public.saved_vehicles(id) on delete cascade,
+  reminder_type text not null check (reminder_type in ('mot', 'tax')),
+  due_date date not null,
+  success boolean not null default false,
+  error_message text,
+  attempted_at timestamptz not null default now(),
+  unique (subscription_id, vehicle_id, reminder_type, due_date)
+);
+
 alter table private.user_accounts enable row level security;
 alter table private.app_admins enable row level security;
 alter table private.vehicle_searches enable row level security;
 alter table private.credit_transactions enable row level security;
+alter table private.push_subscriptions enable row level security;
+alter table private.push_reminder_deliveries enable row level security;
 
 revoke all on all tables in schema private from public, anon, authenticated;
 revoke all on all sequences in schema private from public, anon, authenticated;
@@ -111,6 +140,12 @@ where granted_by is not null;
 
 create index if not exists credit_transactions_user_id_idx
 on private.credit_transactions (user_id);
+
+create index if not exists push_subscriptions_user_id_idx
+on private.push_subscriptions (user_id);
+
+create index if not exists push_reminder_deliveries_vehicle_id_idx
+on private.push_reminder_deliveries (vehicle_id);
 
 -- Assign administrators only through a trusted database migration after their
 -- verified auth.users UUID is known. Never use browser-editable user metadata.
@@ -544,6 +579,254 @@ begin
 end;
 $$;
 
+create or replace function public.upsert_push_subscription(
+  p_endpoint text,
+  p_p256dh text,
+  p_auth text,
+  p_user_agent text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_subscription_id uuid;
+begin
+  if v_user_id is null then
+    raise insufficient_privilege using message = 'Sign in to enable vehicle reminders.';
+  end if;
+
+  if p_endpoint is null or p_endpoint !~ '^https://' or length(p_endpoint) > 2048
+     or p_p256dh is null or length(p_p256dh) not between 40 and 256
+     or p_auth is null or length(p_auth) not between 8 and 128 then
+    raise invalid_parameter_value using message = 'That notification subscription is invalid.';
+  end if;
+
+  insert into private.push_subscriptions (
+    user_id,
+    endpoint,
+    p256dh,
+    auth_key,
+    user_agent,
+    enabled
+  )
+  values (
+    v_user_id,
+    p_endpoint,
+    p_p256dh,
+    p_auth,
+    left(p_user_agent, 500),
+    true
+  )
+  on conflict (endpoint) do update
+  set user_id = excluded.user_id,
+      p256dh = excluded.p256dh,
+      auth_key = excluded.auth_key,
+      user_agent = excluded.user_agent,
+      enabled = true,
+      updated_at = now()
+  returning id into v_subscription_id;
+
+  return jsonb_build_object('enabled', true, 'subscriptionId', v_subscription_id);
+end;
+$$;
+
+create or replace function public.delete_push_subscription(p_endpoint text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_deleted integer;
+begin
+  if v_user_id is null then
+    raise insufficient_privilege using message = 'Sign in to disable vehicle reminders.';
+  end if;
+
+  delete from private.push_subscriptions
+  where user_id = v_user_id
+    and endpoint = p_endpoint;
+
+  get diagnostics v_deleted = row_count;
+  return jsonb_build_object('enabled', false, 'removed', v_deleted > 0);
+end;
+$$;
+
+create or replace function public.get_due_push_reminders(p_cron_secret text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_expected_secret text;
+  v_today date := timezone('Europe/London', now())::date;
+  v_reminders jsonb;
+begin
+  select decrypted_secret
+  into v_expected_secret
+  from vault.decrypted_secrets
+  where name = 'biismo_reminder_cron_secret'
+  limit 1;
+
+  if v_expected_secret is null or p_cron_secret is distinct from v_expected_secret then
+    raise insufficient_privilege using message = 'Invalid reminder job credentials.';
+  end if;
+
+  select coalesce(jsonb_agg(to_jsonb(due)), '[]'::jsonb)
+  into v_reminders
+  from (
+    select
+      subscription.id as "subscriptionId",
+      vehicle.id as "vehicleId",
+      due.reminder_type as "reminderType",
+      due.due_date as "dueDate",
+      (due.due_date - v_today) as "daysRemaining",
+      subscription.endpoint,
+      subscription.p256dh,
+      subscription.auth_key as "authKey",
+      vehicle.registration,
+      vehicle.make,
+      vehicle.model
+    from private.push_subscriptions as subscription
+    join public.saved_vehicles as vehicle
+      on vehicle.user_id = subscription.user_id
+    cross join lateral (
+      values
+        ('mot'::text, vehicle.mot_expiry_date),
+        ('tax'::text, vehicle.tax_due_date)
+    ) as due(reminder_type, due_date)
+    where subscription.enabled
+      and due.due_date is not null
+      and (due.due_date - v_today) in (30, 14, 7, 1, 0)
+      and not exists (
+        select 1
+        from private.push_reminder_deliveries as delivery
+        where delivery.subscription_id = subscription.id
+          and delivery.vehicle_id = vehicle.id
+          and delivery.reminder_type = due.reminder_type
+          and delivery.due_date = due.due_date
+          and delivery.success
+      )
+    order by due.due_date, vehicle.registration
+    limit 500
+  ) as due;
+
+  return jsonb_build_object('reminders', v_reminders);
+end;
+$$;
+
+create or replace function public.record_push_reminder(
+  p_cron_secret text,
+  p_subscription_id uuid,
+  p_vehicle_id uuid,
+  p_reminder_type text,
+  p_due_date date,
+  p_success boolean,
+  p_disable_subscription boolean default false,
+  p_error text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_expected_secret text;
+begin
+  select decrypted_secret
+  into v_expected_secret
+  from vault.decrypted_secrets
+  where name = 'biismo_reminder_cron_secret'
+  limit 1;
+
+  if v_expected_secret is null or p_cron_secret is distinct from v_expected_secret then
+    raise insufficient_privilege using message = 'Invalid reminder job credentials.';
+  end if;
+
+  if p_reminder_type not in ('mot', 'tax') then
+    raise invalid_parameter_value using message = 'Invalid reminder type.';
+  end if;
+
+  insert into private.push_reminder_deliveries (
+    subscription_id,
+    vehicle_id,
+    reminder_type,
+    due_date,
+    success,
+    error_message
+  )
+  select
+    p_subscription_id,
+    p_vehicle_id,
+    p_reminder_type,
+    p_due_date,
+    p_success,
+    left(p_error, 500)
+  from private.push_subscriptions as subscription
+  join public.saved_vehicles as vehicle
+    on vehicle.id = p_vehicle_id
+   and vehicle.user_id = subscription.user_id
+  where subscription.id = p_subscription_id
+  on conflict (subscription_id, vehicle_id, reminder_type, due_date) do update
+  set success = excluded.success,
+      error_message = excluded.error_message,
+      attempted_at = now();
+
+  if p_disable_subscription then
+    update private.push_subscriptions
+    set enabled = false,
+        updated_at = now()
+    where id = p_subscription_id;
+  end if;
+
+  return jsonb_build_object('recorded', found);
+end;
+$$;
+
+create or replace function private.dispatch_due_push_reminders()
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_dispatch_url text;
+  v_cron_secret text;
+  v_request_id bigint;
+begin
+  select decrypted_secret into v_dispatch_url
+  from vault.decrypted_secrets
+  where name = 'biismo_reminder_dispatch_url'
+  limit 1;
+
+  select decrypted_secret into v_cron_secret
+  from vault.decrypted_secrets
+  where name = 'biismo_reminder_cron_secret'
+  limit 1;
+
+  if v_dispatch_url is null or v_cron_secret is null then
+    raise exception 'BIISMO reminder Vault secrets are not configured.';
+  end if;
+
+  select net.http_post(
+    url := v_dispatch_url,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'X-Cron-Secret', v_cron_secret
+    ),
+    body := jsonb_build_object('scheduledAt', now()),
+    timeout_milliseconds := 30000
+  ) into v_request_id;
+
+  return v_request_id;
+end;
+$$;
+
 revoke all on function public.get_search_allowance() from public, anon;
 revoke all on function public.reserve_vehicle_search(text) from public, anon;
 revoke all on function public.complete_vehicle_search(uuid) from public, anon;
@@ -551,6 +834,11 @@ revoke all on function public.cancel_vehicle_search(uuid) from public, anon;
 revoke all on function public.admin_grant_credits(text, integer) from public, anon;
 revoke all on function public.admin_get_user_credits(text) from public, anon;
 revoke all on function public.admin_set_user_credits(text, integer) from public, anon;
+revoke all on function public.upsert_push_subscription(text, text, text, text) from public, anon;
+revoke all on function public.delete_push_subscription(text) from public, anon;
+revoke all on function public.get_due_push_reminders(text) from public, authenticated;
+revoke all on function public.record_push_reminder(text, uuid, uuid, text, date, boolean, boolean, text) from public, authenticated;
+revoke all on function private.dispatch_due_push_reminders() from public, anon, authenticated;
 
 grant execute on function public.get_search_allowance() to authenticated;
 grant execute on function public.reserve_vehicle_search(text) to authenticated;
@@ -559,3 +847,7 @@ grant execute on function public.cancel_vehicle_search(uuid) to authenticated;
 grant execute on function public.admin_grant_credits(text, integer) to authenticated;
 grant execute on function public.admin_get_user_credits(text) to authenticated;
 grant execute on function public.admin_set_user_credits(text, integer) to authenticated;
+grant execute on function public.upsert_push_subscription(text, text, text, text) to authenticated;
+grant execute on function public.delete_push_subscription(text) to authenticated;
+grant execute on function public.get_due_push_reminders(text) to anon;
+grant execute on function public.record_push_reminder(text, uuid, uuid, text, date, boolean, boolean, text) to anon;
