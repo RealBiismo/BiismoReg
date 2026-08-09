@@ -42,6 +42,45 @@
       </form>
     </section>
 
+    <section class="credits-section" aria-labelledby="creditsTitle">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">SEARCH ACCESS</span>
+          <h2 id="creditsTitle">Daily checks &amp; credits</h2>
+        </div>
+        <span class="credit-rate">2 credits = 1 extra check</span>
+      </div>
+
+      <div class="credit-summary">
+        <article class="credit-card">
+          <span>Free checks remaining today</span>
+          <strong id="freeSearchesRemaining">—</strong>
+          <small>Resets at midnight UK time</small>
+        </article>
+        <article class="credit-card">
+          <span>Credit balance</span>
+          <strong id="creditBalance">—</strong>
+          <small>Extra checks cost 2 credits</small>
+        </article>
+      </div>
+
+      <section id="adminCreditPanel" class="admin-credit-panel" aria-labelledby="adminCreditTitle" hidden>
+        <div>
+          <span class="eyebrow">ADMIN ONLY</span>
+          <h3 id="adminCreditTitle">Send credits to a user</h3>
+          <p>Enter the verified email address used for their BIISMO REG account.</p>
+        </div>
+        <form id="creditGrantForm" class="credit-grant-form" novalidate>
+          <label for="creditEmail">User email</label>
+          <input id="creditEmail" type="email" autocomplete="off" placeholder="user@example.com" required>
+          <label for="creditAmount">Credits</label>
+          <input id="creditAmount" type="number" min="1" max="100000" step="1" placeholder="10" required>
+          <button id="grantCreditsButton" class="primary-button" type="submit">Send credits</button>
+        </form>
+        <p id="creditGrantStatus" class="credit-grant-status" role="status"></p>
+      </section>
+    </section>
+
     <section class="garage-section" aria-labelledby="garageTitle">
       <div class="section-heading">
         <div>

@@ -90,6 +90,10 @@ a {
   display: none !important;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .site-header {
   position: relative;
   z-index: 20;
@@ -224,6 +228,28 @@ main {
   color: var(--green);
   font-size: 10px;
   letter-spacing: 0.12em;
+}
+
+.allowance-bar {
+  margin: -6px 0 16px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(79, 124, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(79, 124, 255, 0.07);
+  font-size: 12px;
+}
+
+.allowance-bar span {
+  color: var(--muted);
+}
+
+.allowance-bar strong {
+  color: #d9e3ff;
+  text-align: right;
 }
 
 .plate {
@@ -812,6 +838,124 @@ main {
   color: var(--muted);
 }
 
+.credits-section {
+  padding: 48px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.credit-rate {
+  padding: 8px 12px;
+  border: 1px solid rgba(79, 124, 255, 0.28);
+  border-radius: 999px;
+  color: #b9c8f5;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.credit-summary {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.credit-card,
+.admin-credit-panel {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.credit-card {
+  padding: 20px;
+  border-radius: 18px;
+}
+
+.credit-card span,
+.credit-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.credit-card strong {
+  margin: 8px 0 5px;
+  display: block;
+  color: #fff;
+  font-size: 34px;
+}
+
+.admin-credit-panel {
+  margin-top: 20px;
+  padding: 22px;
+  border-color: rgba(74, 222, 128, 0.24);
+  border-radius: 20px;
+}
+
+.admin-credit-panel h3 {
+  margin-top: 5px;
+  font-size: 22px;
+}
+
+.admin-credit-panel p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.credit-grant-form {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 150px 170px;
+  grid-template-areas:
+    "email-label amount-label button-space"
+    "email amount button";
+  gap: 7px 10px;
+  align-items: end;
+}
+
+.credit-grant-form label {
+  color: #b7bfcd;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.credit-grant-form label[for="creditEmail"] { grid-area: email-label; }
+.credit-grant-form label[for="creditAmount"] { grid-area: amount-label; }
+#creditEmail { grid-area: email; }
+#creditAmount { grid-area: amount; }
+#grantCreditsButton { grid-area: button; }
+
+.credit-grant-form input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 15px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  outline: 0;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+}
+
+.credit-grant-form input:focus {
+  border-color: var(--blue);
+}
+
+.credit-grant-form .primary-button {
+  min-width: 0;
+  margin: 0;
+  justify-content: center;
+}
+
+.credit-grant-status {
+  min-height: 20px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.credit-grant-status.is-success { color: var(--green); }
+.credit-grant-status.is-error { color: #ff9aa4; }
+
 .garage-search {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -1082,6 +1226,15 @@ main {
     gap: 4px;
   }
 
+  .allowance-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .allowance-bar strong {
+    text-align: left;
+  }
+
   .data-note {
     align-items: flex-start;
     flex-direction: column;
@@ -1138,6 +1291,29 @@ main {
   .account-hero {
     padding: 46px 0 40px;
     gap: 30px;
+  }
+
+  .credits-section {
+    padding: 38px 0;
+  }
+
+  .credits-section .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .credit-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .credit-grant-form {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "email-label"
+      "email"
+      "amount-label"
+      "amount"
+      "button";
   }
 
   .garage-search {

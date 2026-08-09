@@ -84,6 +84,105 @@ async function readJsonResponse(response, serviceName) {
   return data;
 }
 
+function getBearerToken(req) {
+  const authorization = req.get("authorization") || "";
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+
+  if (!match) {
+    const error = new Error("Sign in to check a vehicle.");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return match[1];
+}
+
+function assertAuthConfigured() {
+  if (!authConfig.supabaseUrl || !authConfig.supabaseAnonKey) {
+    const error = new Error("Account services are not configured yet.");
+    error.statusCode = 503;
+    throw error;
+  }
+}
+
+async function authenticateRequest(req) {
+  const token = getBearerToken(req);
+  assertAuthConfigured();
+
+  let response;
+  try {
+    response = await fetch(`${authConfig.supabaseUrl}/auth/v1/user`, {
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        Authorization: `Bearer ${token}`,
+      },
+      signal: AbortSignal.timeout(8_000),
+    });
+  } catch (cause) {
+    const error = new Error("Account services could not be reached.", { cause });
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const user = await readJsonResponse(response, "Supabase Auth");
+  if (!response.ok || !user?.id) {
+    const error = new Error("Your session has expired. Sign in again.");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return { token, user };
+}
+
+async function callSupabaseRpc(token, functionName, parameters = {}) {
+  assertAuthConfigured();
+
+  let response;
+  try {
+    response = await fetch(
+      `${authConfig.supabaseUrl}/rest/v1/rpc/${encodeURIComponent(functionName)}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: authConfig.supabaseAnonKey,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(parameters),
+        signal: AbortSignal.timeout(8_000),
+      }
+    );
+  } catch (cause) {
+    const error = new Error("Account services could not be reached.", { cause });
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const data = await readJsonResponse(response, "Supabase Data API");
+  if (!response.ok) {
+    const message = data?.message || "The account operation could not be completed.";
+    const error = new Error(message);
+    error.statusCode = response.status === 401 || response.status === 403 ? response.status : 502;
+    if (message.includes("No verified BIISMO REG account")) error.statusCode = 404;
+    if (message.includes("credit amount")) error.statusCode = 400;
+    throw error;
+  }
+
+  return Array.isArray(data) ? data[0] : data;
+}
+
+async function safelyCancelReservation(token, reservationId) {
+  if (!reservationId) return;
+
+  try {
+    await callSupabaseRpc(token, "cancel_vehicle_search", {
+      p_reservation_id: reservationId,
+    });
+  } catch (error) {
+    console.error(`Could not refund vehicle-search reservation: ${error.message}`);
+  }
+}
+
 async function fetchDvlaVehicle(registration) {
   let response;
 
@@ -220,17 +319,97 @@ app.get("/api/config", (req, res) => {
   return res.json(authConfig);
 });
 
-app.post("/api/check", vehicleCheckLimiter, async (req, res) => {
+app.get("/api/allowance", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
 
   try {
+    const { token } = await authenticateRequest(req);
+    const allowance = await callSupabaseRpc(token, "get_search_allowance");
+    return res.json(allowance);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "Your allowance could not be loaded." : error.message,
+    });
+  }
+});
+
+app.post("/api/grant-credits", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const amount = Number(req.body?.amount);
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return res.status(400).json({ error: "Enter a complete account email address." });
+  }
+  if (!Number.isInteger(amount) || amount < 1 || amount > 100000) {
+    return res.status(400).json({ error: "Enter a credit amount between 1 and 100,000." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    const grant = await callSupabaseRpc(token, "admin_grant_credits", {
+      p_target_email: email,
+      p_amount: amount,
+    });
+    return res.json(grant);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "Credits could not be granted." : error.message,
+    });
+  }
+});
+
+app.post("/api/check", vehicleCheckLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+
+  let token = null;
+  let reservationId = null;
+
+  try {
     const registration = normalizeRegistration(req.body?.registrationNumber);
+    ({ token } = await authenticateRequest(req));
     assertConfigured();
+
+    const reservation = await callSupabaseRpc(token, "reserve_vehicle_search", {
+      p_registration: registration,
+    });
+
+    if (!reservation?.allowed) {
+      return res.status(402).json({
+        error: reservation?.message || "You have no searches available.",
+        allowance: reservation,
+      });
+    }
+
+    reservationId = reservation.reservationId;
     const dvla = await fetchDvlaVehicle(registration);
     const mot = await fetchMotHistory(registration);
 
-    res.json(buildVehicleResponse(registration, dvla, mot));
+    let allowance;
+    try {
+      allowance = await callSupabaseRpc(token, "complete_vehicle_search", {
+        p_reservation_id: reservationId,
+      });
+      reservationId = null;
+    } catch (cause) {
+      await safelyCancelReservation(token, reservationId);
+      reservationId = null;
+      const error = new Error("The search could not be recorded. Please try again.", { cause });
+      error.statusCode = 502;
+      throw error;
+    }
+
+    res.json({
+      ...buildVehicleResponse(registration, dvla, mot),
+      allowance,
+    });
   } catch (error) {
+    await safelyCancelReservation(token, reservationId);
     const statusCode =
       error instanceof ValidationError ? 400 : error.statusCode || 500;
 
