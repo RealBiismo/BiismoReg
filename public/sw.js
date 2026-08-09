@@ -1,4 +1,6 @@
-const CACHE_NAME = "biismo-reg-v16";
+const CACHE_NAME = "biismo-reg-v17";
+const CANONICAL_ORIGIN = "https://biismoreg.com";
+const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -27,11 +29,38 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)));
+      await self.clients.claim();
+
+      if (!LEGACY_HOSTS.has(self.location.hostname)) return;
+
+      let hadPushSubscription = false;
+      try {
+        const subscription = await self.registration.pushManager.getSubscription();
+        if (subscription) {
+          hadPushSubscription = true;
+          await subscription.unsubscribe();
+        }
+      } catch {
+        // Continue migrating open windows even if the old subscription cannot be removed.
+      }
+
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      await Promise.all(
+        windows.map((client) => {
+          const current = new URL(client.url);
+          const destination = hadPushSubscription
+            ? new URL("/account.html?pushMigration=1", CANONICAL_ORIGIN)
+            : new URL(`${current.pathname}${current.search}${current.hash}`, CANONICAL_ORIGIN);
+          return client.navigate(destination.href).catch(() => null);
+        })
+      );
+
+      await self.registration.unregister();
+    })()
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -44,6 +73,21 @@ self.addEventListener("fetch", (event) => {
   // in the shared PWA cache, whose URL-only lookup could expose account data.
   if (requestUrl.pathname.startsWith("/api/") || requestUrl.pathname.startsWith("/auth/")) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  if (requestUrl.pathname === "/pwa.js") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
 
