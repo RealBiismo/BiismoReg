@@ -4,6 +4,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import { timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import Stripe from "stripe";
 import webpush from "web-push";
 
 import {
@@ -27,7 +28,24 @@ const config = {
 const authConfig = {
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  supabaseSecretKey: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
 };
+
+const stripeConfig = {
+  secretKey: process.env.STRIPE_SECRET_KEY,
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  appBaseUrl: process.env.APP_BASE_URL || process.env.RENDER_EXTERNAL_URL,
+};
+
+const creditBundles = Object.freeze([
+  Object.freeze({ id: "starter", credits: 10, amountPence: 199, label: "Starter" }),
+  Object.freeze({ id: "popular", credits: 30, amountPence: 499, label: "Popular" }),
+  Object.freeze({ id: "best_value", credits: 70, amountPence: 999, label: "Best value" }),
+]);
+const creditBundlesById = new Map(creditBundles.map((bundle) => [bundle.id, bundle]));
+const stripe = stripeConfig.secretKey
+  ? new Stripe(stripeConfig.secretKey, { maxNetworkRetries: 2, timeout: 10_000 })
+  : null;
 
 const pushConfig = {
   publicKey: process.env.VAPID_PUBLIC_KEY,
@@ -45,6 +63,12 @@ let cachedMotToken = null;
 let motTokenExpiry = 0;
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json", limit: "100kb" }),
+  handleStripeWebhook
+);
 app.use(express.json({ limit: "10kb" }));
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -81,6 +105,14 @@ const pushActionLimiter = rateLimit({
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { error: "Too many reminder requests. Please try again shortly." },
+});
+
+const checkoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Too many checkout attempts. Please try again shortly." },
 });
 
 function assertConfigured() {
@@ -204,6 +236,119 @@ async function callSupabaseRpc(token, functionName, parameters = {}) {
   }
 
   return Array.isArray(data) ? data[0] : data;
+}
+
+async function callSupabaseAdminRpc(functionName, parameters = {}) {
+  assertAuthConfigured();
+  const secretKey = authConfig.supabaseSecretKey;
+  if (!secretKey) {
+    const error = new Error("Secure credit fulfilment is not configured yet.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const headers = {
+    apikey: secretKey,
+    "Content-Type": "application/json",
+  };
+  if (secretKey.startsWith("eyJ")) headers.Authorization = `Bearer ${secretKey}`;
+
+  let response;
+  try {
+    response = await fetch(
+      `${authConfig.supabaseUrl}/rest/v1/rpc/${encodeURIComponent(functionName)}`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(parameters),
+        signal: AbortSignal.timeout(8_000),
+      }
+    );
+  } catch (cause) {
+    const error = new Error("Account services could not be reached.", { cause });
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const data = await readJsonResponse(response, "Supabase Data API");
+  if (!response.ok) {
+    const error = new Error(data?.message || "The credit purchase could not be recorded.");
+    error.statusCode = response.status === 401 || response.status === 403 ? response.status : 502;
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
+function stripeIsConfigured() {
+  return Boolean(
+    stripe &&
+      stripeConfig.webhookSecret &&
+      authConfig.supabaseUrl &&
+      authConfig.supabaseSecretKey
+  );
+}
+
+function publicAppUrl(req) {
+  const candidate = stripeConfig.appBaseUrl || `${req.protocol}://${req.get("host")}`;
+  const url = new URL(candidate);
+  if (!(["https:", "http:"].includes(url.protocol))) throw new Error("Invalid app URL.");
+  return url.origin;
+}
+
+async function handleStripeWebhook(req, res) {
+  if (!stripeIsConfigured()) {
+    return res.status(503).json({ error: "Credit purchases are not configured yet." });
+  }
+
+  const signature = req.get("stripe-signature");
+  if (!signature) return res.status(400).json({ error: "Missing Stripe signature." });
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, signature, stripeConfig.webhookSecret);
+  } catch (error) {
+    console.error(`Stripe webhook signature rejected: ${error.message}`);
+    return res.status(400).json({ error: "Invalid Stripe signature." });
+  }
+
+  if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
+    return res.json({ received: true });
+  }
+
+  const session = event.data.object;
+  if (session.payment_status !== "paid") return res.json({ received: true });
+
+  const userId = String(session.metadata?.user_id || "");
+  const bundleId = String(session.metadata?.bundle_id || "");
+  const bundle = creditBundlesById.get(bundleId);
+  const currency = String(session.currency || "").toLowerCase();
+
+  if (
+    !bundle ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId) ||
+    session.client_reference_id !== userId ||
+    session.amount_total !== bundle.amountPence ||
+    currency !== "gbp"
+  ) {
+    console.error(`Stripe checkout ${session.id} failed BIISMO REG fulfilment validation.`);
+    return res.status(400).json({ error: "Invalid credit purchase." });
+  }
+
+  try {
+    await callSupabaseAdminRpc("fulfill_stripe_credit_purchase", {
+      p_user_id: userId,
+      p_checkout_session_id: session.id,
+      p_payment_intent_id:
+        typeof session.payment_intent === "string" ? session.payment_intent : null,
+      p_bundle_id: bundle.id,
+      p_amount_pence: session.amount_total,
+      p_currency: currency,
+    });
+    return res.json({ received: true });
+  } catch (error) {
+    console.error(`Stripe checkout fulfilment failed: ${error.message}`);
+    return res.status(500).json({ error: "Credit fulfilment failed." });
+  }
 }
 
 function pushIsConfigured() {
@@ -584,6 +729,83 @@ app.get("/api/allowance", async (req, res) => {
     if (statusCode >= 500) console.error(error.message);
     return res.status(statusCode).json({
       error: statusCode >= 500 ? "Your allowance could not be loaded." : error.message,
+    });
+  }
+});
+
+app.get("/api/credits/store", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({
+    enabled: stripeIsConfigured(),
+    currency: "GBP",
+    creditCost: 2,
+    bundles: creditBundles.map(({ id, credits, amountPence, label }) => ({
+      id,
+      credits,
+      amountPence,
+      label,
+      searches: credits / 2,
+    })),
+  });
+});
+
+app.get("/api/credits/purchases", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "get_credit_purchase_history", { p_limit: 20 }));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "Your purchase history could not be loaded." : error.message,
+    });
+  }
+});
+
+app.post("/api/credits/checkout", checkoutLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const bundle = creditBundlesById.get(String(req.body?.bundleId || ""));
+  if (!bundle) return res.status(400).json({ error: "Choose a valid credit pack." });
+  if (!stripeIsConfigured()) {
+    return res.status(503).json({ error: "Credit purchases are not available yet." });
+  }
+
+  try {
+    const { user } = await authenticateRequest(req);
+    const appUrl = publicAppUrl(req);
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      client_reference_id: user.id,
+      customer_email: user.email || undefined,
+      success_url: `${appUrl}/credits.html?purchase=success`,
+      cancel_url: `${appUrl}/credits.html?purchase=cancelled`,
+      metadata: {
+        user_id: user.id,
+        bundle_id: bundle.id,
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "gbp",
+            unit_amount: bundle.amountPence,
+            product_data: {
+              name: `${bundle.credits} BIISMO REG credits`,
+              description: `${bundle.credits / 2} additional vehicle checks`,
+            },
+          },
+        },
+      ],
+    });
+
+    if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+    return res.json({ url: session.url });
+  } catch (error) {
+    const statusCode = error.statusCode || 502;
+    if (statusCode >= 500) console.error(`Stripe checkout failed: ${error.message}`);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "The secure checkout could not be opened." : error.message,
     });
   }
 });
