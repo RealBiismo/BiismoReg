@@ -912,11 +912,14 @@ main {
 
 .reminder-section {
   padding: 34px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.reminder-topline {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 28px;
-  border-bottom: 1px solid var(--line);
 }
 
 .reminder-copy {
@@ -948,6 +951,62 @@ main {
 .reminder-toggle {
   min-width: 180px;
   flex: 0 0 auto;
+}
+
+.reminder-vehicle-list {
+  margin-top: 22px;
+  padding-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.reminder-vehicle-option {
+  min-width: 0;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+}
+
+.reminder-vehicle-option input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  accent-color: var(--blue);
+}
+
+.reminder-vehicle-option span {
+  min-width: 0;
+}
+
+.reminder-vehicle-option strong,
+.reminder-vehicle-option small {
+  display: block;
+}
+
+.reminder-vehicle-option strong {
+  font-size: 15px;
+}
+
+.reminder-vehicle-option small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reminder-vehicle-empty {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .admin-hero {
@@ -990,7 +1049,9 @@ main {
 }
 
 .admin-user-search input,
-.admin-credit-controls input {
+.admin-credit-controls input,
+.admin-notification-controls input,
+.admin-notification-controls textarea {
   width: 100%;
   min-height: 52px;
   padding: 0 15px;
@@ -1002,7 +1063,9 @@ main {
 }
 
 .admin-user-search input:focus,
-.admin-credit-controls input:focus {
+.admin-credit-controls input:focus,
+.admin-notification-controls input:focus,
+.admin-notification-controls textarea:focus {
   border-color: var(--blue);
 }
 
@@ -1049,7 +1112,7 @@ main {
 .admin-user-stats {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -1068,6 +1131,41 @@ main {
 
 .admin-credit-controls {
   margin-top: 22px;
+}
+
+.admin-notification-controls {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.admin-notification-controls h3 {
+  font-size: 23px;
+}
+
+.admin-notification-controls > div > p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-notification-controls > label {
+  display: block;
+  margin: 14px 0 7px;
+  color: #b7bfcd;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.admin-notification-controls textarea {
+  padding-top: 13px;
+  resize: vertical;
+}
+
+.admin-notification-controls .primary-button {
+  width: fit-content;
+  margin-top: 14px;
+  justify-content: center;
 }
 
 .admin-action-buttons {
@@ -1461,7 +1559,7 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .reminder-section {
+  .reminder-topline {
     align-items: stretch;
     flex-direction: column;
     gap: 18px;
@@ -1469,6 +1567,10 @@ main {
 
   .reminder-toggle {
     width: 100%;
+  }
+
+  .reminder-vehicle-list {
+    grid-template-columns: 1fr;
   }
 
   .admin-hero {

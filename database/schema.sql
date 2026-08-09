@@ -24,8 +24,8 @@ alter table public.saved_vehicles enable row level security;
 -- New Supabase projects do not automatically expose public tables to the
 -- Data API. Grant only the operations used by signed-in garage users.
 grant usage on schema public to authenticated;
+revoke all on table public.saved_vehicles from public, anon, authenticated;
 grant select, insert, update, delete on table public.saved_vehicles to authenticated;
-revoke all on table public.saved_vehicles from anon;
 
 drop policy if exists "Users can view their own saved vehicles" on public.saved_vehicles;
 create policy "Users can view their own saved vehicles"
@@ -117,12 +117,35 @@ create table if not exists private.push_reminder_deliveries (
   unique (subscription_id, vehicle_id, reminder_type, due_date)
 );
 
+create table if not exists private.vehicle_reminder_preferences (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  vehicle_id uuid not null references public.saved_vehicles(id) on delete cascade,
+  enabled boolean not null default true,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, vehicle_id)
+);
+
+create table if not exists private.admin_push_notifications (
+  id uuid primary key default gen_random_uuid(),
+  admin_id uuid not null references auth.users(id) on delete cascade,
+  target_user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null check (length(title) between 1 and 80),
+  message text not null check (length(message) between 1 and 240),
+  device_count integer not null default 0 check (device_count >= 0),
+  sent_count integer not null default 0 check (sent_count >= 0),
+  failed_count integer not null default 0 check (failed_count >= 0),
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+
 alter table private.user_accounts enable row level security;
 alter table private.app_admins enable row level security;
 alter table private.vehicle_searches enable row level security;
 alter table private.credit_transactions enable row level security;
 alter table private.push_subscriptions enable row level security;
 alter table private.push_reminder_deliveries enable row level security;
+alter table private.vehicle_reminder_preferences enable row level security;
+alter table private.admin_push_notifications enable row level security;
 
 revoke all on all tables in schema private from public, anon, authenticated;
 revoke all on all sequences in schema private from public, anon, authenticated;
@@ -146,6 +169,15 @@ on private.push_subscriptions (user_id);
 
 create index if not exists push_reminder_deliveries_vehicle_id_idx
 on private.push_reminder_deliveries (vehicle_id);
+
+create index if not exists vehicle_reminder_preferences_vehicle_id_idx
+on private.vehicle_reminder_preferences (vehicle_id);
+
+create index if not exists admin_push_notifications_admin_id_idx
+on private.admin_push_notifications (admin_id);
+
+create index if not exists admin_push_notifications_target_user_id_idx
+on private.admin_push_notifications (target_user_id);
 
 -- Assign administrators only through a trusted database migration after their
 -- verified auth.users UUID is known. Never use browser-editable user metadata.
@@ -473,6 +505,7 @@ declare
   v_target_email text;
   v_credits integer;
   v_used integer;
+  v_push_devices integer;
   v_today date := timezone('Europe/London', now())::date;
 begin
   if v_admin_id is null or not exists (
@@ -506,12 +539,18 @@ begin
     and search_date = v_today
     and status in ('reserved', 'completed');
 
+  select count(*)::integer into v_push_devices
+  from private.push_subscriptions
+  where user_id = v_target_id
+    and enabled;
+
   return jsonb_build_object(
     'email', v_target_email,
     'credits', v_credits,
     'dailyLimit', 5,
     'freeUsed', least(v_used, 5),
-    'freeRemaining', greatest(5 - v_used, 0)
+    'freeRemaining', greatest(5 - v_used, 0),
+    'pushDevices', v_push_devices
   );
 end;
 $$;
@@ -575,6 +614,144 @@ begin
     'previousCredits', v_previous,
     'credits', p_amount,
     'changedBy', p_amount - v_previous
+  );
+end;
+$$;
+
+create or replace function public.admin_prepare_push_notification(
+  p_target_email text,
+  p_title text,
+  p_message text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_admin_id uuid := auth.uid();
+  v_target_id uuid;
+  v_target_email text;
+  v_title text := trim(coalesce(p_title, ''));
+  v_message text := trim(coalesce(p_message, ''));
+  v_notification_id uuid;
+  v_subscriptions jsonb;
+  v_device_count integer;
+begin
+  if v_admin_id is null or not exists (
+    select 1 from private.app_admins where user_id = v_admin_id
+  ) then
+    raise insufficient_privilege using message = 'Only the BIISMO REG admin can send push notifications.';
+  end if;
+
+  if length(v_title) not between 1 and 80 then
+    raise invalid_parameter_value using message = 'Enter a notification title between 1 and 80 characters.';
+  end if;
+
+  if length(v_message) not between 1 and 240 then
+    raise invalid_parameter_value using message = 'Enter a notification message between 1 and 240 characters.';
+  end if;
+
+  select id, lower(email)
+  into v_target_id, v_target_email
+  from auth.users
+  where lower(email) = lower(trim(p_target_email))
+    and email_confirmed_at is not null
+  limit 1;
+
+  if v_target_id is null then
+    raise no_data_found using message = 'No verified BIISMO REG account was found for that email.';
+  end if;
+
+  select coalesce(
+    jsonb_agg(jsonb_build_object(
+      'subscriptionId', id,
+      'endpoint', endpoint,
+      'p256dh', p256dh,
+      'authKey', auth_key
+    ) order by created_at),
+    '[]'::jsonb
+  )
+  into v_subscriptions
+  from private.push_subscriptions
+  where user_id = v_target_id
+    and enabled;
+
+  v_device_count := jsonb_array_length(v_subscriptions);
+
+  insert into private.admin_push_notifications (
+    admin_id,
+    target_user_id,
+    title,
+    message,
+    device_count
+  )
+  values (
+    v_admin_id,
+    v_target_id,
+    v_title,
+    v_message,
+    v_device_count
+  )
+  returning id into v_notification_id;
+
+  return jsonb_build_object(
+    'notificationId', v_notification_id,
+    'email', v_target_email,
+    'title', v_title,
+    'message', v_message,
+    'deviceCount', v_device_count,
+    'subscriptions', v_subscriptions
+  );
+end;
+$$;
+
+create or replace function public.admin_complete_push_notification(
+  p_notification_id uuid,
+  p_sent integer,
+  p_failed integer
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_admin_id uuid := auth.uid();
+  v_device_count integer;
+begin
+  if v_admin_id is null or not exists (
+    select 1 from private.app_admins where user_id = v_admin_id
+  ) then
+    raise insufficient_privilege using message = 'Only the BIISMO REG admin can complete push notifications.';
+  end if;
+
+  select device_count into v_device_count
+  from private.admin_push_notifications
+  where id = p_notification_id
+    and admin_id = v_admin_id
+  for update;
+
+  if v_device_count is null then
+    raise no_data_found using message = 'That notification request was not found.';
+  end if;
+
+  if p_sent is null or p_failed is null or p_sent < 0 or p_failed < 0
+     or p_sent + p_failed > v_device_count then
+    raise invalid_parameter_value using message = 'Invalid notification delivery totals.';
+  end if;
+
+  update private.admin_push_notifications
+  set sent_count = p_sent,
+      failed_count = p_failed,
+      completed_at = now()
+  where id = p_notification_id;
+
+  return jsonb_build_object(
+    'notificationId', p_notification_id,
+    'devices', v_device_count,
+    'sent', p_sent,
+    'failed', p_failed
   );
 end;
 $$;
@@ -656,6 +833,82 @@ begin
 end;
 $$;
 
+create or replace function public.get_vehicle_reminder_preferences()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_vehicles jsonb;
+begin
+  if v_user_id is null then
+    raise insufficient_privilege using message = 'Sign in to view vehicle reminders.';
+  end if;
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'vehicleId', vehicle.id,
+    'registration', vehicle.registration,
+    'make', vehicle.make,
+    'model', vehicle.model,
+    'enabled', coalesce(preference.enabled, false)
+  ) order by vehicle.saved_at desc), '[]'::jsonb)
+  into v_vehicles
+  from public.saved_vehicles as vehicle
+  left join private.vehicle_reminder_preferences as preference
+    on preference.user_id = v_user_id
+   and preference.vehicle_id = vehicle.id
+  where vehicle.user_id = v_user_id;
+
+  return jsonb_build_object('vehicles', v_vehicles);
+end;
+$$;
+
+create or replace function public.set_vehicle_reminder_preference(
+  p_vehicle_id uuid,
+  p_enabled boolean
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_registration text;
+begin
+  if v_user_id is null then
+    raise insufficient_privilege using message = 'Sign in to manage vehicle reminders.';
+  end if;
+
+  if p_enabled is null then
+    raise invalid_parameter_value using message = 'Choose whether reminders are enabled.';
+  end if;
+
+  select registration into v_registration
+  from public.saved_vehicles
+  where id = p_vehicle_id
+    and user_id = v_user_id;
+
+  if v_registration is null then
+    raise no_data_found using message = 'That saved vehicle was not found.';
+  end if;
+
+  insert into private.vehicle_reminder_preferences (user_id, vehicle_id, enabled)
+  values (v_user_id, p_vehicle_id, p_enabled)
+  on conflict (user_id, vehicle_id) do update
+  set enabled = excluded.enabled,
+      updated_at = now();
+
+  return jsonb_build_object(
+    'vehicleId', p_vehicle_id,
+    'registration', v_registration,
+    'enabled', p_enabled
+  );
+end;
+$$;
+
 create or replace function public.get_due_push_reminders(p_cron_secret text)
 returns jsonb
 language plpgsql
@@ -695,6 +948,10 @@ begin
     from private.push_subscriptions as subscription
     join public.saved_vehicles as vehicle
       on vehicle.user_id = subscription.user_id
+    join private.vehicle_reminder_preferences as preference
+      on preference.user_id = subscription.user_id
+     and preference.vehicle_id = vehicle.id
+     and preference.enabled
     cross join lateral (
       values
         ('mot'::text, vehicle.mot_expiry_date),
@@ -834,8 +1091,12 @@ revoke all on function public.cancel_vehicle_search(uuid) from public, anon;
 revoke all on function public.admin_grant_credits(text, integer) from public, anon;
 revoke all on function public.admin_get_user_credits(text) from public, anon;
 revoke all on function public.admin_set_user_credits(text, integer) from public, anon;
+revoke all on function public.admin_prepare_push_notification(text, text, text) from public, anon;
+revoke all on function public.admin_complete_push_notification(uuid, integer, integer) from public, anon;
 revoke all on function public.upsert_push_subscription(text, text, text, text) from public, anon;
 revoke all on function public.delete_push_subscription(text) from public, anon;
+revoke all on function public.get_vehicle_reminder_preferences() from public, anon;
+revoke all on function public.set_vehicle_reminder_preference(uuid, boolean) from public, anon;
 revoke all on function public.get_due_push_reminders(text) from public, authenticated;
 revoke all on function public.record_push_reminder(text, uuid, uuid, text, date, boolean, boolean, text) from public, authenticated;
 revoke all on function private.dispatch_due_push_reminders() from public, anon, authenticated;
@@ -847,7 +1108,11 @@ grant execute on function public.cancel_vehicle_search(uuid) to authenticated;
 grant execute on function public.admin_grant_credits(text, integer) to authenticated;
 grant execute on function public.admin_get_user_credits(text) to authenticated;
 grant execute on function public.admin_set_user_credits(text, integer) to authenticated;
+grant execute on function public.admin_prepare_push_notification(text, text, text) to authenticated;
+grant execute on function public.admin_complete_push_notification(uuid, integer, integer) to authenticated;
 grant execute on function public.upsert_push_subscription(text, text, text, text) to authenticated;
 grant execute on function public.delete_push_subscription(text) to authenticated;
+grant execute on function public.get_vehicle_reminder_preferences() to authenticated;
+grant execute on function public.set_vehicle_reminder_preference(uuid, boolean) to authenticated;
 grant execute on function public.get_due_push_reminders(text) to anon;
 grant execute on function public.record_push_reminder(text, uuid, uuid, text, date, boolean, boolean, text) to anon;

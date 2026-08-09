@@ -137,6 +137,36 @@ test("serves health status and rejects unsafe input", async (context) => {
     error: "That notification subscription is invalid.",
   });
 
+  const invalidReminderVehicleResponse = await fetch(`${baseUrl}/api/reminders/preferences`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vehicleId: "not-a-uuid", enabled: true }),
+  });
+  assert.equal(invalidReminderVehicleResponse.status, 400);
+  assert.deepEqual(await invalidReminderVehicleResponse.json(), {
+    error: "Choose a valid saved vehicle.",
+  });
+
+  const invalidReminderChoiceResponse = await fetch(`${baseUrl}/api/reminders/preferences`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vehicleId: "00000000-0000-4000-8000-000000000001", enabled: "yes" }),
+  });
+  assert.equal(invalidReminderChoiceResponse.status, 400);
+  assert.deepEqual(await invalidReminderChoiceResponse.json(), {
+    error: "Choose whether reminders are enabled.",
+  });
+
+  const invalidAdminNotificationResponse = await fetch(`${baseUrl}/api/admin/send-notification`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "user@example.com", title: "BIISMO REG", message: "" }),
+  });
+  assert.equal(invalidAdminNotificationResponse.status, 400);
+  assert.deepEqual(await invalidAdminNotificationResponse.json(), {
+    error: "Enter a notification message between 1 and 240 characters.",
+  });
+
   const pushKeyResponse = await fetch(`${baseUrl}/api/push/public-key`);
   assert.equal(pushKeyResponse.status, 503);
   assert.deepEqual(await pushKeyResponse.json(), {
@@ -147,6 +177,16 @@ test("serves health status and rejects unsafe input", async (context) => {
   assert.equal(cronResponse.status, 503);
   assert.deepEqual(await cronResponse.json(), {
     error: "Vehicle reminders are not configured yet.",
+  });
+
+  const unconfiguredAdminNotificationResponse = await fetch(`${baseUrl}/api/admin/send-notification`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "user@example.com", title: "BIISMO REG", message: "Test message" }),
+  });
+  assert.equal(unconfiguredAdminNotificationResponse.status, 503);
+  assert.deepEqual(await unconfiguredAdminNotificationResponse.json(), {
+    error: "Push notifications are not configured yet.",
   });
 
   const configResponse = await fetch(`${baseUrl}/api/config`);
