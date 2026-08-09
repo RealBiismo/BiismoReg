@@ -167,6 +167,19 @@ test("serves health status and rejects unsafe input", async (context) => {
     error: "Enter a notification message between 1 and 240 characters.",
   });
 
+  const invalidBroadcastResponse = await fetch(`${baseUrl}/api/admin/send-broadcast`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: "BIISMO REG", message: "" }),
+  });
+  assert.equal(invalidBroadcastResponse.status, 400);
+  assert.deepEqual(await invalidBroadcastResponse.json(), {
+    error: "Enter a notification message between 1 and 240 characters.",
+  });
+
+  const signedOutAudienceResponse = await fetch(`${baseUrl}/api/admin/push-audience`);
+  assert.equal(signedOutAudienceResponse.status, 401);
+
   const pushKeyResponse = await fetch(`${baseUrl}/api/push/public-key`);
   assert.equal(pushKeyResponse.status, 503);
   assert.deepEqual(await pushKeyResponse.json(), {
@@ -186,6 +199,16 @@ test("serves health status and rejects unsafe input", async (context) => {
   });
   assert.equal(unconfiguredAdminNotificationResponse.status, 503);
   assert.deepEqual(await unconfiguredAdminNotificationResponse.json(), {
+    error: "Push notifications are not configured yet.",
+  });
+
+  const unconfiguredBroadcastResponse = await fetch(`${baseUrl}/api/admin/send-broadcast`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: "BIISMO REG", message: "Test broadcast" }),
+  });
+  assert.equal(unconfiguredBroadcastResponse.status, 503);
+  assert.deepEqual(await unconfiguredBroadcastResponse.json(), {
     error: "Push notifications are not configured yet.",
   });
 

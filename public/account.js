@@ -26,10 +26,19 @@ const adminNotificationTitle = document.getElementById("adminNotificationTitle")
 const adminNotificationMessage = document.getElementById("adminNotificationMessage");
 const adminSendNotificationButton = document.getElementById("adminSendNotificationButton");
 const adminNotificationStatus = document.getElementById("adminNotificationStatus");
+const broadcastAccountCount = document.getElementById("broadcastAccountCount");
+const broadcastDeviceCount = document.getElementById("broadcastDeviceCount");
+const notificationConsentModal = document.getElementById("notificationConsentModal");
+const notificationAllowButton = document.getElementById("notificationAllowButton");
+const notificationNotNowButton = document.getElementById("notificationNotNowButton");
 
 let hasAdminAccess = false;
 let selectedAdminEmail = null;
 let selectedPushDevices = 0;
+let broadcastAccounts = 0;
+let broadcastDevices = 0;
+
+const NOTIFICATION_PROMPT_DISMISSED_KEY = "biismo-notification-prompt-dismissed-v1";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -96,7 +105,8 @@ function renderAllowance(allowance) {
   creditBalance.textContent = String(credits);
   hasAdminAccess = Boolean(allowance.isAdmin);
   accountMenu.hidden = !hasAdminAccess;
-  if (!hasAdminAccess) switchAccountView("garage");
+  if (hasAdminAccess) loadPushAudience();
+  else switchAccountView("garage");
 }
 
 function switchAccountView(view) {
@@ -307,6 +317,43 @@ async function loadReminderVehicles() {
   }
 }
 
+function hideNotificationConsentPrompt() {
+  notificationConsentModal.hidden = true;
+}
+
+function maybeShowNotificationConsentPrompt() {
+  if (
+    Notification.permission === "default" &&
+    window.localStorage.getItem(NOTIFICATION_PROMPT_DISMISSED_KEY) !== "true"
+  ) {
+    notificationConsentModal.hidden = false;
+  }
+}
+
+async function enableRemindersOnDevice() {
+  const registration = await navigator.serviceWorker.ready;
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error("Notification permission was not granted. You can enable it later from your browser settings.");
+  }
+
+  const keyResponse = await fetch("/api/push/public-key", { cache: "no-store" });
+  const keyData = await keyResponse.json();
+  if (!keyResponse.ok || !keyData.publicKey) {
+    throw new Error(keyData.error || "Vehicle reminders are not available yet.");
+  }
+
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: base64UrlToUint8Array(keyData.publicKey),
+  });
+  await savePushSubscription(subscription);
+  window.localStorage.removeItem(NOTIFICATION_PROMPT_DISMISSED_KEY);
+  reminderToggleButton.textContent = "Disable reminders";
+  reminderToggleButton.dataset.enabled = "true";
+  await loadReminderVehicles();
+}
+
 async function initializeReminders() {
   const iosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const installed = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
@@ -337,6 +384,7 @@ async function initializeReminders() {
       reminderToggleButton.dataset.enabled = "false";
       reminderVehicleList.hidden = true;
       setReminderStatus("Reminders are currently off on this device.");
+      maybeShowNotificationConsentPrompt();
     }
     reminderToggleButton.disabled = false;
   } catch (error) {
@@ -366,30 +414,34 @@ reminderToggleButton.addEventListener("click", async () => {
       return;
     }
 
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      throw new Error("Notification permission was not granted.");
-    }
-
-    const keyResponse = await fetch("/api/push/public-key", { cache: "no-store" });
-    const keyData = await keyResponse.json();
-    if (!keyResponse.ok || !keyData.publicKey) {
-      throw new Error(keyData.error || "Vehicle reminders are not available yet.");
-    }
-
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: base64UrlToUint8Array(keyData.publicKey),
-    });
-    await savePushSubscription(subscription);
-    reminderToggleButton.textContent = "Disable reminders";
-    reminderToggleButton.dataset.enabled = "true";
-    await loadReminderVehicles();
+    await enableRemindersOnDevice();
   } catch (error) {
     setReminderStatus(error.message || "Reminder settings could not be changed.", "error");
   } finally {
     reminderToggleButton.disabled = false;
   }
+});
+
+notificationAllowButton.addEventListener("click", async () => {
+  notificationAllowButton.disabled = true;
+  notificationNotNowButton.disabled = true;
+  hideNotificationConsentPrompt();
+  reminderToggleButton.disabled = true;
+  try {
+    await enableRemindersOnDevice();
+  } catch (error) {
+    setReminderStatus(error.message || "Notifications could not be enabled.", "error");
+  } finally {
+    notificationAllowButton.disabled = false;
+    notificationNotNowButton.disabled = false;
+    reminderToggleButton.disabled = false;
+  }
+});
+
+notificationNotNowButton.addEventListener("click", () => {
+  window.localStorage.setItem(NOTIFICATION_PROMPT_DISMISSED_KEY, "true");
+  hideNotificationConsentPrompt();
+  setReminderStatus("Notifications are off. You can enable them here whenever you want.");
 });
 
 async function loadGarage() {
@@ -439,7 +491,7 @@ function setAdminBusy(busy) {
   adminAddCreditsButton.disabled = busy;
   adminSetCreditsButton.disabled = busy;
   adminResetCreditsButton.disabled = busy;
-  adminSendNotificationButton.disabled = busy || !selectedAdminEmail || selectedPushDevices === 0;
+  adminSendNotificationButton.disabled = busy || broadcastDevices === 0;
 }
 
 function renderAdminUser(account) {
@@ -450,12 +502,6 @@ function renderAdminUser(account) {
   document.getElementById("selectedUserFreeRemaining").textContent = String(Number(account.freeRemaining) || 0);
   document.getElementById("selectedUserFreeUsed").textContent = String(Number(account.freeUsed) || 0);
   document.getElementById("selectedUserPushDevices").textContent = String(selectedPushDevices);
-  adminSendNotificationButton.disabled = selectedPushDevices === 0;
-  setAdminNotificationStatus(
-    selectedPushDevices > 0
-      ? `${selectedPushDevices} enabled ${selectedPushDevices === 1 ? "device" : "devices"} can receive this message.`
-      : "This account has no enabled push devices."
-  );
   adminUserResult.hidden = false;
 }
 
@@ -477,6 +523,33 @@ async function findAdminUser(email, showLoading = true) {
   return account;
 }
 
+async function loadPushAudience() {
+  try {
+    const response = await window.biismoAuth.authorizedFetch("/api/admin/push-audience", {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "The push audience could not be loaded.");
+    broadcastAccounts = Number(data.accounts) || 0;
+    broadcastDevices = Number(data.devices) || 0;
+    broadcastAccountCount.textContent = String(broadcastAccounts);
+    broadcastDeviceCount.textContent = String(broadcastDevices);
+    adminSendNotificationButton.disabled = broadcastDevices === 0;
+    setAdminNotificationStatus(
+      broadcastDevices > 0
+        ? `Ready to reach ${broadcastAccounts} opted-in ${broadcastAccounts === 1 ? "account" : "accounts"} across ${broadcastDevices} ${broadcastDevices === 1 ? "device" : "devices"}.`
+        : "No accounts have enabled push notifications yet."
+    );
+  } catch (error) {
+    broadcastAccounts = 0;
+    broadcastDevices = 0;
+    broadcastAccountCount.textContent = "—";
+    broadcastDeviceCount.textContent = "—";
+    adminSendNotificationButton.disabled = true;
+    setAdminNotificationStatus(error.message || "The push audience could not be loaded.", "error");
+  }
+}
+
 garageMenuButton.addEventListener("click", () => switchAccountView("garage"));
 adminMenuButton.addEventListener("click", () => switchAccountView("admin"));
 
@@ -493,7 +566,6 @@ adminUserSearchForm.addEventListener("submit", async (event) => {
   adminUserResult.hidden = true;
   selectedAdminEmail = null;
   selectedPushDevices = 0;
-  setAdminNotificationStatus("");
   try {
     await findAdminUser(email);
     setAdminStatus("User found.", "success");
@@ -570,7 +642,7 @@ adminResetCreditsButton.addEventListener("click", async () => {
 });
 
 adminSendNotificationButton.addEventListener("click", async () => {
-  if (!selectedAdminEmail || selectedPushDevices === 0) return;
+  if (broadcastDevices === 0) return;
 
   const title = adminNotificationTitle.value.trim();
   const message = adminNotificationMessage.value.trim();
@@ -582,13 +654,12 @@ adminSendNotificationButton.addEventListener("click", async () => {
     setAdminNotificationStatus("Enter a notification message between 1 and 240 characters.", "error");
     return;
   }
-  if (!window.confirm(`Send this push notification to ${selectedAdminEmail}?`)) return;
+  if (!window.confirm(`Send this push notification to all ${broadcastAccounts} opted-in ${broadcastAccounts === 1 ? "account" : "accounts"} across ${broadcastDevices} ${broadcastDevices === 1 ? "device" : "devices"}?`)) return;
 
   setAdminBusy(true);
-  setAdminNotificationStatus(`Sending to ${selectedPushDevices} enabled ${selectedPushDevices === 1 ? "device" : "devices"}…`);
+  setAdminNotificationStatus(`Broadcasting to ${broadcastDevices} enabled ${broadcastDevices === 1 ? "device" : "devices"}…`);
   try {
-    const result = await postAdminAction("/api/admin/send-notification", {
-      email: selectedAdminEmail,
+    const result = await postAdminAction("/api/admin/send-broadcast", {
       title,
       message,
     });
@@ -596,7 +667,7 @@ adminSendNotificationButton.addEventListener("click", async () => {
     if (result.failed > 0) {
       setAdminNotificationStatus(`Sent to ${result.sent} devices; ${result.failed} failed.`, "error");
     } else {
-      setAdminNotificationStatus(`Notification sent to ${result.sent} ${result.sent === 1 ? "device" : "devices"}.`, "success");
+      setAdminNotificationStatus(`Broadcast sent to ${result.sent} ${result.sent === 1 ? "device" : "devices"}.`, "success");
     }
   } catch (error) {
     setAdminNotificationStatus(error.message || "The push notification could not be sent.", "error");

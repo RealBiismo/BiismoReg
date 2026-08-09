@@ -1134,13 +1134,14 @@ main {
 }
 
 .admin-notification-controls {
-  margin-top: 28px;
-  padding-top: 24px;
+  margin-top: 34px;
+  padding: 30px;
   border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
-.admin-notification-controls h3 {
-  font-size: 23px;
+.admin-notification-controls h2 {
+  font-size: clamp(25px, 4vw, 36px);
 }
 
 .admin-notification-controls > div > p {
@@ -1165,6 +1166,88 @@ main {
 .admin-notification-controls .primary-button {
   width: fit-content;
   margin-top: 14px;
+  justify-content: center;
+}
+
+.admin-broadcast-stats {
+  margin: 20px 0 4px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-broadcast-stats article {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.admin-broadcast-stats span,
+.admin-broadcast-stats strong {
+  display: block;
+}
+
+.admin-broadcast-stats span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.admin-broadcast-stats strong {
+  margin-top: 6px;
+  font-size: 25px;
+}
+
+.notification-consent {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.notification-consent[hidden] {
+  display: none;
+}
+
+.notification-consent-card {
+  width: min(100%, 460px);
+  padding: 30px;
+  border: 1px solid #242a35;
+  border-radius: 22px;
+  background: #090b0f;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.notification-consent-card img {
+  margin-bottom: 22px;
+  border-radius: 14px;
+}
+
+.notification-consent-card h2 {
+  margin-top: 7px;
+  font-size: clamp(26px, 7vw, 38px);
+  line-height: 1.02;
+}
+
+.notification-consent-card p {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.notification-consent-card > div {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.notification-consent-card button {
   justify-content: center;
 }
 
@@ -1570,6 +1653,14 @@ main {
   }
 
   .reminder-vehicle-list {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-notification-controls {
+    padding: 24px 0;
+  }
+
+  .notification-consent-card > div {
     grid-template-columns: 1fr;
   }
 

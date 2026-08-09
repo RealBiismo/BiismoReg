@@ -352,6 +352,51 @@ async function sendAdminPushNotification(token, email, title, message) {
   };
 }
 
+async function sendAdminBroadcastNotification(token, title, message) {
+  const prepared = await callSupabaseRpc(token, "admin_prepare_broadcast_push_notification", {
+    p_title: title,
+    p_message: message,
+  });
+  const subscriptions = Array.isArray(prepared.subscriptions) ? prepared.subscriptions : [];
+  let sent = 0;
+  let failed = 0;
+
+  for (const subscription of subscriptions) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.authKey },
+        },
+        JSON.stringify({
+          title: prepared.title,
+          body: prepared.message,
+          tag: `biismo-broadcast-${prepared.notificationId}`,
+          url: "/account.html",
+        }),
+        { TTL: 60 * 60 * 24 }
+      );
+      sent += 1;
+    } catch (error) {
+      failed += 1;
+      console.error(`Admin broadcast push failed (${error?.statusCode || "unknown"}).`);
+    }
+  }
+
+  await callSupabaseRpc(token, "admin_complete_push_notification", {
+    p_notification_id: prepared.notificationId,
+    p_sent: sent,
+    p_failed: failed,
+  });
+
+  return {
+    accounts: Number(prepared.accountCount) || 0,
+    devices: Number(prepared.deviceCount) || 0,
+    sent,
+    failed,
+  };
+}
+
 async function safelyCancelReservation(token, reservationId) {
   if (!reservationId) return;
 
@@ -739,6 +784,47 @@ app.post("/api/admin/send-notification", adminActionLimiter, async (req, res) =>
     if (statusCode >= 500) console.error(error.message);
     return res.status(statusCode).json({
       error: statusCode >= 500 ? "The push notification could not be sent." : error.message,
+    });
+  }
+});
+
+app.get("/api/admin/push-audience", adminActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "admin_get_push_audience"));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "The push audience could not be loaded." : error.message,
+    });
+  }
+});
+
+app.post("/api/admin/send-broadcast", adminActionLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const title = String(req.body?.title || "").trim();
+  const message = String(req.body?.message || "").trim();
+
+  if (title.length < 1 || title.length > 80) {
+    return res.status(400).json({ error: "Enter a notification title between 1 and 80 characters." });
+  }
+  if (message.length < 1 || message.length > 240) {
+    return res.status(400).json({ error: "Enter a notification message between 1 and 240 characters." });
+  }
+  if (!pushKeysAreConfigured()) {
+    return res.status(503).json({ error: "Push notifications are not configured yet." });
+  }
+
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await sendAdminBroadcastNotification(token, title, message));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    if (statusCode >= 500) console.error(error.message);
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? "The broadcast push notification could not be sent." : error.message,
     });
   }
 });

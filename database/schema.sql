@@ -128,7 +128,9 @@ create table if not exists private.vehicle_reminder_preferences (
 create table if not exists private.admin_push_notifications (
   id uuid primary key default gen_random_uuid(),
   admin_id uuid not null references auth.users(id) on delete cascade,
-  target_user_id uuid not null references auth.users(id) on delete cascade,
+  target_user_id uuid references auth.users(id) on delete cascade,
+  is_broadcast boolean not null default false,
+  recipient_user_count integer not null default 1 check (recipient_user_count >= 0),
   title text not null check (length(title) between 1 and 80),
   message text not null check (length(message) between 1 and 240),
   device_count integer not null default 0 check (device_count >= 0),
@@ -137,6 +139,13 @@ create table if not exists private.admin_push_notifications (
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );
+
+alter table private.admin_push_notifications
+  alter column target_user_id drop not null;
+
+alter table private.admin_push_notifications
+  add column if not exists is_broadcast boolean not null default false,
+  add column if not exists recipient_user_count integer not null default 1;
 
 alter table private.user_accounts enable row level security;
 alter table private.app_admins enable row level security;
@@ -706,6 +715,113 @@ begin
 end;
 $$;
 
+create or replace function public.admin_get_push_audience()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_admin_id uuid := auth.uid();
+  v_accounts integer;
+  v_devices integer;
+begin
+  if v_admin_id is null or not exists (
+    select 1 from private.app_admins where user_id = v_admin_id
+  ) then
+    raise insufficient_privilege using message = 'Only the BIISMO REG admin can view the push audience.';
+  end if;
+
+  select count(distinct user_id)::integer, count(*)::integer
+  into v_accounts, v_devices
+  from private.push_subscriptions
+  where enabled;
+
+  return jsonb_build_object(
+    'accounts', v_accounts,
+    'devices', v_devices
+  );
+end;
+$$;
+
+create or replace function public.admin_prepare_broadcast_push_notification(
+  p_title text,
+  p_message text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_admin_id uuid := auth.uid();
+  v_title text := trim(coalesce(p_title, ''));
+  v_message text := trim(coalesce(p_message, ''));
+  v_notification_id uuid;
+  v_subscriptions jsonb;
+  v_account_count integer;
+  v_device_count integer;
+begin
+  if v_admin_id is null or not exists (
+    select 1 from private.app_admins where user_id = v_admin_id
+  ) then
+    raise insufficient_privilege using message = 'Only the BIISMO REG admin can send broadcast push notifications.';
+  end if;
+
+  if length(v_title) not between 1 and 80 then
+    raise invalid_parameter_value using message = 'Enter a notification title between 1 and 80 characters.';
+  end if;
+
+  if length(v_message) not between 1 and 240 then
+    raise invalid_parameter_value using message = 'Enter a notification message between 1 and 240 characters.';
+  end if;
+
+  select coalesce(
+    jsonb_agg(jsonb_build_object(
+      'subscriptionId', id,
+      'endpoint', endpoint,
+      'p256dh', p256dh,
+      'authKey', auth_key
+    ) order by created_at),
+    '[]'::jsonb
+  ), count(distinct user_id)::integer
+  into v_subscriptions, v_account_count
+  from private.push_subscriptions
+  where enabled;
+
+  v_device_count := jsonb_array_length(v_subscriptions);
+
+  insert into private.admin_push_notifications (
+    admin_id,
+    target_user_id,
+    is_broadcast,
+    recipient_user_count,
+    title,
+    message,
+    device_count
+  )
+  values (
+    v_admin_id,
+    null,
+    true,
+    v_account_count,
+    v_title,
+    v_message,
+    v_device_count
+  )
+  returning id into v_notification_id;
+
+  return jsonb_build_object(
+    'notificationId', v_notification_id,
+    'title', v_title,
+    'message', v_message,
+    'accountCount', v_account_count,
+    'deviceCount', v_device_count,
+    'subscriptions', v_subscriptions
+  );
+end;
+$$;
+
 create or replace function public.admin_complete_push_notification(
   p_notification_id uuid,
   p_sent integer,
@@ -1092,6 +1208,8 @@ revoke all on function public.admin_grant_credits(text, integer) from public, an
 revoke all on function public.admin_get_user_credits(text) from public, anon;
 revoke all on function public.admin_set_user_credits(text, integer) from public, anon;
 revoke all on function public.admin_prepare_push_notification(text, text, text) from public, anon;
+revoke all on function public.admin_get_push_audience() from public, anon;
+revoke all on function public.admin_prepare_broadcast_push_notification(text, text) from public, anon;
 revoke all on function public.admin_complete_push_notification(uuid, integer, integer) from public, anon;
 revoke all on function public.upsert_push_subscription(text, text, text, text) from public, anon;
 revoke all on function public.delete_push_subscription(text) from public, anon;
@@ -1109,6 +1227,8 @@ grant execute on function public.admin_grant_credits(text, integer) to authentic
 grant execute on function public.admin_get_user_credits(text) to authenticated;
 grant execute on function public.admin_set_user_credits(text, integer) to authenticated;
 grant execute on function public.admin_prepare_push_notification(text, text, text) to authenticated;
+grant execute on function public.admin_get_push_audience() to authenticated;
+grant execute on function public.admin_prepare_broadcast_push_notification(text, text) to authenticated;
 grant execute on function public.admin_complete_push_notification(uuid, integer, integer) to authenticated;
 grant execute on function public.upsert_push_subscription(text, text, text, text) to authenticated;
 grant execute on function public.delete_push_subscription(text) to authenticated;
