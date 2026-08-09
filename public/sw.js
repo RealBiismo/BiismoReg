@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v13";
+const CACHE_NAME = "biismo-reg-v14";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
