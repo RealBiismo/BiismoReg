@@ -18,6 +18,12 @@ create table if not exists public.saved_vehicles (
 
 alter table public.saved_vehicles enable row level security;
 
+-- New Supabase projects do not automatically expose public tables to the
+-- Data API. Grant only the operations used by signed-in garage users.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on table public.saved_vehicles to authenticated;
+revoke all on table public.saved_vehicles from anon;
+
 drop policy if exists "Users can view their own saved vehicles" on public.saved_vehicles;
 create policy "Users can view their own saved vehicles"
 on public.saved_vehicles for select
