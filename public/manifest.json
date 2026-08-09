@@ -1,13 +1,14 @@
 {
   "id": "/",
-  "name": "BIISMO REG",
-  "short_name": "BIISMO",
-  "description": "Check official UK vehicle, MOT and tax information.",
+  "name": "BIISMO REG — UK Vehicle Check",
+  "short_name": "BIISMO REG",
+  "description": "Check UK vehicle registrations for MOT status, MOT history, road tax, mileage records and official DVLA vehicle details.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "lang": "en-GB",
   "categories": ["automotive", "utilities"],
   "icons": [
     {
