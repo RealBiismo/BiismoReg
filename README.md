@@ -16,7 +16,8 @@ BIISMO REG is a UK vehicle checker built with Node.js, Express and browser-nativ
 - Credit-funded extra checks and an audited admin console for lookups, grants, exact balances and resets
 - Colour-coded MOT and tax countdowns in the saved-vehicle garage
 - Free opt-in push reminders for chosen garage registrations 30, 14, 7 and 1 day before expiry, plus the due date
-- Targeted admin push notifications to a selected user's enabled devices, with a private delivery audit record
+- Confirmed admin broadcast push notifications to every opted-in account, with a private delivery audit record
+- A branded notification consent prompt before the browser permission request
 
 ## Requirements
 

@@ -102,7 +102,7 @@
       <section class="admin-hero">
         <span class="eyebrow">ADMIN ONLY</span>
         <h1>Admin menu.</h1>
-        <p>Find a verified user by email, manage their credits or send a push notification.</p>
+        <p>Manage user credits or send one push notification to every account that has enabled them.</p>
       </section>
 
       <section class="admin-console" aria-labelledby="adminUserSearchTitle">
@@ -160,23 +160,41 @@
             </div>
           </div>
 
-          <div class="admin-notification-controls">
-            <div>
-              <span class="eyebrow">PUSH MESSAGE</span>
-              <h3>Send notification</h3>
-              <p>This sends to every enabled device belonging to the selected account.</p>
-            </div>
-            <label for="adminNotificationTitle">Notification title</label>
-            <input id="adminNotificationTitle" type="text" maxlength="80" value="BIISMO REG" autocomplete="off">
-            <label for="adminNotificationMessage">Message</label>
-            <textarea id="adminNotificationMessage" maxlength="240" rows="4" placeholder="Type the notification message…"></textarea>
-            <button id="adminSendNotificationButton" class="primary-button" type="button">Send push notification</button>
-            <p id="adminNotificationStatus" class="admin-status" role="status"></p>
+        </section>
+
+        <section class="admin-notification-controls" aria-labelledby="adminBroadcastTitle">
+          <div>
+            <span class="eyebrow">BROADCAST PUSH</span>
+            <h2 id="adminBroadcastTitle">Notify everyone</h2>
+            <p>This sends once to every enabled device across all opted-in BIISMO REG accounts.</p>
           </div>
+          <div class="admin-broadcast-stats" aria-live="polite">
+            <article><span>Opted-in accounts</span><strong id="broadcastAccountCount">—</strong></article>
+            <article><span>Enabled devices</span><strong id="broadcastDeviceCount">—</strong></article>
+          </div>
+          <label for="adminNotificationTitle">Notification title</label>
+          <input id="adminNotificationTitle" type="text" maxlength="80" value="BIISMO REG" autocomplete="off">
+          <label for="adminNotificationMessage">Message</label>
+          <textarea id="adminNotificationMessage" maxlength="240" rows="4" placeholder="Type the notification message…"></textarea>
+          <button id="adminSendNotificationButton" class="primary-button" type="button" disabled>Send to all opted-in accounts</button>
+          <p id="adminNotificationStatus" class="admin-status" role="status"></p>
         </section>
       </section>
     </section>
   </main>
+
+  <div id="notificationConsentModal" class="notification-consent" role="dialog" aria-modal="true" aria-labelledby="notificationConsentTitle" hidden>
+    <div class="notification-consent-card">
+      <img src="icon-192.png" alt="" width="56" height="56">
+      <span class="eyebrow">BIISMO ALERTS</span>
+      <h2 id="notificationConsentTitle">Want useful vehicle notifications?</h2>
+      <p>Allow notifications to receive MOT and tax reminders for registrations you choose, plus occasional BIISMO REG updates.</p>
+      <div>
+        <button id="notificationAllowButton" class="primary-button" type="button">Allow notifications</button>
+        <button id="notificationNotNowButton" class="secondary-button" type="button">Not now</button>
+      </div>
+    </div>
+  </div>
 
   <div id="loadingOverlay" class="loading-overlay is-visible" role="status" aria-live="polite" aria-hidden="false">
     <div class="loader-card">
