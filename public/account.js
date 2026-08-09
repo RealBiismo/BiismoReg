@@ -31,12 +31,20 @@ const broadcastDeviceCount = document.getElementById("broadcastDeviceCount");
 const notificationConsentModal = document.getElementById("notificationConsentModal");
 const notificationAllowButton = document.getElementById("notificationAllowButton");
 const notificationNotNowButton = document.getElementById("notificationNotNowButton");
+const notificationBellButton = document.getElementById("notificationBellButton");
+const notificationBadge = document.getElementById("notificationBadge");
+const notificationDrawer = document.getElementById("notificationDrawer");
+const notificationList = document.getElementById("notificationList");
+const notificationDrawerStatus = document.getElementById("notificationDrawerStatus");
+const markAllNotificationsReadButton = document.getElementById("markAllNotificationsReadButton");
+const broadcastHistoryList = document.getElementById("broadcastHistoryList");
 
 let hasAdminAccess = false;
 let selectedAdminEmail = null;
 let selectedPushDevices = 0;
 let broadcastAccounts = 0;
 let broadcastDevices = 0;
+let broadcastRecipients = 0;
 
 const NOTIFICATION_PROMPT_DISMISSED_KEY = "biismo-notification-prompt-dismissed-v1";
 
@@ -53,6 +61,62 @@ function formatDate(value) {
   if (!value) return "Not available";
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime()) ? "Not available" : date.toLocaleDateString("en-GB");
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Unknown time" : date.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+}
+
+function renderNotificationBadge(count) {
+  const unread = Math.max(0, Number(count) || 0);
+  notificationBadge.textContent = unread > 99 ? "99+" : String(unread);
+  notificationBadge.hidden = unread === 0;
+  notificationBellButton.setAttribute("aria-label", unread ? `Open notifications, ${unread} unread` : "Open notifications");
+}
+
+function renderNotifications(items, unreadCount) {
+  renderNotificationBadge(unreadCount);
+  markAllNotificationsReadButton.disabled = !unreadCount;
+  if (!items.length) {
+    notificationList.innerHTML = '<p class="notification-empty">You have no notifications yet.</p>';
+    return;
+  }
+  notificationList.innerHTML = items.map((item) => `
+    <article class="notification-item ${item.read_at ? "" : "is-unread"}" data-notification-id="${escapeHtml(item.id)}">
+      <div class="notification-item-top"><span>${escapeHtml(String(item.type || "update").toUpperCase())}</span><time>${escapeHtml(formatDateTime(item.created_at))}</time></div>
+      <h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.message)}</p>
+      <div class="notification-item-actions">
+        ${item.read_at ? "" : '<button data-notification-read type="button">Mark read</button>'}
+        <button data-notification-delete type="button">Delete</button>
+      </div>
+    </article>`).join("");
+}
+
+async function loadNotifications() {
+  try {
+    const response = await window.biismoAuth.authorizedFetch("/api/notifications", { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Notifications could not be loaded.");
+    renderNotifications(Array.isArray(data.notifications) ? data.notifications : [], data.unreadCount);
+    notificationDrawerStatus.textContent = "";
+  } catch (error) {
+    notificationDrawerStatus.textContent = error.message || "Notifications could not be loaded.";
+  }
+}
+
+async function updateNotification(url, options = {}) {
+  const response = await window.biismoAuth.authorizedFetch(url, { method: options.method || "POST", headers: { "Content-Type": "application/json" }, body: options.body ? JSON.stringify(options.body) : undefined });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Notification could not be updated.");
+  await loadNotifications();
+}
+
+function setNotificationDrawer(open) {
+  notificationDrawer.hidden = !open;
+  notificationBellButton.setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("has-open-drawer", open);
+  if (open) loadNotifications();
 }
 
 function londonTodayUtc() {
@@ -464,6 +528,8 @@ async function loadGarage() {
   accountEmail.textContent = user.email || "Signed in securely";
   loadAllowance();
   initializeReminders();
+  loadNotifications();
+  if (new URLSearchParams(window.location.search).has("notifications")) setNotificationDrawer(true);
 
   try {
     const vehicles = await window.biismoAuth.listSavedVehicles();
@@ -491,7 +557,7 @@ function setAdminBusy(busy) {
   adminAddCreditsButton.disabled = busy;
   adminSetCreditsButton.disabled = busy;
   adminResetCreditsButton.disabled = busy;
-  adminSendNotificationButton.disabled = busy || broadcastDevices === 0;
+  adminSendNotificationButton.disabled = busy || broadcastRecipients === 0;
 }
 
 function renderAdminUser(account) {
@@ -532,13 +598,14 @@ async function loadPushAudience() {
     if (!response.ok) throw new Error(data.error || "The push audience could not be loaded.");
     broadcastAccounts = Number(data.accounts) || 0;
     broadcastDevices = Number(data.devices) || 0;
+    broadcastRecipients = Number(data.recipients ?? data.totalAccounts ?? data.accounts) || 0;
     broadcastAccountCount.textContent = String(broadcastAccounts);
     broadcastDeviceCount.textContent = String(broadcastDevices);
-    adminSendNotificationButton.disabled = broadcastDevices === 0;
+    adminSendNotificationButton.disabled = broadcastRecipients === 0;
     setAdminNotificationStatus(
       broadcastDevices > 0
         ? `Ready to reach ${broadcastAccounts} opted-in ${broadcastAccounts === 1 ? "account" : "accounts"} across ${broadcastDevices} ${broadcastDevices === 1 ? "device" : "devices"}.`
-        : "No accounts have enabled push notifications yet."
+        : "No accounts have enabled push notifications yet. Announcements will still appear in the in-app inbox."
     );
   } catch (error) {
     broadcastAccounts = 0;
@@ -550,8 +617,22 @@ async function loadPushAudience() {
   }
 }
 
+async function loadBroadcastHistory() {
+  try {
+    const response = await window.biismoAuth.authorizedFetch("/api/admin/broadcast-history", { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Broadcast history could not be loaded.");
+    const items = Array.isArray(data.broadcasts) ? data.broadcasts : [];
+    broadcastHistoryList.innerHTML = items.length ? items.map((item) => `
+      <article class="broadcast-history-item"><div><strong>${escapeHtml(item.title)}</strong><time>${escapeHtml(formatDateTime(item.created_at))}</time></div>
+      <p>${escapeHtml(item.message)}</p><small>${Number(item.recipients)||0} recipients · ${Number(item.devices)||0} devices · ${Number(item.sent)||0} sent · ${Number(item.failed)||0} failed</small></article>`).join("") : '<p class="notification-empty">No broadcasts yet.</p>';
+  } catch (error) {
+    broadcastHistoryList.innerHTML = `<p class="notification-empty">${escapeHtml(error.message || "Broadcast history could not be loaded.")}</p>`;
+  }
+}
+
 garageMenuButton.addEventListener("click", () => switchAccountView("garage"));
-adminMenuButton.addEventListener("click", () => switchAccountView("admin"));
+adminMenuButton.addEventListener("click", () => { switchAccountView("admin"); loadBroadcastHistory(); });
 
 adminUserSearchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -642,7 +723,7 @@ adminResetCreditsButton.addEventListener("click", async () => {
 });
 
 adminSendNotificationButton.addEventListener("click", async () => {
-  if (broadcastDevices === 0) return;
+  if (broadcastRecipients === 0) return;
 
   const title = adminNotificationTitle.value.trim();
   const message = adminNotificationMessage.value.trim();
@@ -654,7 +735,7 @@ adminSendNotificationButton.addEventListener("click", async () => {
     setAdminNotificationStatus("Enter a notification message between 1 and 240 characters.", "error");
     return;
   }
-  if (!window.confirm(`Send this push notification to all ${broadcastAccounts} opted-in ${broadcastAccounts === 1 ? "account" : "accounts"} across ${broadcastDevices} ${broadcastDevices === 1 ? "device" : "devices"}?`)) return;
+  if (!window.confirm(`Send this announcement to all ${broadcastRecipients} ${broadcastRecipients === 1 ? "account" : "accounts"}? Push will also go to ${broadcastDevices} enabled ${broadcastDevices === 1 ? "device" : "devices"}.`)) return;
 
   setAdminBusy(true);
   setAdminNotificationStatus(`Broadcasting to ${broadcastDevices} enabled ${broadcastDevices === 1 ? "device" : "devices"}…`);
@@ -664,6 +745,7 @@ adminSendNotificationButton.addEventListener("click", async () => {
       message,
     });
     adminNotificationMessage.value = "";
+    await Promise.all([loadPushAudience(), loadBroadcastHistory(), loadNotifications()]);
     if (result.failed > 0) {
       setAdminNotificationStatus(`Sent to ${result.sent} devices; ${result.failed} failed.`, "error");
     } else {
@@ -674,6 +756,22 @@ adminSendNotificationButton.addEventListener("click", async () => {
   } finally {
     setAdminBusy(false);
   }
+});
+
+notificationBellButton.addEventListener("click", () => setNotificationDrawer(true));
+document.getElementById("closeNotificationDrawerButton").addEventListener("click", () => setNotificationDrawer(false));
+document.getElementById("notificationDrawerBackdrop").addEventListener("click", () => setNotificationDrawer(false));
+document.getElementById("refreshBroadcastHistoryButton").addEventListener("click", loadBroadcastHistory);
+markAllNotificationsReadButton.addEventListener("click", async () => {
+  try { await updateNotification("/api/notifications/read-all"); } catch (error) { notificationDrawerStatus.textContent = error.message; }
+});
+notificationList.addEventListener("click", async (event) => {
+  const item = event.target.closest("[data-notification-id]");
+  if (!item) return;
+  try {
+    if (event.target.closest("[data-notification-read]")) await updateNotification(`/api/notifications/${item.dataset.notificationId}/read`, { body: { read: true } });
+    if (event.target.closest("[data-notification-delete]")) await updateNotification(`/api/notifications/${item.dataset.notificationId}`, { method: "DELETE" });
+  } catch (error) { notificationDrawerStatus.textContent = error.message; }
 });
 
 document.getElementById("garageSearchForm").addEventListener("submit", (event) => {
