@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v11";
+const CACHE_NAME = "biismo-reg-v12";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -6,6 +6,7 @@ const STATIC_ASSETS = [
   "/classic.css",
   "/pwa-install.css",
   "/script.js",
+  "/splash.js",
   "/auth.js",
   "/pwa.js",
   "/account.html",
