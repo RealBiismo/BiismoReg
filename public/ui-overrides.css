@@ -1,0 +1,241 @@
+/* Final interface polish layered after the main stylesheet. */
+
+.home-page {
+  min-height: 100svh;
+}
+
+.home-page .site-header {
+  min-height: 72px;
+}
+
+.home-page .hero-shell {
+  min-height: calc(100svh - 142px);
+  padding: clamp(24px, 5vh, 56px) 0;
+  gap: clamp(32px, 5vw, 72px);
+}
+
+.home-page .hero-copy h1 {
+  font-size: clamp(44px, 5.4vw, 72px);
+}
+
+.home-page .hero-copy > p {
+  margin-top: 20px;
+  font-size: clamp(16px, 1.55vw, 19px);
+}
+
+.home-page .search-panel {
+  padding: 24px;
+}
+
+.home-page .plate {
+  height: 82px;
+}
+
+.home-page .data-note {
+  min-height: 70px;
+  padding: 12px 0;
+}
+
+.notification-bell-icon {
+  width: 21px;
+  height: 21px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-bell-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.garage-heading-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.garage-limit {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+body:has(#adminView:not([hidden])) {
+  --blue: #ef3340;
+  --blue-strong: #a90d1b;
+  --green: #ff6b78;
+  background:
+    radial-gradient(circle at 78% 8%, rgba(239, 51, 64, 0.24), transparent 31rem),
+    radial-gradient(circle at 8% 38%, rgba(169, 13, 27, 0.17), transparent 26rem),
+    #0c0709;
+}
+
+body:has(#adminView:not([hidden])) .site-header {
+  border-bottom-color: rgba(239, 51, 64, 0.28);
+}
+
+body:has(#adminView:not([hidden])) .account-menu {
+  border-color: rgba(239, 51, 64, 0.28);
+  background: rgba(100, 8, 18, 0.2);
+}
+
+body:has(#adminView:not([hidden])) .account-menu-button.is-active {
+  border-color: rgba(255, 107, 120, 0.62);
+  background: linear-gradient(135deg, rgba(239, 51, 64, 0.32), rgba(169, 13, 27, 0.36));
+  color: #fff;
+}
+
+#adminView .admin-hero,
+#adminView .admin-console,
+#adminView .admin-user-result,
+#adminView .admin-user-stats article,
+#adminView .admin-notification-controls,
+#adminView .admin-broadcast-stats article,
+#adminView .broadcast-history-item {
+  border-color: rgba(239, 51, 64, 0.28);
+  background: linear-gradient(145deg, rgba(76, 11, 20, 0.9), rgba(28, 8, 12, 0.94));
+  box-shadow: 0 22px 70px rgba(52, 0, 8, 0.3);
+}
+
+#adminView .admin-hero {
+  margin-bottom: 24px;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgba(239, 51, 64, 0.28);
+  border-radius: 28px;
+}
+
+#adminView .eyebrow,
+#adminView .admin-status.is-success {
+  color: #ff8994;
+}
+
+#adminView input,
+#adminView textarea {
+  border-color: rgba(239, 51, 64, 0.34);
+  background: rgba(38, 7, 12, 0.82);
+}
+
+#adminView input:focus,
+#adminView textarea:focus {
+  border-color: rgba(255, 107, 120, 0.82);
+  box-shadow: 0 0 0 4px rgba(239, 51, 64, 0.12);
+}
+
+#adminView .primary-button {
+  background: linear-gradient(135deg, #f04754, #a90d1b);
+}
+
+#adminView .secondary-button {
+  border-color: rgba(255, 107, 120, 0.38);
+  background: rgba(239, 51, 64, 0.1);
+}
+
+#adminView .danger-button {
+  border-color: rgba(255, 107, 120, 0.64);
+  background: rgba(169, 13, 27, 0.32);
+  color: #ffd9dc;
+}
+
+@media (max-width: 820px) {
+  .home-page .site-header {
+    min-height: 62px;
+  }
+
+  .home-page .hero-shell {
+    min-height: calc(100svh - 112px);
+    padding: 14px 0 10px;
+    grid-template-columns: 1fr;
+    align-content: center;
+    gap: 14px;
+  }
+
+  .home-page .hero-copy h1 {
+    font-size: clamp(34px, 10vw, 46px);
+  }
+
+  .home-page .hero-copy > p {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .home-page .search-panel {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .home-page .search-heading {
+    margin-bottom: 10px;
+  }
+
+  .home-page .allowance-bar {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+  }
+
+  .home-page .plate {
+    height: 68px;
+    border-width: 4px;
+  }
+
+  .home-page .primary-button {
+    min-height: 48px;
+    margin-top: 12px;
+  }
+
+  .home-page .form-error {
+    min-height: 18px;
+    margin-top: 6px;
+  }
+
+  .home-page .trust-row {
+    margin-top: 2px;
+  }
+
+  .home-page .data-note {
+    min-height: 50px;
+    padding: 9px 0;
+  }
+
+  .home-page .data-note p {
+    display: none;
+  }
+
+  .garage-heading-meta {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+@media (min-width: 821px) and (max-height: 720px) {
+  .home-page .site-header {
+    min-height: 64px;
+  }
+
+  .home-page .hero-shell {
+    min-height: calc(100svh - 124px);
+    padding: 18px 0;
+  }
+
+  .home-page .search-panel {
+    padding: 20px;
+  }
+
+  .home-page .plate {
+    height: 72px;
+  }
+
+  .home-page .data-note {
+    min-height: 60px;
+    padding: 8px 0;
+  }
+}
