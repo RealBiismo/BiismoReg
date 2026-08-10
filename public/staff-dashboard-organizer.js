@@ -33,97 +33,88 @@
     });
   }
 
-  function hide(node, value) {
+  function hide(node, value = true) {
     if (node) node.hidden = Boolean(value);
   }
 
-  function makeNav(staffRole) {
-    if (byId("staffWorkspaceNav") || staffRole === "moderator") return;
-    const hero = adminView.querySelector(".admin-hero");
-    const nav = document.createElement("nav");
-    nav.id = "staffWorkspaceNav";
-    nav.className = "staff-workspace-nav";
-    nav.setAttribute("aria-label", "Staff dashboard sections");
-    const items = [
-      ["overview", "Overview"],
-      ["users", "Users"],
-      ["notifications", "Notifications"],
-    ];
-    if (staffRole === "owner") items.push(["team", "Team"]);
-    nav.innerHTML = items.map(([key, label], index) => `<button type="button" data-staff-section="${key}" class="${index === 0 ? "is-active" : ""}">${label}</button>`).join("");
-    hero?.after(nav);
-    nav.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-staff-section]");
-      if (!button) return;
-      setSection(button.dataset.staffSection);
+  function buildGlobalActions(staffRole) {
+    if (staffRole === "moderator" || byId("staffGlobalActions")) return;
+    const broadcast = adminView.querySelector(".admin-broadcast-panel");
+    const history = byId("adminBroadcastHistoryPanel");
+    if (!broadcast) return;
+
+    hide(broadcast, true);
+    hide(history, true);
+
+    const bar = document.createElement("div");
+    bar.id = "staffGlobalActions";
+    bar.className = "staff-global-actions";
+    bar.innerHTML = '<button id="staffBroadcastToggle" class="secondary-button compact-button" type="button" aria-expanded="false">Broadcast notification</button>';
+
+    const activity = adminView.querySelector(".admin-quick-tools");
+    activity?.after(bar);
+
+    byId("staffBroadcastToggle")?.addEventListener("click", () => {
+      const open = broadcast.hidden;
+      hide(broadcast, !open);
+      if (!open) hide(history, true);
+      const button = byId("staffBroadcastToggle");
+      if (button) {
+        button.setAttribute("aria-expanded", String(open));
+        button.textContent = open ? "Close broadcast" : "Broadcast notification";
+      }
+      if (open) broadcast.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
-  function setSection(section) {
+  function simplify(staffRole) {
+    document.body.classList.add("has-user-focused-staff-dashboard");
+    if (staffRole === "moderator") document.body.classList.add("has-moderator-workspace");
+
     const hero = adminView.querySelector(".admin-hero");
     const overview = adminView.querySelector(".admin-overview");
     const dashboardGrid = adminView.querySelector(".admin-dashboard-grid");
     const userPanel = adminView.querySelector(".admin-user-panel");
-    const broadcastPanel = adminView.querySelector(".admin-broadcast-panel");
-    const historyPanel = byId("adminBroadcastHistoryPanel");
-    const quickTools = adminView.querySelector(".admin-quick-tools");
+    const broadcast = adminView.querySelector(".admin-broadcast-panel");
+    const history = byId("adminBroadcastHistoryPanel");
+    const activity = adminView.querySelector(".admin-quick-tools");
     const teamPanel = byId("teamManagementPanel");
+    const oldNav = byId("staffWorkspaceNav");
 
-    adminView.dataset.staffSection = section;
-    hide(hero, section !== "overview");
-    hide(overview, section !== "overview");
-    hide(quickTools, section !== "overview");
-    hide(userPanel, section !== "users");
-    hide(broadcastPanel, section !== "notifications");
-    hide(historyPanel, section !== "notifications" || historyPanel?.hidden);
-    hide(teamPanel, section !== "team");
+    hide(hero, true);
+    hide(overview, true);
+    hide(oldNav, true);
+    hide(teamPanel, true);
+    hide(history, true);
+    hide(broadcast, true);
 
-    if (dashboardGrid) {
-      dashboardGrid.hidden = !["users", "notifications"].includes(section);
-      dashboardGrid.classList.toggle("is-single-workspace", ["users", "notifications"].includes(section));
-    }
-
-    document.querySelectorAll("[data-staff-section]").forEach((button) => {
-      const active = button.dataset.staffSection === section;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-current", active ? "page" : "false");
-    });
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function setupModeratorView() {
-    document.body.classList.add("has-moderator-workspace");
-    const hero = adminView.querySelector(".admin-hero");
-    const overview = adminView.querySelector(".admin-overview");
-    const broadcastPanel = adminView.querySelector(".admin-broadcast-panel");
-    const historyPanel = byId("adminBroadcastHistoryPanel");
-    const quickTools = adminView.querySelector(".admin-quick-tools");
-    const teamPanel = byId("teamManagementPanel");
-    const dashboardGrid = adminView.querySelector(".admin-dashboard-grid");
-    const userPanel = adminView.querySelector(".admin-user-panel");
-    const refresh = byId("adminDashboardRefreshButton");
-    const heading = byId("adminUserSearchTitle");
-    const rate = userPanel?.querySelector(".credit-rate");
-    const eyebrow = userPanel?.querySelector(".admin-panel-heading .eyebrow");
-
-    [hero, overview, broadcastPanel, historyPanel, quickTools, teamPanel, refresh].forEach((node) => hide(node, true));
+    hide(activity, false);
     hide(userPanel, false);
-    if (dashboardGrid) {
-      dashboardGrid.hidden = false;
-      dashboardGrid.classList.add("is-single-workspace", "is-moderator-workspace");
+    hide(dashboardGrid, false);
+
+    if (dashboardGrid) dashboardGrid.classList.add("is-user-focused-layout");
+
+    if (activity && userPanel && activity.nextElementSibling !== dashboardGrid) {
+      // Keep live activity first, then the user directory/account panel.
+      activity.after(dashboardGrid);
     }
-    if (heading) heading.textContent = "Account support";
-    if (eyebrow) eyebrow.textContent = "MODERATOR SUPPORT";
-    if (rate) rate.textContent = "Read-only account tools";
+
+    const result = byId("adminUserResult");
+    if (result && !result.dataset.accountSelected) result.hidden = true;
 
     const banner = byId("staffRoleBanner");
     if (banner) {
-      banner.innerHTML = "<strong>Moderator workspace</strong><span>Search accounts, review usage and add internal support notes. Admin-only controls are not shown.</span>";
+      banner.innerHTML = staffRole === "moderator"
+        ? "<strong>Moderator workspace</strong><span>Recent activity stays visible. Select a user to reveal the support actions available to moderators.</span>"
+        : staffRole === "owner"
+          ? "<strong>Owner workspace</strong><span>Recent activity stays visible. Select a user to reveal account actions, including moderator management.</span>"
+          : "<strong>Admin workspace</strong><span>Recent activity stays visible. Select a user to reveal account management actions.</span>";
     }
 
     const menu = byId("adminMenuButton");
-    if (menu) menu.textContent = "Moderator";
+    if (menu) menu.textContent = staffRole === "moderator" ? "Moderator" : "Admin";
+
+    buildGlobalActions(staffRole);
   }
 
   async function init() {
@@ -131,23 +122,13 @@
     const staffRole = await waitForRole();
     if (!staffRole || staffRole === "user") return;
 
-    if (staffRole === "moderator") {
-      setupModeratorView();
-      return;
-    }
+    simplify(staffRole);
 
-    document.body.classList.add("has-organised-admin");
-    makeNav(staffRole);
-
-    const teamObserver = new MutationObserver(() => {
-      if (role() === "owner" && byId("teamManagementPanel")) {
-        teamObserver.disconnect();
-        if (adminView.dataset.staffSection !== "team") hide(byId("teamManagementPanel"), true);
-      }
+    const observer = new MutationObserver(() => {
+      const teamPanel = byId("teamManagementPanel");
+      if (teamPanel) hide(teamPanel, true);
     });
-    teamObserver.observe(adminView, { childList: true, subtree: true });
-
-    setSection("overview");
+    observer.observe(adminView, { childList: true, subtree: true });
   }
 
   void init();
