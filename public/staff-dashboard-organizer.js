@@ -53,6 +53,7 @@
 
     const overview = adminView.querySelector(".admin-overview");
     overview?.after(bar);
+    bar.after(broadcast);
 
     byId("staffBroadcastToggle")?.addEventListener("click", () => {
       const open = broadcast.hidden;
@@ -96,12 +97,8 @@
 
     if (dashboardGrid) dashboardGrid.classList.add("is-user-focused-layout");
 
-    if (overview && activity && overview.nextElementSibling !== activity) {
-      overview.after(activity);
-    }
-    if (activity && dashboardGrid && activity.nextElementSibling !== dashboardGrid) {
-      activity.after(dashboardGrid);
-    }
+    if (overview && activity && overview.nextElementSibling !== activity) overview.after(activity);
+    if (activity && dashboardGrid && activity.nextElementSibling !== dashboardGrid) activity.after(dashboardGrid);
 
     const result = byId("adminUserResult");
     if (result && !result.dataset.accountSelected) result.hidden = true;
