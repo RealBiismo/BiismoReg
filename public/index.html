@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#05070b">
   <meta name="description" content="Check a UK vehicle registration for MOT status, MOT history, road tax status, mileage records and official DVLA vehicle details with BIISMO REG.">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="application-name" content="BIISMO REG">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BIISMO REG">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="en_GB">
@@ -74,24 +75,25 @@
 </head>
 <body class="home-page">
   <div id="appSplash" class="app-splash" role="status" aria-label="Loading BIISMO REG">
-    <div class="app-splash-logo">
-      <img src="/icon-512.png" alt="">
-    </div>
+    <div class="app-splash-logo"><img src="/icon-512.png" alt=""></div>
     <p>MOT <span>•</span> TAX <span>•</span> HISTORY</p>
   </div>
 
-  <header class="site-header">
-    <a class="brand" href="/" aria-label="BIISMO REG home">
-      <img src="/icon-512.png" alt="BIISMO REG UK vehicle checker">
+  <header class="site-header home-header">
+    <a class="brand transparent-brand" href="/" aria-label="BIISMO REG home">
+      <img src="/icon.svg" alt="BIISMO REG UK vehicle checker">
     </a>
-    <button id="accountButton" class="header-action" type="button">Sign in</button>
+    <div class="home-header-actions">
+      <button id="accountButton" class="header-action" type="button">Sign in</button>
+    </div>
   </header>
 
-  <main>
-    <section class="hero-shell">
+  <main class="home-main">
+    <section class="hero-shell" aria-labelledby="homeHeading">
       <div class="hero-copy">
-        <h1>Free UK reg check</h1>
-        <p>Check MOT status, MOT history, road tax, mileage records and official DVLA vehicle details from one UK registration number.</p>
+        <span class="eyebrow">DVLA • DVSA • UK VEHICLE DATA</span>
+        <h1 id="homeHeading">Free UK reg check</h1>
+        <p>Check MOT status, MOT history, road tax, mileage records and official vehicle details from one UK registration.</p>
       </div>
 
       <form id="vehicleForm" class="search-panel" novalidate>
@@ -108,22 +110,11 @@
         <label class="sr-only" for="regInput">Enter a UK vehicle registration number</label>
         <div class="plate">
           <div class="gb" aria-hidden="true"><small>GB</small></div>
-          <input
-            id="regInput"
-            type="text"
-            name="registrationNumber"
-            placeholder="PA55 MGN"
-            maxlength="8"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            required
-          >
+          <input id="regInput" type="text" name="registrationNumber" placeholder="PA55 MGN" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
         </div>
 
         <button id="searchButton" class="primary-button" type="submit">
-          Check vehicle
-          <span aria-hidden="true">→</span>
+          Check vehicle <span aria-hidden="true">→</span>
         </button>
         <p id="formError" class="form-error" role="alert"></p>
 
@@ -133,14 +124,14 @@
           <span>No searches sold</span>
         </div>
       </form>
-    </section>
 
-    <section class="data-note" aria-labelledby="officialVehicleData">
-      <div>
-        <strong id="officialVehicleData">Government-sourced vehicle records</strong>
-        <p>Official DVLA and DVSA information is combined with clearly labelled calculated insights. Results depend on the records available for the registration entered.</p>
-      </div>
-      <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">Created by RealBiismo</a>
+      <section class="data-note" aria-labelledby="officialVehicleData">
+        <div>
+          <strong id="officialVehicleData">Government-sourced vehicle records</strong>
+          <p>Official DVLA and DVSA information is combined with clearly labelled calculated insights. Results depend on the records available for the registration entered.</p>
+        </div>
+        <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">Created by RealBiismo</a>
+      </section>
     </section>
 
     <div id="result" aria-live="polite"></div>
@@ -148,10 +139,7 @@
 
   <dialog id="authDialog" class="auth-dialog">
     <div class="dialog-topline">
-      <div>
-        <span class="eyebrow">BIISMO ACCOUNT</span>
-        <h2 id="authTitle">Welcome back</h2>
-      </div>
+      <div><span class="eyebrow">BIISMO ACCOUNT</span><h2 id="authTitle">Welcome back</h2></div>
       <button id="closeAuthButton" class="icon-button" type="button" aria-label="Close">×</button>
     </div>
 
@@ -160,20 +148,14 @@
       <button id="signUpTab" class="auth-tab" type="button" role="tab">Create account</button>
     </div>
 
-    <button id="googleAuthButton" class="google-button" type="button">
-      <span class="google-mark" aria-hidden="true">G</span>
-      Continue with Google
-    </button>
-
+    <button id="googleAuthButton" class="google-button" type="button"><span class="google-mark" aria-hidden="true">G</span>Continue with Google</button>
     <div class="auth-divider"><span>or use email</span></div>
 
     <form id="authForm" novalidate>
       <label id="authEmailLabel" for="authEmail">Email address</label>
       <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
-
       <label for="authPassword">Password</label>
       <input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required>
-
       <button id="authSubmitButton" class="primary-button" type="submit">Sign in</button>
       <button id="forgotPasswordButton" class="text-button" type="button">Forgot password?</button>
     </form>
@@ -183,11 +165,7 @@
   </dialog>
 
   <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite" aria-hidden="true">
-    <div class="loader-card">
-      <div class="progress-wheel" aria-hidden="true"></div>
-      <strong>Checking the vehicle</strong>
-      <span>Contacting official DVLA and DVSA services…</span>
-    </div>
+    <div class="loader-card"><div class="progress-wheel" aria-hidden="true"></div><strong>Checking the vehicle</strong><span>Contacting official DVLA and DVSA services…</span></div>
   </div>
 
   <script src="splash.js" defer></script>
