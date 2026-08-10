@@ -1,10 +1,13 @@
-const CACHE_NAME = "biismo-reg-v28";
+const CACHE_NAME = "biismo-reg-v29";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
   "/index.html",
   "/account.html",
   "/credits.html",
+  "/notifications.html",
+  "/notifications.js",
+  "/notifications.css",
   "/pwa.js",
   "/admin-controls.js",
   "/ui-overrides.css",
@@ -29,6 +32,9 @@ const STATIC_ASSETS = [
   "/admin-controls.js",
   "/credits.html",
   "/credits.js",
+  "/notifications.html",
+  "/notifications.js",
+  "/notifications.css",
   "/manifest.json",
   "/icon.svg",
   "/icon-192.png",
@@ -138,11 +144,15 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || "/account.html", self.location.origin);
-  if (target.pathname === "/account.html") {
-    target.searchParams.set("notifications", "1");
-  }
-  const targetUrl = target.href;
+
+  const reader = new URL("/notifications.html", self.location.origin);
+  const details = new URLSearchParams();
+  details.set("title", event.notification.title || "BIISMO REG notification");
+  details.set("message", event.notification.body || "Open your inbox for the latest BIISMO REG update.");
+  details.set("tag", event.notification.tag || "");
+  details.set("source", event.notification.data?.url || "/account.html");
+  reader.hash = details.toString();
+  const targetUrl = reader.href;
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
