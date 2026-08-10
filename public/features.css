@@ -1,0 +1,131 @@
+.plate-scanner-button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.biismo-intelligence {
+  margin: 26px 0;
+  display: grid;
+  gap: 14px;
+}
+
+.intelligence-top,
+.feature-grid,
+.feature-actions,
+.garage-health-grid,
+.watchlist-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.intelligence-top { grid-template-columns: 190px minmax(0,1fr); }
+.feature-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.feature-actions { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.garage-health-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.watchlist-grid { grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); }
+
+.score-card,
+.verdict-card,
+.feature-panel,
+.cost-panel,
+.feature-alert,
+.garage-health-card,
+.watch-card {
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  background: rgba(255,255,255,.045);
+}
+
+.score-card,
+.verdict-card,
+.feature-panel,
+.garage-health-card,
+.watch-card { padding: 18px; }
+
+.score-card {
+  text-align: center;
+  background: linear-gradient(145deg,rgba(37,99,235,.22),rgba(255,255,255,.04));
+}
+.score-card span,
+.verdict-card span,
+.feature-kicker,
+.garage-health-card span,
+.watch-card span {
+  color: #8ca9ff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+.score-card strong { display:block; margin-top:6px; font-size:58px; line-height:.95; }
+.score-card small { color:#aaa; }
+.verdict-card strong { display:block; margin:7px 0 5px; font-size:24px; }
+.verdict-card p,
+.feature-panel p,
+.cost-panel p,
+.feature-disclaimer,
+.watch-card p { color:#aaa; line-height:1.45; }
+.verdict-card.is-bad { border-color: rgba(248,113,113,.35); }
+.verdict-card.is-warning { border-color: rgba(250,204,21,.28); }
+.verdict-card.is-good { border-color: rgba(74,222,128,.25); }
+
+.feature-alert { padding:14px 16px; }
+.feature-alert strong { display:block; margin-bottom:4px; }
+.feature-alert.is-bad { border-color:rgba(248,113,113,.4); background:rgba(127,29,29,.16); }
+.feature-alert.is-good { border-color:rgba(74,222,128,.25); background:rgba(20,83,45,.12); }
+
+.feature-panel h3,
+.cost-panel h3 { margin:5px 0 13px; font-size:20px; }
+.feature-empty { color:#777; }
+.fault-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.fault-chip { padding:11px; border-radius:12px; background:rgba(255,255,255,.055); }
+.fault-chip strong,.fault-chip span { display:block; }
+.fault-chip span { margin-top:3px; color:#888; font-size:11px; }
+.feature-disclaimer { margin-top:11px; font-size:11px; }
+
+.mot-timeline { display:grid; gap:0; }
+.timeline-item { position:relative; min-height:48px; padding:0 0 11px 24px; border-left:2px solid rgba(255,255,255,.12); }
+.timeline-item:last-child { border-left-color:transparent; }
+.timeline-dot { position:absolute; left:-6px; top:3px; width:10px; height:10px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 4px rgba(74,222,128,.1); }
+.timeline-item.is-fail .timeline-dot { background:#f87171; box-shadow:0 0 0 4px rgba(248,113,113,.1); }
+.timeline-item strong,.timeline-item small { display:block; }
+.timeline-item small { margin-top:2px; color:#888; }
+
+.cost-panel { padding:18px; display:grid; grid-template-columns:1fr auto; gap:8px 18px; align-items:center; }
+.cost-panel > strong { font-size:28px; text-align:right; }
+.cost-panel > small { grid-column:1/-1; color:#777; }
+.feature-actions .secondary-button { width:100%; min-height:48px; justify-content:center; }
+.feature-status { min-height:18px; color:#9fb9ff; text-align:center; }
+
+.garage-health-section,
+.watchlist-section { margin-top:28px; }
+.garage-health-card strong { display:block; margin-top:6px; font-size:28px; }
+.garage-health-card small { display:block; margin-top:4px; color:#888; }
+.watch-card { position:relative; }
+.watch-card h3 { margin:7px 0 4px; }
+.watch-card .mini-plate { margin-bottom:10px; }
+.watch-card-actions { margin-top:13px; display:flex; gap:8px; }
+.watch-card-actions a,.watch-card-actions button { flex:1; }
+.remove-watch { border:1px solid rgba(248,113,113,.25); background:rgba(127,29,29,.12); color:#ffb4b4; border-radius:10px; cursor:pointer; }
+.watchlist-status { color:#9fb9ff; min-height:18px; }
+
+.shared-report-page main { width:min(940px,calc(100% - 28px)); padding:24px 0 60px; }
+.shared-report-header { text-align:center; margin-bottom:20px; }
+.shared-report-header img { width:180px; max-width:55vw; }
+.shared-report-meta { color:#888; text-align:center; margin:7px 0 22px; }
+
+@media (max-width:700px) {
+  .intelligence-top,.feature-grid,.feature-actions,.garage-health-grid { grid-template-columns:1fr; }
+  .score-card { display:grid; grid-template-columns:auto auto auto; justify-content:center; align-items:end; gap:7px; }
+  .score-card span { grid-column:1/-1; }
+  .score-card strong { font-size:48px; }
+  .fault-grid { grid-template-columns:1fr; }
+  .cost-panel { grid-template-columns:1fr; text-align:center; }
+  .cost-panel > strong { text-align:center; }
+}
