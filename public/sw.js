@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v18";
+const CACHE_NAME = "biismo-reg-v19";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const STATIC_ASSETS = [
@@ -14,6 +14,7 @@ const STATIC_ASSETS = [
   "/pwa.js",
   "/account.html",
   "/account.js",
+  "/admin-controls.js",
   "/credits.html",
   "/credits.js",
   "/manifest.json",
@@ -66,12 +67,8 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(event.request.url);
-  if (event.request.method !== "GET" || requestUrl.origin !== self.location.origin) {
-    return;
-  }
+  if (event.request.method !== "GET" || requestUrl.origin !== self.location.origin) return;
 
-  // Authenticated responses are private to the current account. Never place them
-  // in the shared PWA cache, whose URL-only lookup could expose account data.
   if (requestUrl.pathname.startsWith("/api/") || requestUrl.pathname.startsWith("/auth/")) {
     event.respondWith(fetch(event.request));
     return;
@@ -103,7 +100,6 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() => cached);
-
       return cached || networkRequest;
     })
   );
@@ -131,7 +127,6 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = new URL(event.notification.data?.url || "/account.html", self.location.origin).href;
-
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
       const existing = clients.find((client) => new URL(client.url).origin === self.location.origin);
