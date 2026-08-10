@@ -7,6 +7,7 @@ const path = require('node:path');
 const expressPackage = path.join(process.cwd(), 'node_modules', 'express', 'package.json');
 
 if (fs.existsSync(expressPackage)) {
+  require('./legacy-host-redirect.cjs');
   require('./account-inject.cjs');
   require('./feature-preload.cjs');
 }
