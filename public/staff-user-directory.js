@@ -95,15 +95,45 @@
       : '<p class="notification-empty">No matching accounts.</p>';
   }
 
-  function selectAccount(email) {
-    const input = byId("adminUserEmail");
-    const form = byId("adminUserSearchForm");
-    if (!input || !form) return;
-    input.value = email;
-    form.requestSubmit();
+  function markSelected(email) {
     document.querySelectorAll(".staff-user-row").forEach((row) => {
       row.classList.toggle("is-selected", row.dataset.userEmail === email);
     });
+  }
+
+  async function selectModeratorAccount(email) {
+    const account = await rpc("admin_get_user_credits", { p_target_email: email });
+    const result = byId("adminUserResult");
+    byId("selectedUserEmail").textContent = account.email;
+    byId("selectedUserCredits").textContent = String(Number(account.credits) || 0);
+    byId("selectedUserFreeRemaining").textContent = String(Number(account.freeRemaining) || 0);
+    byId("selectedUserFreeUsed").textContent = String(Number(account.freeUsed) || 0);
+    byId("selectedUserPushDevices").textContent = String(Number(account.pushDevices) || 0);
+    const badge = byId("adminAccountStatusBadge");
+    if (badge) {
+      badge.textContent = account.banned ? "Banned" : account.verified ? "Active" : "Unverified";
+      badge.className = `account-status-badge ${account.banned ? "is-banned" : "is-active"}`;
+    }
+    if (result) result.hidden = false;
+  }
+
+  async function selectAccount(email) {
+    markSelected(email);
+    const input = byId("adminUserEmail");
+    if (input) input.value = email;
+
+    if (role() === "moderator") {
+      try {
+        await selectModeratorAccount(email);
+      } catch (error) {
+        const list = byId("staffUserDirectoryList");
+        if (list) list.insertAdjacentHTML("afterbegin", `<p class="notification-empty">${escapeHtml(error.message)}</p>`);
+      }
+      return;
+    }
+
+    const form = byId("adminUserSearchForm");
+    if (form) form.requestSubmit();
   }
 
   function buildDirectory() {
@@ -119,7 +149,7 @@
       const rate = heading.querySelector(".credit-rate");
       if (eyebrow) eyebrow.textContent = "ACCOUNTS";
       if (title) title.textContent = "All users";
-      if (rate) rate.textContent = "Select an account to manage";
+      if (rate) rate.textContent = role() === "moderator" ? "Select an account to review" : "Select an account to manage";
     }
 
     form.hidden = true;
@@ -144,7 +174,7 @@
     byId("staffUserDirectoryList")?.addEventListener("click", (event) => {
       const row = event.target.closest("[data-user-email]");
       if (!row) return;
-      selectAccount(row.dataset.userEmail);
+      void selectAccount(row.dataset.userEmail);
     });
   }
 
