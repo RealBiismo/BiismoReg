@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v27";
+const CACHE_NAME = "biismo-reg-v28";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -138,7 +138,12 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = new URL(event.notification.data?.url || "/account.html", self.location.origin).href;
+  const target = new URL(event.notification.data?.url || "/account.html", self.location.origin);
+  if (target.pathname === "/account.html") {
+    target.searchParams.set("notifications", "1");
+  }
+  const targetUrl = target.href;
+
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
       const existing = clients.find((client) => new URL(client.url).origin === self.location.origin);
