@@ -49,10 +49,10 @@
     const bar = document.createElement("div");
     bar.id = "staffGlobalActions";
     bar.className = "staff-global-actions";
-    bar.innerHTML = '<button id="staffBroadcastToggle" class="secondary-button compact-button" type="button" aria-expanded="false">Broadcast notification</button>';
+    bar.innerHTML = '<button id="staffBroadcastToggle" class="secondary-button compact-button" type="button" aria-expanded="false">Global actions</button>';
 
-    const activity = adminView.querySelector(".admin-quick-tools");
-    activity?.after(bar);
+    const overview = adminView.querySelector(".admin-overview");
+    overview?.after(bar);
 
     byId("staffBroadcastToggle")?.addEventListener("click", () => {
       const open = broadcast.hidden;
@@ -61,7 +61,7 @@
       const button = byId("staffBroadcastToggle");
       if (button) {
         button.setAttribute("aria-expanded", String(open));
-        button.textContent = open ? "Close broadcast" : "Broadcast notification";
+        button.textContent = open ? "Close global actions" : "Global actions";
       }
       if (open) broadcast.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -80,36 +80,31 @@
     const activity = adminView.querySelector(".admin-quick-tools");
     const teamPanel = byId("teamManagementPanel");
     const oldNav = byId("staffWorkspaceNav");
+    const banner = byId("staffRoleBanner");
 
     hide(hero, true);
-    hide(overview, true);
     hide(oldNav, true);
     hide(teamPanel, true);
     hide(history, true);
     hide(broadcast, true);
+    hide(banner, true);
 
+    hide(overview, false);
     hide(activity, false);
     hide(userPanel, false);
     hide(dashboardGrid, false);
 
     if (dashboardGrid) dashboardGrid.classList.add("is-user-focused-layout");
 
-    if (activity && userPanel && activity.nextElementSibling !== dashboardGrid) {
-      // Keep live activity first, then the user directory/account panel.
+    if (overview && activity && overview.nextElementSibling !== activity) {
+      overview.after(activity);
+    }
+    if (activity && dashboardGrid && activity.nextElementSibling !== dashboardGrid) {
       activity.after(dashboardGrid);
     }
 
     const result = byId("adminUserResult");
     if (result && !result.dataset.accountSelected) result.hidden = true;
-
-    const banner = byId("staffRoleBanner");
-    if (banner) {
-      banner.innerHTML = staffRole === "moderator"
-        ? "<strong>Moderator workspace</strong><span>Recent activity stays visible. Select a user to reveal the support actions available to moderators.</span>"
-        : staffRole === "owner"
-          ? "<strong>Owner workspace</strong><span>Recent activity stays visible. Select a user to reveal account actions, including moderator management.</span>"
-          : "<strong>Admin workspace</strong><span>Recent activity stays visible. Select a user to reveal account management actions.</span>";
-    }
 
     const menu = byId("adminMenuButton");
     if (menu) menu.textContent = staffRole === "moderator" ? "Moderator" : "Admin";
@@ -127,6 +122,8 @@
     const observer = new MutationObserver(() => {
       const teamPanel = byId("teamManagementPanel");
       if (teamPanel) hide(teamPanel, true);
+      const banner = byId("staffRoleBanner");
+      if (banner) hide(banner, true);
     });
     observer.observe(adminView, { childList: true, subtree: true });
   }
