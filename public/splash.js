@@ -39,6 +39,14 @@
   window.setTimeout(dismiss, 3500);
 })();
 
+// Keep vehicle result styling isolated from the homepage layout rules.
+if (window.location.pathname === "/" || window.location.pathname === "/index.html") {
+  const resultStyles = document.createElement("link");
+  resultStyles.rel = "stylesheet";
+  resultStyles.href = "/result-compact.css";
+  document.head.append(resultStyles);
+}
+
 // Staff enhancements are isolated from the core garage/admin code.
 if (window.location.pathname === "/account.html") {
   import("/moderator-controls.js")
