@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <meta name="description" content="Your saved vehicles and BIISMO REG account.">
+  <meta name="robots" content="noindex, nofollow">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="BIISMO REG">
@@ -12,9 +13,11 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="pwa-install.css">
+  <link rel="stylesheet" href="ui-overrides.css">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="shortcut icon" href="/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
 </head>
 <body class="account-page">
   <div id="appSplash" class="app-splash" role="status" aria-label="Loading BIISMO REG">
@@ -34,7 +37,13 @@
     </a>
     <div class="account-header-actions">
       <button id="notificationBellButton" class="notification-bell" type="button" aria-label="Open notifications" aria-controls="notificationDrawer" aria-expanded="false">
-        <span aria-hidden="true">♢</span><strong id="notificationBadge" hidden>0</strong>
+        <span class="notification-bell-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+            <path d="M10 21h4"></path>
+          </svg>
+        </span>
+        <strong id="notificationBadge" hidden>0</strong>
       </button>
       <button id="signOutButton" class="header-action" type="button">Sign out</button>
     </div>
@@ -105,7 +114,10 @@
             <span class="eyebrow">COLLECTION</span>
             <h2 id="garageTitle">Saved vehicles</h2>
           </div>
-          <span id="vehicleCount" class="count-badge">0 vehicles</span>
+          <div class="garage-heading-meta">
+            <span class="garage-limit">Maximum 3 vehicles per account</span>
+            <span id="vehicleCount" class="count-badge">0 vehicles</span>
+          </div>
         </div>
 
         <p id="garageStatus" class="garage-status" role="status"></p>
@@ -174,7 +186,6 @@
               <button id="adminResetCreditsButton" class="danger-button" type="button">Reset to 0</button>
             </div>
           </div>
-
         </section>
 
         <section class="admin-notification-controls" aria-labelledby="adminBroadcastTitle">
