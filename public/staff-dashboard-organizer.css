@@ -1,74 +1,151 @@
-.has-user-focused-staff-dashboard #adminView {
-  max-width: 1180px;
+.has-simple-staff-dashboard #adminView {
+  max-width: 1120px;
   margin-inline: auto;
 }
 
-.has-user-focused-staff-dashboard #adminView > [hidden],
-.has-user-focused-staff-dashboard .admin-dashboard-grid > [hidden] {
+.has-simple-staff-dashboard #adminView > [hidden],
+.has-simple-staff-dashboard .admin-dashboard-grid > [hidden],
+.has-simple-staff-dashboard .admin-quick-tools > [hidden] {
   display: none !important;
 }
 
-.has-user-focused-staff-dashboard .admin-overview {
+.simple-staff-nav {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  z-index: 25;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 5px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  background: rgba(7,10,15,.9);
+  backdrop-filter: blur(18px);
+}
+
+.simple-staff-nav button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255,255,255,.62);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.simple-staff-nav button:hover,
+.simple-staff-nav button:focus-visible {
+  color: #fff;
+  background: rgba(255,255,255,.05);
+  outline: none;
+}
+
+.simple-staff-nav button.is-active {
+  color: #fff;
+  background: rgba(55,124,255,.18);
+  box-shadow: inset 0 0 0 1px rgba(84,146,255,.24);
+}
+
+.simple-user-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.simple-user-filters > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.simple-user-filters button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  color: rgba(255,255,255,.62);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.simple-user-filters button.is-active {
+  color: #fff;
+  border-color: rgba(77,151,255,.35);
+  background: rgba(77,151,255,.12);
+}
+
+.simple-user-filters > span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.has-simple-staff-dashboard .admin-overview {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.has-user-focused-staff-dashboard .admin-overview > article {
+.has-simple-staff-dashboard .admin-overview > article {
   min-width: 0;
   padding: 10px 12px;
   border-radius: 12px;
 }
 
-.has-user-focused-staff-dashboard .admin-overview > article:nth-child(2) {
+.has-simple-staff-dashboard .admin-overview > article:nth-child(2) {
   display: none !important;
 }
 
-.has-user-focused-staff-dashboard .admin-overview span {
+.has-simple-staff-dashboard .admin-overview span {
   font-size: 10px;
 }
 
-.has-user-focused-staff-dashboard .admin-overview strong {
+.has-simple-staff-dashboard .admin-overview strong {
   font-size: clamp(18px, 2vw, 24px);
 }
 
-.has-user-focused-staff-dashboard .admin-quick-tools {
+.has-simple-staff-dashboard .admin-quick-tools {
   display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 14px;
+  margin: 0;
 }
 
-.has-user-focused-staff-dashboard .admin-quick-tools .admin-panel {
+.has-simple-staff-dashboard .admin-quick-tools .admin-panel {
   min-width: 0;
   padding: 12px;
 }
 
-.has-user-focused-staff-dashboard .admin-dashboard-grid.is-user-focused-layout {
+.has-simple-staff-dashboard .admin-dashboard-grid.is-simple-users-page {
   display: block !important;
-  margin-top: 0;
+  margin: 0;
 }
 
-.has-user-focused-staff-dashboard .admin-dashboard-grid.is-user-focused-layout > .admin-user-panel {
+.has-simple-staff-dashboard .admin-dashboard-grid.is-simple-users-page > .admin-user-panel {
   width: 100%;
   max-width: none;
 }
 
-.has-user-focused-staff-dashboard .staff-global-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin: 0 0 10px;
+.has-simple-staff-dashboard .admin-broadcast-panel,
+.has-simple-staff-dashboard .admin-history-panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
-.has-user-focused-staff-dashboard .admin-broadcast-panel:not([hidden]) {
-  margin: 0 0 12px;
-}
-
-.has-user-focused-staff-dashboard #teamManagementPanel,
-.has-user-focused-staff-dashboard .staff-workspace-nav,
-.has-user-focused-staff-dashboard .admin-hero,
-.has-user-focused-staff-dashboard .staff-role-banner {
+.has-simple-staff-dashboard #teamManagementPanel,
+.has-simple-staff-dashboard .staff-workspace-nav,
+.has-simple-staff-dashboard .staff-global-actions,
+.has-simple-staff-dashboard .admin-hero,
+.has-simple-staff-dashboard .staff-role-banner {
   display: none !important;
 }
 
@@ -81,20 +158,21 @@
   display: none !important;
 }
 
+body[data-staff-role="moderator"] .simple-staff-nav {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (max-width: 860px) {
-  .has-user-focused-staff-dashboard .admin-overview {
+  .has-simple-staff-dashboard .admin-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .has-user-focused-staff-dashboard .admin-quick-tools {
+  .has-simple-staff-dashboard .admin-quick-tools {
     grid-template-columns: 1fr;
   }
 
-  .has-user-focused-staff-dashboard .staff-global-actions {
-    justify-content: stretch;
-  }
-
-  .has-user-focused-staff-dashboard .staff-global-actions .secondary-button {
-    width: 100%;
+  .simple-user-filters {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

@@ -4,6 +4,7 @@
   const byId = (id) => document.getElementById(id);
   const adminView = byId("adminView");
   if (!adminView) return;
+  let activeUserFilter = "all";
 
   function injectStyles() {
     if (document.querySelector('link[href="/staff-dashboard-organizer.css"]')) return;
@@ -37,39 +38,113 @@
     if (node) node.hidden = Boolean(value);
   }
 
-  function buildGlobalActions(staffRole) {
-    if (staffRole === "moderator" || byId("staffGlobalActions")) return;
-    const broadcast = adminView.querySelector(".admin-broadcast-panel");
-    const history = byId("adminBroadcastHistoryPanel");
-    if (!broadcast) return;
+  function applyUserFilter() {
+    const list = byId("staffUserDirectoryList");
+    if (!list) return;
+    let visible = 0;
+    list.querySelectorAll(".staff-user-row").forEach((row) => {
+      const meta = String(row.querySelector(".staff-user-main small")?.textContent || "").toLowerCase();
+      const matches = activeUserFilter === "all"
+        || (activeUserFilter === "users" && meta.startsWith("user ·"))
+        || (activeUserFilter === "moderators" && meta.startsWith("moderator ·"))
+        || (activeUserFilter === "banned" && meta.includes("· banned"));
+      row.hidden = !matches;
+      if (matches) visible += 1;
+    });
+    const count = byId("simpleUserFilterCount");
+    if (count) count.textContent = `${visible} shown`;
+  }
 
-    hide(broadcast, true);
-    hide(history, true);
+  function buildUserFilters() {
+    const attach = () => {
+      const directory = byId("staffUserDirectory");
+      if (!directory || byId("simpleUserFilters")) return false;
+      const filters = document.createElement("div");
+      filters.id = "simpleUserFilters";
+      filters.className = "simple-user-filters";
+      filters.innerHTML = `
+        <div role="group" aria-label="Filter accounts">
+          <button type="button" data-user-filter="all" class="is-active">All</button>
+          <button type="button" data-user-filter="users">Users</button>
+          <button type="button" data-user-filter="moderators">Moderators</button>
+          <button type="button" data-user-filter="banned">Banned</button>
+        </div>
+        <span id="simpleUserFilterCount"></span>`;
+      directory.prepend(filters);
+      filters.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-user-filter]");
+        if (!button) return;
+        activeUserFilter = button.dataset.userFilter;
+        filters.querySelectorAll("[data-user-filter]").forEach((item) => item.classList.toggle("is-active", item === button));
+        applyUserFilter();
+      });
+      const list = byId("staffUserDirectoryList");
+      if (list) new MutationObserver(applyUserFilter).observe(list, { childList: true });
+      applyUserFilter();
+      return true;
+    };
 
-    const bar = document.createElement("div");
-    bar.id = "staffGlobalActions";
-    bar.className = "staff-global-actions";
-    bar.innerHTML = '<button id="staffBroadcastToggle" class="secondary-button compact-button" type="button" aria-expanded="false">Global actions</button>';
+    if (attach()) return;
+    const observer = new MutationObserver(() => {
+      if (attach()) observer.disconnect();
+    });
+    observer.observe(adminView, { childList: true, subtree: true });
+  }
 
-    const overview = adminView.querySelector(".admin-overview");
-    overview?.after(bar);
-    bar.after(broadcast);
+  function buildNav(staffRole) {
+    if (byId("simpleStaffNav")) return;
+    const nav = document.createElement("nav");
+    nav.id = "simpleStaffNav";
+    nav.className = "simple-staff-nav";
+    nav.setAttribute("aria-label", "Staff menu");
 
-    byId("staffBroadcastToggle")?.addEventListener("click", () => {
-      const open = broadcast.hidden;
-      hide(broadcast, !open);
-      if (!open) hide(history, true);
-      const button = byId("staffBroadcastToggle");
-      if (button) {
-        button.setAttribute("aria-expanded", String(open));
-        button.textContent = open ? "Close global actions" : "Global actions";
-      }
-      if (open) broadcast.scrollIntoView({ behavior: "smooth", block: "start" });
+    const items = [["home", "Home"], ["users", "Users"]];
+    if (staffRole !== "moderator") items.push(["tools", "Tools"]);
+
+    nav.innerHTML = items.map(([key, label], index) => `
+      <button type="button" data-simple-staff-page="${key}" class="${index === 0 ? "is-active" : ""}" aria-current="${index === 0 ? "page" : "false"}">${label}</button>`).join("");
+
+    adminView.prepend(nav);
+    nav.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-simple-staff-page]");
+      if (!button) return;
+      showPage(button.dataset.simpleStaffPage, staffRole);
     });
   }
 
+  function showPage(page, staffRole) {
+    const overview = adminView.querySelector(".admin-overview");
+    const activity = adminView.querySelector(".admin-quick-tools");
+    const dashboardGrid = adminView.querySelector(".admin-dashboard-grid");
+    const broadcast = adminView.querySelector(".admin-broadcast-panel");
+    const history = byId("adminBroadcastHistoryPanel");
+
+    if (page === "tools" && staffRole === "moderator") page = "home";
+    adminView.dataset.simpleStaffPage = page;
+
+    hide(overview, page !== "home");
+    hide(activity, page !== "home");
+    hide(dashboardGrid, page !== "users");
+    hide(broadcast, page !== "tools");
+    hide(history, page !== "tools" || Boolean(history?.hidden));
+
+    if (activity) {
+      activity.querySelectorAll(":scope > .admin-panel").forEach((panel, index) => {
+        panel.hidden = index > 1;
+      });
+    }
+
+    document.querySelectorAll("[data-simple-staff-page]").forEach((button) => {
+      const active = button.dataset.simpleStaffPage === page;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-current", active ? "page" : "false");
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function simplify(staffRole) {
-    document.body.classList.add("has-user-focused-staff-dashboard");
+    document.body.classList.add("has-simple-staff-dashboard");
     if (staffRole === "moderator") document.body.classList.add("has-moderator-workspace");
 
     const hero = adminView.querySelector(".admin-hero");
@@ -82,31 +157,28 @@
     const teamPanel = byId("teamManagementPanel");
     const oldNav = byId("staffWorkspaceNav");
     const banner = byId("staffRoleBanner");
+    const globalActions = byId("staffGlobalActions");
 
-    hide(hero, true);
-    hide(oldNav, true);
-    hide(teamPanel, true);
+    [hero, oldNav, teamPanel, banner, globalActions].forEach((node) => hide(node, true));
     hide(history, true);
     hide(broadcast, true);
-    hide(banner, true);
-
     hide(overview, false);
     hide(activity, false);
     hide(userPanel, false);
-    hide(dashboardGrid, false);
+    hide(dashboardGrid, true);
 
-    if (dashboardGrid) dashboardGrid.classList.add("is-user-focused-layout");
-
+    if (dashboardGrid) dashboardGrid.classList.add("is-simple-users-page");
     if (overview && activity && overview.nextElementSibling !== activity) overview.after(activity);
     if (activity && dashboardGrid && activity.nextElementSibling !== dashboardGrid) activity.after(dashboardGrid);
-
-    const result = byId("adminUserResult");
-    if (result && !result.dataset.accountSelected) result.hidden = true;
+    if (dashboardGrid && broadcast && dashboardGrid.nextElementSibling !== broadcast) dashboardGrid.after(broadcast);
+    if (broadcast && history && broadcast.nextElementSibling !== history) broadcast.after(history);
 
     const menu = byId("adminMenuButton");
     if (menu) menu.textContent = staffRole === "moderator" ? "Moderator" : "Admin";
 
-    buildGlobalActions(staffRole);
+    buildNav(staffRole);
+    buildUserFilters();
+    showPage("home", staffRole);
   }
 
   async function init() {
@@ -117,10 +189,7 @@
     simplify(staffRole);
 
     const observer = new MutationObserver(() => {
-      const teamPanel = byId("teamManagementPanel");
-      if (teamPanel) hide(teamPanel, true);
-      const banner = byId("staffRoleBanner");
-      if (banner) hide(banner, true);
+      [byId("teamManagementPanel"), byId("staffRoleBanner"), byId("staffGlobalActions")].forEach((node) => hide(node, true));
     });
     observer.observe(adminView, { childList: true, subtree: true });
   }
