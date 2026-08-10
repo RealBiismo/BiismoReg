@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v33";
+const CACHE_NAME = "biismo-reg-v34";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -18,6 +18,8 @@ const NETWORK_FIRST_ASSETS = new Set([
   "/moderator-controls.css",
   "/ui-overrides.css",
   "/homepage-fix.css",
+  "/full-history-preview.js",
+  "/full-history-preview.css",
   "/pwa-install.css",
   "/manifest.json"
 ]);
@@ -30,7 +32,9 @@ const STATIC_ASSETS = [
   "/ui-overrides.css",
   "/homepage-fix.css",
   "/brand-logos.css",
+  "/full-history-preview.css",
   "/script.js",
+  "/full-history-preview.js",
   "/splash.js",
   "/auth.js",
   "/pwa.js",
