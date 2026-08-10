@@ -96,12 +96,27 @@
     const title = document.querySelector("#result .car-title");
     if (!title || title.closest(".vehicle-title-row")) return;
 
-    const make = title.dataset.make || resolveMakeFromTitle(title.textContent || "");
+    const fullTitle = String(title.textContent || "").trim();
+    const make = resolveMakeFromTitle(fullTitle);
+    const normalisedTitle = normaliseMake(fullTitle);
+    const normalisedMake = normaliseMake(make);
+    const model = normalisedTitle.startsWith(`${normalisedMake} `)
+      ? fullTitle.slice(normalisedMake.length).trim()
+      : fullTitle.split(/\s+/).slice(1).join(" ");
+
     const row = document.createElement("div");
     row.className = "vehicle-title-row";
     row.innerHTML = `<span class="vehicle-brand-mark">${logoMarkup(make)}</span>`;
     title.parentNode.insertBefore(row, title);
     row.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "vehicle-identity-meta";
+    meta.innerHTML = `
+      <span><small>Make</small><strong>${escapeHtml(make)}</strong></span>
+      <span><small>Model</small><strong>${escapeHtml(model || "Unknown")}</strong></span>
+    `;
+    row.insertAdjacentElement("afterend", meta);
   }
 
   const result = document.getElementById("result");
