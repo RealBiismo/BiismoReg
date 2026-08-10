@@ -154,6 +154,142 @@
   }
 }
 
+/* Referral card: compact, balanced, and easy to scan on mobile. */
+#referralSection {
+  margin-top: 24px;
+  padding-top: 24px;
+}
+
+#referralSection .section-heading {
+  align-items: flex-start;
+  gap: 14px;
+}
+
+#referralSection .section-heading h2 {
+  max-width: 680px;
+  margin-bottom: 0;
+}
+
+#referralSection > p:not(.garage-status) {
+  max-width: 760px;
+  margin: 10px 0 18px;
+  color: #c7c7c7;
+  line-height: 1.55;
+}
+
+#referralSection .credit-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+#referralSection .credit-card {
+  min-height: 132px;
+  padding: 18px;
+}
+
+#referralSection .credit-card strong {
+  font-size: clamp(28px, 5vw, 42px);
+  line-height: 1;
+}
+
+#referralSection .garage-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+#referralSection #referralLink {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#referralSection #referralShareButton {
+  min-width: 140px;
+}
+
+#referralSection #referralStatus:empty {
+  display: none;
+}
+
+@media (max-width: 620px) {
+  #referralSection {
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+
+  #referralSection .section-heading {
+    display: block;
+  }
+
+  #referralSection .section-heading h2 {
+    margin-top: 6px;
+    font-size: clamp(28px, 9vw, 38px);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+  }
+
+  #referralSection .credit-rate {
+    display: inline-flex;
+    width: auto;
+    margin-top: 12px;
+    padding: 8px 12px;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  #referralSection > p:not(.garage-status) {
+    margin: 12px 0 14px;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  #referralSection .credit-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px;
+  }
+
+  #referralSection .credit-card {
+    min-height: 116px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  #referralSection .credit-card > span,
+  #referralSection .credit-card small {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  #referralSection .credit-card strong {
+    margin: 10px 0 8px;
+    font-size: 30px;
+  }
+
+  #referralSection .garage-search {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  #referralSection #referralLink {
+    height: 50px;
+    font-size: 12px;
+  }
+
+  #referralSection #referralShareButton {
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+  }
+
+  #referralSection .garage-status {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .install-prompt {
     transition: none;
