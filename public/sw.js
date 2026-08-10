@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v32";
+const CACHE_NAME = "biismo-reg-v33";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
