@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v24";
+const CACHE_NAME = "biismo-reg-v25";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -158,6 +158,6 @@ self.addEventListener("notificationclick", (event) => {
         return existing.focus();
       }
       return self.clients.openWindow(targetUrl);
-    })
+    })()
   );
 });
