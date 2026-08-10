@@ -290,6 +290,114 @@
   }
 }
 
+/* Vehicle identity: manufacturer badge plus explicit make/model details. */
+.vehicle-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 7px;
+}
+
+.vehicle-title-row .car-title {
+  min-width: 0;
+  margin: 0;
+}
+
+.vehicle-brand-mark {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.vehicle-brand-logo {
+  width: 32px;
+  height: 32px;
+  display: block;
+  object-fit: contain;
+  filter: invert(1);
+}
+
+.vehicle-brand-fallback {
+  color: #e8efff;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.vehicle-identity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.vehicle-identity-meta > span {
+  min-width: 104px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.vehicle-identity-meta small,
+.vehicle-identity-meta strong {
+  display: block;
+}
+
+.vehicle-identity-meta small {
+  color: #8e98aa;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.vehicle-identity-meta strong {
+  margin-top: 3px;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+@media (max-width: 520px) {
+  .vehicle-title-row {
+    gap: 9px;
+  }
+
+  .vehicle-brand-mark {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+    border-radius: 12px;
+  }
+
+  .vehicle-brand-logo {
+    width: 27px;
+    height: 27px;
+  }
+
+  .vehicle-brand-fallback {
+    font-size: 12px;
+  }
+
+  .vehicle-identity-meta {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .vehicle-identity-meta > span {
+    min-width: 0;
+    flex: 1 1 100px;
+    padding: 7px 9px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .install-prompt {
     transition: none;

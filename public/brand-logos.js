@@ -1,49 +1,35 @@
 (() => {
-  const BRAND_ICON_SLUGS = {
-    "BMW": "bmw",
-    "MERCEDES-BENZ": "mercedesbenz",
-    "MERCEDES": "mercedesbenz",
-    "AUDI": "audi",
-    "VOLKSWAGEN": "volkswagen",
-    "VW": "volkswagen",
-    "FORD": "ford",
-    "TOYOTA": "toyota",
-    "HONDA": "honda",
-    "NISSAN": "nissan",
-    "KIA": "kia",
-    "HYUNDAI": "hyundai",
-    "VOLVO": "volvo",
-    "PEUGEOT": "peugeot",
-    "RENAULT": "renault",
-    "CITROEN": "citroen",
-    "SKODA": "skoda",
-    "SEAT": "seat",
-    "CUPRA": "cupra",
-    "FIAT": "fiat",
-    "MINI": "mini",
-    "LAND ROVER": "landrover",
-    "RANGE ROVER": "landrover",
-    "JAGUAR": "jaguar",
-    "TESLA": "tesla",
-    "PORSCHE": "porsche",
-    "MAZDA": "mazda",
-    "MITSUBISHI": "mitsubishi",
-    "SUZUKI": "suzuki",
-    "VAUXHALL": "vauxhall",
-    "LEXUS": "lexus",
-    "ALFA ROMEO": "alfaromeo",
-    "BENTLEY": "bentley",
-    "FERRARI": "ferrari",
-    "LAMBORGHINI": "lamborghini",
-    "MASERATI": "maserati",
-    "MCLAREN": "mclaren",
-  };
+  const BRAND_LOGOS = Object.freeze({
+    BMW: "/brands/bmw.svg",
+    AUDI: "/brands/audi.svg",
+    VOLKSWAGEN: "/brands/volkswagen.svg",
+    VW: "/brands/volkswagen.svg",
+    TOYOTA: "/brands/toyota.svg",
+  });
+
+  const MAKE_ALIASES = Object.freeze({
+    "MERCEDES BENZ": "MERCEDES-BENZ",
+    "MERCEDES-BENZ": "MERCEDES-BENZ",
+    "LANDROVER": "LAND ROVER",
+    "RANGE ROVER": "LAND ROVER",
+    "ALFA-ROMEO": "ALFA ROMEO",
+  });
 
   function normaliseMake(value) {
-    return String(value || "")
+    const normalised = String(value || "")
       .trim()
       .toUpperCase()
       .replace(/\s+/g, " ");
+    return MAKE_ALIASES[normalised] || normalised;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
   function initials(make) {
@@ -57,37 +43,86 @@
 
   function logoMarkup(make) {
     const normalised = normaliseMake(make);
-    const slug = BRAND_ICON_SLUGS[normalised];
-    if (!slug) {
-      return `<span class="vehicle-brand-fallback" aria-hidden="true">${initials(normalised)}</span>`;
+    const localLogo = BRAND_LOGOS[normalised];
+
+    if (localLogo) {
+      return `<img class="vehicle-brand-logo" src="${localLogo}" alt="${escapeHtml(normalised)} logo" loading="eager">`;
     }
 
-    const safeMake = normalised.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
-    return `<img class="vehicle-brand-logo" src="https://cdn.simpleicons.org/${slug}/FFFFFF" alt="${safeMake} logo" loading="eager" referrerpolicy="no-referrer">`;
+    return `<span class="vehicle-brand-fallback" aria-hidden="true">${escapeHtml(initials(normalised))}</span>`;
+  }
+
+  function resolveMakeFromTitle(title) {
+    const text = normaliseMake(title);
+    const candidates = [
+      ...Object.keys(BRAND_LOGOS),
+      "MERCEDES-BENZ",
+      "LAND ROVER",
+      "RANGE ROVER",
+      "ALFA ROMEO",
+      "VAUXHALL",
+      "FORD",
+      "HONDA",
+      "NISSAN",
+      "KIA",
+      "HYUNDAI",
+      "VOLVO",
+      "PEUGEOT",
+      "RENAULT",
+      "CITROEN",
+      "SKODA",
+      "SEAT",
+      "CUPRA",
+      "FIAT",
+      "MINI",
+      "JAGUAR",
+      "TESLA",
+      "PORSCHE",
+      "MAZDA",
+      "MITSUBISHI",
+      "SUZUKI",
+      "LEXUS",
+      "BENTLEY",
+      "FERRARI",
+      "LAMBORGHINI",
+      "MASERATI",
+      "MCLAREN",
+    ].sort((a, b) => b.length - a.length);
+
+    return candidates.find((candidate) => text === candidate || text.startsWith(`${candidate} `)) || text.split(" ")[0] || "CAR";
   }
 
   function decorateResult() {
     const title = document.querySelector("#result .car-title");
     if (!title || title.closest(".vehicle-title-row")) return;
 
-    const make = title.textContent?.trim().split(/\s+/)[0] || "";
-    const text = title.textContent || "";
-    const knownMake = Object.keys(BRAND_ICON_SLUGS)
-      .sort((a, b) => b.length - a.length)
-      .find((candidate) => normaliseMake(text).startsWith(`${candidate} `) || normaliseMake(text) === candidate);
-    const resolvedMake = knownMake || make;
+    const fullTitle = String(title.textContent || "").trim();
+    const make = resolveMakeFromTitle(fullTitle);
+    const normalisedTitle = normaliseMake(fullTitle);
+    const normalisedMake = normaliseMake(make);
+    const model = normalisedTitle.startsWith(`${normalisedMake} `)
+      ? fullTitle.slice(normalisedMake.length).trim()
+      : fullTitle.split(/\s+/).slice(1).join(" ");
 
     const row = document.createElement("div");
     row.className = "vehicle-title-row";
-    row.innerHTML = `<span class="vehicle-brand-mark">${logoMarkup(resolvedMake)}</span>`;
+    row.innerHTML = `<span class="vehicle-brand-mark">${logoMarkup(make)}</span>`;
     title.parentNode.insertBefore(row, title);
     row.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "vehicle-identity-meta";
+    meta.innerHTML = `
+      <span><small>Make</small><strong>${escapeHtml(make)}</strong></span>
+      <span><small>Model</small><strong>${escapeHtml(model || "Unknown")}</strong></span>
+    `;
+    row.insertAdjacentElement("afterend", meta);
   }
 
-  const observer = new MutationObserver(decorateResult);
   const result = document.getElementById("result");
-  if (result) {
-    observer.observe(result, { childList: true, subtree: true });
-    decorateResult();
-  }
+  if (!result) return;
+
+  const observer = new MutationObserver(decorateResult);
+  observer.observe(result, { childList: true, subtree: true });
+  decorateResult();
 })();
