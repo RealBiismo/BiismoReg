@@ -192,6 +192,11 @@
     return String(findInfoBox(titleText)?.querySelector(".info-value")?.textContent || "").trim();
   }
 
+  function numericValue(value) {
+    const parsed = Number.parseInt(String(value || "").replace(/[^\d]/g, ""), 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   function firstRegistrationDate(value) {
     const match = String(value || "").trim().match(/^(\d{4})-(\d{2})$/);
     if (!match) return null;
@@ -230,6 +235,76 @@
     box.dataset.ulezSource = Number.isFinite(euroNumber) ? "euro-standard" : firstRegistered ? "registration-date" : "insufficient-data";
   }
 
+  function taxBandForCo2(co2) {
+    if (co2 <= 100) return 20;
+    if (co2 <= 110) return 20;
+    if (co2 <= 120) return 35;
+    if (co2 <= 130) return 170;
+    if (co2 <= 140) return 200;
+    if (co2 <= 150) return 225;
+    if (co2 <= 165) return 275;
+    if (co2 <= 175) return 325;
+    if (co2 <= 185) return 360;
+    if (co2 <= 200) return 410;
+    if (co2 <= 225) return 445;
+    if (co2 <= 255) return 760;
+    return 790;
+  }
+
+  function estimateAnnualTax() {
+    const registered = firstRegistrationDate(infoValue("First registered"));
+    if (!registered) return null;
+
+    const co2 = numericValue(infoValue("CO₂ emissions"));
+    const engine = numericValue(infoValue("Engine"));
+
+    if (registered < 200103) {
+      if (engine === null) return null;
+      return {
+        value: engine <= 1549 ? "£230/yr" : "£375/yr",
+        note: "2026/27 rate • based on engine size"
+      };
+    }
+
+    if (registered < 201704) {
+      if (co2 === null) return null;
+      let rate = taxBandForCo2(co2);
+      let value = `£${rate}/yr`;
+      let note = "2026/27 rate • based on CO₂ band";
+
+      if (co2 > 225 && registered < 200603) {
+        value = "£445/yr";
+        note = "2026/27 rate • Band K rule for older registrations";
+      } else if (co2 > 225 && registered === 200603) {
+        value = `£445–£${rate}/yr`;
+        note = "Exact March 2006 registration day is needed for the precise band";
+      }
+
+      return { value, note };
+    }
+
+    return {
+      value: "£200/yr",
+      note: "2026/27 standard rate • £640/yr if the expensive-car supplement applies"
+    };
+  }
+
+  function addTaxEstimate() {
+    if (findInfoBox("Annual tax estimate")) return;
+    const estimate = estimateAnnualTax();
+    const grid = document.querySelector("#result .detail-grid");
+    if (!estimate || !grid) return;
+
+    const box = document.createElement("div");
+    box.className = "info-box calculated-field";
+    box.innerHTML = `
+      <div class="info-title">Annual tax estimate</div>
+      <div class="info-value">${escapeHtml(estimate.value)}</div>
+      <div class="tax-amber">${escapeHtml(estimate.note)}</div>
+    `;
+    grid.prepend(box);
+  }
+
   function hideUnavailableValues() {
     document.querySelectorAll("#result .info-box").forEach((box) => {
       const value = box.querySelector(".info-value");
@@ -247,6 +322,7 @@
   function polishResult() {
     decorateResult();
     improveUlezEstimate();
+    addTaxEstimate();
     hideUnavailableValues();
   }
 
