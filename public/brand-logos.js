@@ -72,7 +72,7 @@
     TESLA: "tesla-logo.svg",
     TOYOTA: "toyota-logo.svg",
     TVR: "tvr-logo.png",
-    VAUXHALL: "vauxhall-logo.png",
+    VAUXHALL: "vauxhall-logo.svg",
     VINFAST: "vinfast-logo.png",
     VOLKSWAGEN: "volkswagen-logo.svg",
     VOLVO: "volvo-logo.svg",
@@ -182,9 +182,77 @@
     attachImageFallbacks(row);
   }
 
+  function findInfoBox(titleText) {
+    return [...document.querySelectorAll("#result .info-box")].find((box) =>
+      String(box.querySelector(".info-title")?.textContent || "").trim().toLowerCase() === titleText.toLowerCase()
+    );
+  }
+
+  function infoValue(titleText) {
+    return String(findInfoBox(titleText)?.querySelector(".info-value")?.textContent || "").trim();
+  }
+
+  function firstRegistrationDate(value) {
+    const match = String(value || "").trim().match(/^(\d{4})-(\d{2})$/);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return null;
+    return year * 100 + month;
+  }
+
+  function improveUlezEstimate() {
+    const box = findInfoBox("ULEZ estimate");
+    const value = box?.querySelector(".info-value");
+    if (!value) return;
+
+    const current = String(value.textContent || "").trim().toLowerCase();
+    if (current && current !== "unknown" && current !== "n/a") return;
+
+    const fuel = infoValue("Fuel").toLowerCase();
+    const euro = infoValue("Euro status");
+    const firstRegistered = firstRegistrationDate(infoValue("First registered"));
+    const euroNumber = Number.parseInt(String(euro).replace(/\D/g, ""), 10);
+
+    let estimate = "Check required";
+
+    if (fuel.includes("electric")) {
+      estimate = "Likely compliant";
+    } else if (Number.isFinite(euroNumber)) {
+      if (fuel.includes("petrol")) estimate = euroNumber >= 4 ? "Likely compliant" : "Likely non-compliant";
+      if (fuel.includes("diesel")) estimate = euroNumber >= 6 ? "Likely compliant" : "Likely non-compliant";
+    } else if (firstRegistered) {
+      if (fuel.includes("petrol") && firstRegistered >= 200601) estimate = "Likely compliant";
+      if (fuel.includes("diesel") && firstRegistered >= 201509) estimate = "Likely compliant";
+    }
+
+    value.textContent = estimate;
+    box.dataset.ulezSource = Number.isFinite(euroNumber) ? "euro-standard" : firstRegistered ? "registration-date" : "insufficient-data";
+  }
+
+  function hideUnavailableValues() {
+    document.querySelectorAll("#result .info-box").forEach((box) => {
+      const value = box.querySelector(".info-value");
+      if (!value || String(value.textContent || "").trim().toUpperCase() !== "N/A") return;
+
+      const hasUsefulStatus = box.querySelector(".tax-green, .tax-red, .tax-amber");
+      if (hasUsefulStatus) {
+        value.remove();
+      } else {
+        box.remove();
+      }
+    });
+  }
+
+  function polishResult() {
+    decorateResult();
+    improveUlezEstimate();
+    hideUnavailableValues();
+  }
+
   const result = document.getElementById("result");
   if (!result) return;
-  const observer = new MutationObserver(decorateResult);
+  const observer = new MutationObserver(polishResult);
   observer.observe(result, { childList: true, subtree: true });
-  decorateResult();
+  polishResult();
 })();
