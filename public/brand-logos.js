@@ -1,86 +1,99 @@
 (() => {
-  const CARDOG_BASE = "https://cdn.jsdelivr.net/npm/@cardog-icons/core@1.2.0/optimized/";
-  const OTHER_LOGOS = Object.freeze({
-    VAUXHALL: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/vauxhall.svg",
-    OPEL: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/opel.svg",
-    PEUGEOT: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/peugeot.svg",
-    RENAULT: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/renault.svg",
-    CITROEN: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/citroen.svg",
-    SKODA: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/skoda.svg",
-    SEAT: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/seat.svg",
-    CUPRA: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/cupra.svg",
-    SUZUKI: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/suzuki.svg",
-    DACIA: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/dacia.svg",
-    MG: "https://cdn.jsdelivr.net/npm/@thesvg/icons/icons/mg.svg",
-  });
-
-  const CARDOG_FILES = Object.freeze({
-    ACURA: "Acura Icon.svg",
-    "ALFA ROMEO": "Alfa Romeo Icon.svg",
-    "ASTON MARTIN": "Aston Martin Icon.svg",
-    AUDI: "Audi Icon.svg",
-    BENTLEY: "Bentley Icon.svg",
-    BMW: "BMW Icon.svg",
-    BUGATTI: "Bugatti Icon.svg",
-    BUICK: "Buick Icon.svg",
-    BYD: "BYD Icon.svg",
-    CADILLAC: "Cadillac Icon.svg",
-    CHEVROLET: "Chevrolet Icon.svg",
-    CHRYSLER: "Chrysler Icon.svg",
-    DODGE: "Dodge Icon.svg",
-    FERRARI: "Ferrari Icon.svg",
-    FIAT: "Fiat Icon.svg",
-    FORD: "Ford Icon.svg",
-    GENESIS: "Genesis Icon.svg",
-    GMC: "GMC Icon.svg",
-    HONDA: "Honda Icon.svg",
-    HUMMER: "Hummer Icon.svg",
-    HYUNDAI: "Hyundai Icon.svg",
-    INFINITI: "Infiniti Icon.svg",
-    JAGUAR: "Jaguar Icon.svg",
-    JEEP: "Jeep Icon.svg",
-    KIA: "Kia Icon.svg",
-    KOENIGSEGG: "Koenigsegg Icon.svg",
-    LAMBORGHINI: "Lamborghini Icon.svg",
-    "LAND ROVER": "Landrover Icon.svg",
-    LEXUS: "Lexus Icon.svg",
-    LINCOLN: "Lincoln Icon.svg",
-    LOTUS: "Lotus Icon.svg",
-    LUCID: "Lucid Icon.svg",
-    MASERATI: "Maserati Icon.svg",
-    MAZDA: "Mazda Icon.svg",
-    "MERCEDES-BENZ": "MB Icon.svg",
-    MCLAREN: "McLaren Icon.svg",
-    MINI: "Mini Icon.svg",
-    MITSUBISHI: "Mitsubishi Icon.svg",
-    NISSAN: "Nissan Icon.svg",
-    PAGANI: "Pagani Icon.svg",
-    POLESTAR: "Polestar Icon.svg",
-    PORSCHE: "Porsche Icon.svg",
-    RAM: "RAM Icon.svg",
-    RIVIAN: "Rivian Icon.svg",
-    "ROLLS-ROYCE": "RollsRoyce Icon.svg",
-    SUBARU: "Subaru Icon.svg",
-    TESLA: "Tesla Icon.svg",
-    TOYOTA: "Toyota Icon.svg",
-    VINFAST: "Vinfast Icon.svg",
-    VOLKSWAGEN: "Volkswagen Icon.svg",
-    VOLVO: "Volvo Icon.svg",
+  const BRAND_FILES = Object.freeze({
+    ABARTH: "abarth-logo.svg",
+    ACURA: "acura-logo.svg",
+    "ALFA ROMEO": "alfa-romeo-logo.svg",
+    ALPINE: "alpine-logo.svg",
+    "ASTON MARTIN": "aston-martin-logo.svg",
+    AUDI: "audi-logo.svg",
+    BENTLEY: "bentley-logo.svg",
+    BMW: "bmw-logo.svg",
+    BUGATTI: "bugatti-logo.svg",
+    BYD: "byd-logo.svg",
+    CHEVROLET: "chevrolet-logo.png",
+    CHRYSLER: "chrysler-logo.svg",
+    CITROEN: "citroen-logo.svg",
+    CUPRA: "cupra-logo.svg",
+    DACIA: "dacia-logo.svg",
+    DAIHATSU: "daihatsu-logo.svg",
+    DODGE: "dodge-logo.png",
+    DS: "ds-logo.svg",
+    FERRARI: "ferrari-logo.svg",
+    FIAT: "fiat-logo.svg",
+    FORD: "ford-logo.png",
+    GENESIS: "genesis-logo.svg",
+    GMC: "gmc-logo.png",
+    HONDA: "honda-logo.png",
+    HUMMER: "hummer-logo.svg",
+    HYUNDAI: "hyundai-logo.svg",
+    INEOS: "ineos-logo.svg",
+    INFINITI: "infiniti-logo.svg",
+    ISUZU: "isuzu-logo.svg",
+    JAECOO: "jaecoo-logo.svg",
+    JAGUAR: "jaguar-logo.svg",
+    JEEP: "jeep-logo.svg",
+    KGM: "kgm-logo.svg",
+    KIA: "kia-logo.svg",
+    KOENIGSEGG: "koenigsegg-logo.svg",
+    LAMBORGHINI: "lamborghini-logo.png",
+    "LAND ROVER": "land-rover-logo.svg",
+    LEXUS: "lexus-logo.png",
+    LOTUS: "lotus-logo.svg",
+    LUCID: "lucid-logo.png",
+    MASERATI: "maserati-logo.png",
+    MAXUS: "maxus-logo.png",
+    MAZDA: "mazda-logo.svg",
+    MCLAREN: "mclaren-logo.svg",
+    "MERCEDES-BENZ": "mercedes-benz-logo.svg",
+    MG: "mg-logo.png",
+    MINI: "mini-logo.svg",
+    MITSUBISHI: "mitsubishi-logo.svg",
+    MORGAN: "morgan-logo.png",
+    NISSAN: "nissan-logo.svg",
+    OMODA: "omoda-logo.png",
+    OPEL: "opel-logo.svg",
+    ORA: "ora-logo.png",
+    PAGANI: "pagani-logo.png",
+    PEUGEOT: "peugeot-logo.svg",
+    POLESTAR: "polestar-logo.png",
+    PORSCHE: "porsche-logo.svg",
+    RAM: "ram-logo.svg",
+    RENAULT: "renault-logo.svg",
+    RIVIAN: "rivian-logo.svg",
+    "ROLLS-ROYCE": "rolls-royce-logo.svg",
+    ROVER: "rover-logo.png",
+    SAAB: "saab-logo.png",
+    SEAT: "seat-logo.svg",
+    SKODA: "skoda-logo.svg",
+    SMART: "smart-logo.png",
+    SSANGYONG: "ssangyong-logo.png",
+    SUBARU: "subaru-logo.png",
+    SUZUKI: "suzuki-logo.svg",
+    TESLA: "tesla-logo.svg",
+    TOYOTA: "toyota-logo.svg",
+    TVR: "tvr-logo.png",
+    VAUXHALL: "vauxhall-logo.png",
+    VINFAST: "vinfast-logo.png",
+    VOLKSWAGEN: "volkswagen-logo.svg",
+    VOLVO: "volvo-logo.svg",
+    XPENG: "xpeng-logo.png"
   });
 
   const MAKE_ALIASES = Object.freeze({
     "MERCEDES BENZ": "MERCEDES-BENZ",
     MERCEDES: "MERCEDES-BENZ",
-    "LANDROVER": "LAND ROVER",
+    LANDROVER: "LAND ROVER",
     "RANGE ROVER": "LAND ROVER",
     "ALFA-ROMEO": "ALFA ROMEO",
     "ROLLS ROYCE": "ROLLS-ROYCE",
-    "VW": "VOLKSWAGEN",
+    VW: "VOLKSWAGEN",
     "MG MOTOR": "MG",
+    CITROËN: "CITROEN",
+    ŠKODA: "SKODA"
   });
 
   const KNOWN_MAKES = Object.freeze(
-    [...new Set([...Object.keys(CARDOG_FILES), ...Object.keys(OTHER_LOGOS), ...Object.keys(MAKE_ALIASES)])]
+    [...new Set([...Object.keys(BRAND_FILES), ...Object.keys(MAKE_ALIASES)])]
       .sort((a, b) => b.length - a.length)
   );
 
@@ -112,39 +125,21 @@
   }
 
   function logoUrl(make) {
-    const normalised = normaliseMake(make);
-    const cardogFile = CARDOG_FILES[normalised];
-    if (cardogFile) return `${CARDOG_BASE}${encodeURIComponent(cardogFile).replaceAll("%2F", "/")}`;
-    return OTHER_LOGOS[normalised] || null;
+    const filename = BRAND_FILES[normaliseMake(make)];
+    return filename ? `/brands/${encodeURIComponent(filename)}` : null;
   }
 
   function logoMarkup(make) {
     const normalised = normaliseMake(make);
     const url = logoUrl(normalised);
     if (!url) return `<span class="vehicle-brand-fallback" aria-hidden="true">${escapeHtml(initials(normalised))}</span>`;
-    return `<img class="vehicle-brand-logo" src="${escapeHtml(url)}" alt="${escapeHtml(normalised)} logo" loading="eager" referrerpolicy="no-referrer">`;
+    return `<img class="vehicle-brand-logo" src="${escapeHtml(url)}" alt="${escapeHtml(normalised)} logo" loading="eager">`;
   }
 
   function resolveMakeFromTitle(title) {
     const text = normaliseMake(title);
     const candidate = KNOWN_MAKES.find((make) => text === make || text.startsWith(`${make} `));
     return normaliseMake(candidate || text.split(" ")[0] || "CAR");
-  }
-
-  function installStyles() {
-    if (document.getElementById("vehicleBrandLogoStyles")) return;
-    const style = document.createElement("style");
-    style.id = "vehicleBrandLogoStyles";
-    style.textContent = `
-      .vehicle-title-row{display:flex;align-items:center;gap:14px;min-width:0}
-      .vehicle-brand-mark{width:54px;height:54px;flex:0 0 54px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(255,255,255,.055);overflow:hidden}
-      .vehicle-brand-logo{display:block;max-width:42px;max-height:42px;width:auto;height:auto;object-fit:contain}
-      .vehicle-brand-fallback{font-size:13px;font-weight:900;letter-spacing:.08em;color:#fff}
-      .vehicle-identity-meta{display:flex;gap:22px;margin:10px 0 0 68px;color:var(--muted,#9da4b2);font-size:12px}
-      .vehicle-identity-meta span{display:flex;gap:6px;align-items:baseline}.vehicle-identity-meta small{text-transform:uppercase;letter-spacing:.08em}.vehicle-identity-meta strong{color:#fff;font-size:12px}
-      @media(max-width:640px){.vehicle-brand-mark{width:46px;height:46px;flex-basis:46px;border-radius:13px}.vehicle-brand-logo{max-width:36px;max-height:36px}.vehicle-identity-meta{margin-left:60px;gap:12px;flex-wrap:wrap}}
-    `;
-    document.head.appendChild(style);
   }
 
   function attachImageFallbacks(root = document) {
@@ -187,7 +182,6 @@
     attachImageFallbacks(row);
   }
 
-  installStyles();
   const result = document.getElementById("result");
   if (!result) return;
   const observer = new MutationObserver(decorateResult);
