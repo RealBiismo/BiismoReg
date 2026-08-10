@@ -90,15 +90,15 @@
 .has-simple-staff-dashboard .admin-overview {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 7px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 9px;
 }
 
 .has-simple-staff-dashboard .admin-overview > article {
   min-width: 0;
-  min-height: 58px;
-  padding: 7px 10px;
-  border-radius: 11px;
+  min-height: 46px;
+  padding: 5px 9px;
+  border-radius: 10px;
 }
 
 .has-simple-staff-dashboard .admin-overview > article:nth-child(2) {
@@ -106,14 +106,22 @@
 }
 
 .has-simple-staff-dashboard .admin-overview span {
-  font-size: 9px;
-  line-height: 1.2;
+  font-size: 8.5px;
+  line-height: 1.15;
 }
 
 .has-simple-staff-dashboard .admin-overview strong {
-  margin-top: 3px;
-  font-size: clamp(17px, 1.8vw, 21px);
-  line-height: 1.05;
+  margin-top: 2px;
+  font-size: clamp(16px, 1.65vw, 19px);
+  line-height: 1;
+}
+
+.has-simple-staff-dashboard .admin-overview > article:nth-child(4) {
+  grid-column: 3;
+}
+
+.has-simple-staff-dashboard .admin-overview > article:nth-child(5) {
+  grid-column: 4;
 }
 
 .simple-activity-switch {
@@ -167,25 +175,75 @@
   margin-bottom: 8px;
 }
 
-.has-simple-staff-dashboard .staff-notes-panel textarea {
+.has-simple-staff-dashboard .staff-notes-panel textarea,
+.has-simple-staff-dashboard .admin-direct-notification input,
+.has-simple-staff-dashboard .admin-direct-notification textarea {
   width: 100%;
-  min-height: 92px;
-  padding: 12px 13px;
+  padding: 11px 12px;
   border: 1px solid rgba(79, 124, 255, .24);
-  border-radius: 13px;
+  border-radius: 12px;
   outline: none;
-  resize: vertical;
   background: linear-gradient(145deg, rgba(21, 35, 64, .9), rgba(11, 20, 36, .94));
   color: #f6f8fc;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
   transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
 
-.has-simple-staff-dashboard .staff-notes-panel textarea::placeholder {
+.has-simple-staff-dashboard .staff-notes-panel textarea {
+  min-height: 92px;
+  padding: 12px 13px;
+  border-radius: 13px;
+  resize: vertical;
+}
+
+.has-simple-staff-dashboard .admin-direct-notification {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(79,124,255,.14);
+  border-radius: 15px;
+  background: linear-gradient(155deg, rgba(20,34,61,.42), rgba(8,15,27,.3));
+}
+
+.has-simple-staff-dashboard .admin-direct-notification > div:first-child {
+  margin-bottom: 10px;
+}
+
+.has-simple-staff-dashboard .admin-direct-notification h3 {
+  margin: 3px 0 0;
+}
+
+.has-simple-staff-dashboard .admin-direct-notification label {
+  display: block;
+  margin: 9px 0 5px;
+  color: rgba(207,218,237,.72);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.has-simple-staff-dashboard .admin-direct-notification input {
+  min-height: 42px;
+}
+
+.has-simple-staff-dashboard .admin-direct-notification textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.has-simple-staff-dashboard .admin-direct-notification button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.has-simple-staff-dashboard .staff-notes-panel textarea::placeholder,
+.has-simple-staff-dashboard .admin-direct-notification input::placeholder,
+.has-simple-staff-dashboard .admin-direct-notification textarea::placeholder {
   color: rgba(190, 204, 228, .48);
 }
 
-.has-simple-staff-dashboard .staff-notes-panel textarea:focus {
+.has-simple-staff-dashboard .staff-notes-panel textarea:focus,
+.has-simple-staff-dashboard .admin-direct-notification input:focus,
+.has-simple-staff-dashboard .admin-direct-notification textarea:focus {
   border-color: rgba(91, 149, 255, .58);
   background: linear-gradient(145deg, rgba(24, 42, 77, .94), rgba(12, 23, 43, .98));
   box-shadow: 0 0 0 3px rgba(55, 124, 255, .1), inset 0 1px 0 rgba(255,255,255,.035);
@@ -232,6 +290,11 @@ body[data-staff-role="moderator"] .simple-staff-nav {
 @media (max-width: 860px) {
   .has-simple-staff-dashboard .admin-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .has-simple-staff-dashboard .admin-overview > article:nth-child(4),
+  .has-simple-staff-dashboard .admin-overview > article:nth-child(5) {
+    grid-column: auto;
   }
 
   .simple-user-filters {
