@@ -1,0 +1,39 @@
+.vehicle-brand-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.vehicle-brand-title .car-title {
+  margin: 0;
+}
+
+.vehicle-brand-badge {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: block;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #0d0f13;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.09), 0 8px 22px rgba(0,0,0,.3);
+}
+
+@media (max-width: 620px) {
+  .vehicle-brand-title {
+    gap: 10px;
+  }
+
+  .vehicle-brand-badge {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    border-radius: 12px;
+  }
+
+  .vehicle-brand-title .car-title {
+    font-size: clamp(1.55rem, 7vw, 2.15rem);
+    line-height: 1.08;
+  }
+}
