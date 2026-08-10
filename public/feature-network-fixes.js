@@ -47,6 +47,101 @@
   window.addEventListener("DOMContentLoaded", () => {
     const style = document.createElement("style");
     style.textContent = `
+      @media (min-width: 821px) {
+        .home-page .site-header.home-header {
+          position: relative !important;
+          width: min(1180px, calc(100% - 48px)) !important;
+          min-height: 116px !important;
+          margin: 0 auto !important;
+          padding: 18px 0 10px !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+        }
+        .home-page .site-header.home-header .brand {
+          position: static !important;
+          margin: 0 auto !important;
+        }
+        .home-page .site-header.home-header .brand img {
+          width: 170px !important;
+          max-width: 170px !important;
+          height: auto !important;
+        }
+        .home-page .home-header-actions {
+          position: absolute !important;
+          right: 0 !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          margin: 0 !important;
+          z-index: 5 !important;
+        }
+        .home-page .home-header-actions .header-action {
+          position: static !important;
+          transform: none !important;
+          margin: 0 !important;
+        }
+        .home-page .home-main,
+        .home-page:not(:has(#result > *)) .home-main {
+          width: min(900px, calc(100% - 48px)) !important;
+          margin: 0 auto !important;
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 26px !important;
+        }
+        .home-page .hero-shell,
+        .home-page:not(:has(#result > *)) .hero-shell {
+          width: 100% !important;
+          padding: 18px 0 0 !important;
+          margin: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: stretch !important;
+          justify-content: flex-start !important;
+          gap: 30px !important;
+        }
+        .home-page .hero-copy {
+          width: 100% !important;
+          max-width: 820px !important;
+          margin: 0 auto !important;
+          text-align: center !important;
+        }
+        .home-page .hero-copy .eyebrow { display: none !important; }
+        .home-page .hero-copy h1 {
+          margin: 0 !important;
+          font-size: clamp(48px, 5vw, 68px) !important;
+          line-height: .98 !important;
+          letter-spacing: -.035em !important;
+          text-align: center !important;
+        }
+        .home-page .hero-copy > p {
+          max-width: 700px !important;
+          margin: 16px auto 0 !important;
+          font-size: 18px !important;
+          line-height: 1.45 !important;
+          text-align: center !important;
+        }
+        .home-page .search-panel {
+          width: min(760px, 100%) !important;
+          margin: 0 auto !important;
+          align-self: center !important;
+        }
+        .home-page .homepage-footer-note {
+          width: min(900px, 100%) !important;
+          margin: 6px auto 0 !important;
+          padding: 18px 16px !important;
+          flex-direction: column !important;
+          gap: 7px !important;
+          text-align: center !important;
+        }
+        .home-page .homepage-footer-note > div,
+        .home-page .homepage-footer-note p,
+        .home-page .homepage-footer-note a {
+          text-align: center !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+      }
+
       #vehicleForm .plate {
         position: relative;
         display: grid;
@@ -92,6 +187,13 @@
       #vehicleForm .plate.is-scanning input::placeholder {
         color: rgba(0,0,0,.68);
         opacity: 1;
+      }
+      @media (max-width: 820px) {
+        .home-page .home-header-actions {
+          position: static !important;
+          transform: none !important;
+          margin: 0 !important;
+        }
       }
       @media (max-width: 680px) {
         #vehicleForm .plate { grid-template-columns: auto minmax(0, 1fr) 46px; }
