@@ -1,0 +1,72 @@
+/* Homepage-only corrections. Keep the admin dashboard untouched. */
+.home-page,
+.home-page:not(:has(#result > *)) {
+  height: auto !important;
+  min-height: 100svh;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.home-page .home-main,
+.home-page:not(:has(#result > *)) .home-main {
+  height: auto !important;
+  min-height: 0 !important;
+  display: block;
+  overflow: visible !important;
+}
+
+.home-page .hero-shell,
+.home-page:not(:has(#result > *)) .hero-shell {
+  height: auto !important;
+  min-height: calc(100svh - 72px) !important;
+  grid-template-rows: auto !important;
+}
+
+.home-page .brand img {
+  display: block;
+  width: 190px;
+  max-width: 42vw;
+  height: auto;
+}
+
+.home-page .homepage-footer-note {
+  width: 100%;
+  margin-top: 0;
+  padding: 22px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.home-page .homepage-footer-note p {
+  max-width: 820px;
+  margin-top: 3px;
+}
+
+.home-page .homepage-footer-note a {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 820px) {
+  .home-page .hero-shell,
+  .home-page:not(:has(#result > *)) .hero-shell {
+    min-height: auto !important;
+    padding-top: 24px;
+    padding-bottom: 30px;
+  }
+
+  .home-page .brand img {
+    width: clamp(150px, 42vw, 190px);
+    max-width: 48vw;
+  }
+
+  .home-page .homepage-footer-note {
+    padding: 18px 0 24px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
