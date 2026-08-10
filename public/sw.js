@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v24";
+const CACHE_NAME = "biismo-reg-v25";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -80,8 +80,6 @@ self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(event.request.url);
   if (event.request.method !== "GET" || requestUrl.origin !== self.location.origin) return;
 
-  // Authenticated responses are private to the signed-in account and must never
-  // be placed in the shared service-worker cache.
   if (requestUrl.pathname.startsWith("/api/") || requestUrl.pathname.startsWith("/auth/")) {
     event.respondWith(fetch(event.request));
     return;
