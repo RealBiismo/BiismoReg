@@ -8,15 +8,41 @@
   display: none !important;
 }
 
+.has-user-focused-staff-dashboard .admin-overview {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.has-user-focused-staff-dashboard .admin-overview > article {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.has-user-focused-staff-dashboard .admin-overview > article:nth-child(2) {
+  display: none !important;
+}
+
+.has-user-focused-staff-dashboard .admin-overview span {
+  font-size: 10px;
+}
+
+.has-user-focused-staff-dashboard .admin-overview strong {
+  font-size: clamp(18px, 2vw, 24px);
+}
+
 .has-user-focused-staff-dashboard .admin-quick-tools {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .has-user-focused-staff-dashboard .admin-quick-tools .admin-panel {
   min-width: 0;
+  padding: 12px;
 }
 
 .has-user-focused-staff-dashboard .admin-dashboard-grid.is-user-focused-layout {
@@ -29,30 +55,20 @@
   max-width: none;
 }
 
-.has-user-focused-staff-dashboard .admin-user-result[hidden] {
-  display: none !important;
-}
-
-.has-user-focused-staff-dashboard .admin-user-result:not([hidden]) {
-  margin-top: 14px;
-  border-top: 1px solid rgba(255,255,255,.08);
-  padding-top: 16px;
-}
-
 .has-user-focused-staff-dashboard .staff-global-actions {
   display: flex;
   justify-content: flex-end;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
 }
 
 .has-user-focused-staff-dashboard .admin-broadcast-panel:not([hidden]) {
-  margin-top: 12px;
+  margin: 0 0 12px;
 }
 
 .has-user-focused-staff-dashboard #teamManagementPanel,
 .has-user-focused-staff-dashboard .staff-workspace-nav,
-.has-user-focused-staff-dashboard .admin-overview,
-.has-user-focused-staff-dashboard .admin-hero {
+.has-user-focused-staff-dashboard .admin-hero,
+.has-user-focused-staff-dashboard .staff-role-banner {
   display: none !important;
 }
 
@@ -66,6 +82,10 @@
 }
 
 @media (max-width: 860px) {
+  .has-user-focused-staff-dashboard .admin-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .has-user-focused-staff-dashboard .admin-quick-tools {
     grid-template-columns: 1fr;
   }
