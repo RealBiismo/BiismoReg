@@ -1,14 +1,38 @@
+.vehicle-result-mode .hero-copy,
+.vehicle-result-mode #vehicleForm,
+.vehicle-result-mode .homepage-footer-note {
+  display: none !important;
+}
+
+.vehicle-result-mode .hero-shell {
+  min-height: 0 !important;
+  padding: 8px 0 0 !important;
+  display: block !important;
+}
+
+.vehicle-result-mode .home-main {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.check-another-vehicle {
+  margin: 0 0 14px;
+  min-height: 40px;
+  padding: 0 14px;
+}
+
 .full-history-preview {
   margin: 22px 0;
-  padding: clamp(18px, 2.6vw, 26px);
+  padding: clamp(16px, 2.2vw, 22px);
   border: 1px solid rgba(80, 132, 255, .24);
-  border-radius: 22px;
+  border-radius: 20px;
   background:
     radial-gradient(circle at 100% 0%, rgba(45, 102, 230, .16), transparent 34%),
     linear-gradient(145deg, rgba(16, 27, 49, .96), rgba(8, 14, 26, .98));
   box-shadow: 0 24px 70px rgba(0, 0, 0, .2);
 }
 
+.full-history-preview__summary,
 .full-history-preview__top {
   display: flex;
   align-items: flex-start;
@@ -23,23 +47,77 @@
   letter-spacing: .12em;
 }
 
-.full-history-preview h3 {
+.full-history-preview h3,
+.full-history-preview h4 {
   margin: 5px 0 0;
-  font-size: clamp(24px, 3vw, 34px);
-  line-height: 1.02;
-  letter-spacing: -.035em;
+  line-height: 1.04;
+  letter-spacing: -.03em;
 }
 
+.full-history-preview h3 {
+  font-size: clamp(21px, 2.5vw, 28px);
+}
+
+.full-history-preview h4 {
+  font-size: clamp(19px, 2.2vw, 25px);
+}
+
+.full-history-preview__summary p,
 .full-history-preview__top p,
 .full-history-preview__note {
   color: rgba(214, 223, 240, .64);
 }
 
+.full-history-preview__summary p,
 .full-history-preview__top p {
-  max-width: 650px;
-  margin: 8px 0 0;
-  font-size: 13px;
-  line-height: 1.5;
+  margin: 7px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.full-history-preview__coming-soon {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid rgba(93, 145, 255, .25);
+  border-radius: 999px;
+  background: rgba(55, 100, 205, .12);
+  color: #a9c6ff;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.full-history-preview__toggle {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(77, 135, 255, .28);
+  border-radius: 12px;
+  background: rgba(45, 86, 171, .12);
+  color: #f4f7ff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.full-history-preview__toggle:hover,
+.full-history-preview__toggle:focus-visible {
+  border-color: rgba(96, 151, 255, .5);
+  background: rgba(51, 96, 190, .18);
+  outline: none;
+}
+
+.full-history-preview__details {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,.07);
 }
 
 .full-history-preview__price {
@@ -70,7 +148,7 @@
 }
 
 .full-history-preview__grid {
-  margin-top: 18px;
+  margin-top: 16px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -78,8 +156,8 @@
 
 .full-history-preview__item {
   min-width: 0;
-  min-height: 68px;
-  padding: 11px 12px;
+  min-height: 64px;
+  padding: 10px 11px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -104,10 +182,7 @@
   display: block;
 }
 
-.full-history-preview__item strong {
-  font-size: 12px;
-}
-
+.full-history-preview__item strong { font-size: 12px; }
 .full-history-preview__item small {
   margin-top: 2px;
   color: rgba(205, 216, 235, .5);
@@ -142,16 +217,23 @@
 }
 
 @media (max-width: 720px) {
+  .vehicle-result-mode .hero-shell { padding-top: 4px !important; }
+
   .full-history-preview {
     margin: 16px 0;
-    padding: 15px;
+    padding: 14px;
     border-radius: 18px;
   }
 
+  .full-history-preview__summary,
   .full-history-preview__top {
     align-items: stretch;
     flex-direction: column;
-    gap: 12px;
+    gap: 11px;
+  }
+
+  .full-history-preview__coming-soon {
+    align-self: flex-start;
   }
 
   .full-history-preview__price {
@@ -161,15 +243,7 @@
     text-align: left;
   }
 
-  .full-history-preview__price strong {
-    margin: 0;
-  }
-
-  .full-history-preview__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .full-history-preview__item {
-    min-height: 62px;
-  }
+  .full-history-preview__price strong { margin: 0; }
+  .full-history-preview__grid { grid-template-columns: 1fr; }
+  .full-history-preview__item { min-height: 60px; }
 }
