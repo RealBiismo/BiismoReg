@@ -33,6 +33,21 @@
   justify-content: center;
 }
 
+.home-page .trust-row {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  gap: 8px;
+}
+
+.home-page .trust-row > span {
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .home-page .homepage-footer-note {
   width: 100%;
   margin: 0;
@@ -278,6 +293,14 @@
     margin-top: 9px !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
+  }
+
+  .home-page .trust-row {
+    gap: 4px;
+  }
+
+  .home-page .trust-row > span {
+    font-size: clamp(8px, 2.5vw, 10px);
   }
 
   .home-page .homepage-footer-note {
