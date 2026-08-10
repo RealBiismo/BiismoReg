@@ -1,4 +1,5 @@
 /* Homepage-only corrections. Keep the admin dashboard untouched. */
+.home-page .app-splash { display: none !important; }
 .home-page,
 .home-page:not(:has(#result > *)) {
   height: auto !important;
