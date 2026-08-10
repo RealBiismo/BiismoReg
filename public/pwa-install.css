@@ -1,3 +1,5 @@
+@import url("android-compat.css");
+
 .install-prompt {
   position: fixed;
   z-index: 120;
