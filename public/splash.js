@@ -38,3 +38,8 @@
 
   window.setTimeout(dismiss, 3500);
 })();
+
+// Staff enhancements are isolated from the core garage/admin code.
+if (window.location.pathname === "/account.html") {
+  import("/moderator-controls.js").catch(() => {});
+}
