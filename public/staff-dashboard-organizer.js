@@ -5,6 +5,7 @@
   const adminView = byId("adminView");
   if (!adminView) return;
   let activeUserFilter = "all";
+  let activeActivity = "signups";
 
   function injectStyles() {
     if (document.querySelector('link[href="/staff-dashboard-organizer.css"]')) return;
@@ -91,6 +92,44 @@
     observer.observe(adminView, { childList: true, subtree: true });
   }
 
+  function updateActivityPanels() {
+    const activity = adminView.querySelector(".admin-quick-tools");
+    if (!activity) return;
+    const panels = [...activity.querySelectorAll(":scope > .admin-panel")];
+    panels.forEach((panel, index) => {
+      if (index === 0) panel.hidden = activeActivity !== "signups";
+      else if (index === 1) panel.hidden = activeActivity !== "searches";
+      else panel.hidden = true;
+    });
+
+    activity.querySelectorAll("[data-simple-activity]").forEach((button) => {
+      const active = button.dataset.simpleActivity === activeActivity;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", String(active));
+    });
+  }
+
+  function buildActivitySwitch() {
+    const activity = adminView.querySelector(".admin-quick-tools");
+    if (!activity || byId("simpleActivitySwitch")) return;
+    const toggle = document.createElement("div");
+    toggle.id = "simpleActivitySwitch";
+    toggle.className = "simple-activity-switch";
+    toggle.setAttribute("role", "tablist");
+    toggle.setAttribute("aria-label", "Recent activity");
+    toggle.innerHTML = `
+      <button type="button" role="tab" aria-selected="true" data-simple-activity="signups" class="is-active">Recent signups</button>
+      <button type="button" role="tab" aria-selected="false" data-simple-activity="searches">Recent searches</button>`;
+    activity.prepend(toggle);
+    toggle.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-simple-activity]");
+      if (!button) return;
+      activeActivity = button.dataset.simpleActivity;
+      updateActivityPanels();
+    });
+    updateActivityPanels();
+  }
+
   function buildNav(staffRole) {
     if (byId("simpleStaffNav")) return;
     const nav = document.createElement("nav");
@@ -128,11 +167,7 @@
     hide(broadcast, page !== "tools");
     hide(history, page !== "tools" || Boolean(history?.hidden));
 
-    if (activity) {
-      activity.querySelectorAll(":scope > .admin-panel").forEach((panel, index) => {
-        panel.hidden = index > 1;
-      });
-    }
+    if (page === "home") updateActivityPanels();
 
     document.querySelectorAll("[data-simple-staff-page]").forEach((button) => {
       const active = button.dataset.simpleStaffPage === page;
@@ -177,6 +212,7 @@
     if (menu) menu.textContent = staffRole === "moderator" ? "Moderator" : "Admin";
 
     buildNav(staffRole);
+    buildActivitySwitch();
     buildUserFilters();
     showPage("home", staffRole);
   }
@@ -190,6 +226,7 @@
 
     const observer = new MutationObserver(() => {
       [byId("teamManagementPanel"), byId("staffRoleBanner"), byId("staffGlobalActions")].forEach((node) => hide(node, true));
+      updateActivityPanels();
     });
     observer.observe(adminView, { childList: true, subtree: true });
   }
