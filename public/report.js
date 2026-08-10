@@ -27,7 +27,8 @@
     return `<div class="mot-timeline">${tests.map((test) => {
       const result = String(test.result || 'UNKNOWN').toUpperCase();
       const mileage = test.mileage ? `${Number(String(test.mileage).replace(/[^\d]/g,'')).toLocaleString()} mi` : 'Mileage N/A';
-      return `<div class="timeline-item is-${result === 'PASSED' ? 'pass' : 'fail'}"><span class="timeline-dot"></span><div><strong>${escapeHtml(result)}</strong><small>${escapeHtml(date(test.completedDate))} · ${escapeHtml(mileage)} · ${(test.defects || []).length} issue${(test.defects || []).length === 1 ? '' : 's'}</small></div></div>`;
+      const issueCount = Number(test.defectCount ?? (test.defects || []).length) || 0;
+      return `<div class="timeline-item is-${result === 'PASSED' ? 'pass' : 'fail'}"><span class="timeline-dot"></span><div><strong>${escapeHtml(result)}</strong><small>${escapeHtml(date(test.completedDate))} · ${escapeHtml(mileage)} · ${issueCount} issue${issueCount === 1 ? '' : 's'}</small></div></div>`;
     }).join('')}</div>`;
   }
 
