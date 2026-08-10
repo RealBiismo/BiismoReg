@@ -103,11 +103,57 @@
     });
   }
 
+  function closeDrawer() {
+    const shell = byId("staffUserDrawer");
+    if (!shell) return;
+    shell.classList.remove("is-open");
+    shell.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("staff-user-drawer-open");
+  }
+
+  function openDrawer() {
+    const shell = byId("staffUserDrawer");
+    if (!shell) return;
+    shell.classList.add("is-open");
+    shell.setAttribute("aria-hidden", "false");
+    document.body.classList.add("staff-user-drawer-open");
+    window.setTimeout(() => byId("staffUserDrawerClose")?.focus(), 30);
+  }
+
+  function buildDrawer() {
+    if (byId("staffUserDrawer")) return;
+    const result = byId("adminUserResult");
+    if (!result) return;
+
+    const shell = document.createElement("div");
+    shell.id = "staffUserDrawer";
+    shell.className = "staff-user-drawer";
+    shell.setAttribute("aria-hidden", "true");
+    shell.innerHTML = `
+      <button class="staff-user-drawer-backdrop" type="button" aria-label="Close user details"></button>
+      <aside class="staff-user-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="staffUserDrawerTitle">
+        <header class="staff-user-drawer-header">
+          <div><span class="eyebrow">ACCOUNT</span><h2 id="staffUserDrawerTitle">User details</h2></div>
+          <button id="staffUserDrawerClose" class="staff-user-drawer-close" type="button" aria-label="Close user details">×</button>
+        </header>
+        <div id="staffUserDrawerContent" class="staff-user-drawer-content"></div>
+      </aside>`;
+    document.body.append(shell);
+    byId("staffUserDrawerContent")?.append(result);
+
+    shell.querySelector(".staff-user-drawer-backdrop")?.addEventListener("click", closeDrawer);
+    byId("staffUserDrawerClose")?.addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && shell.classList.contains("is-open")) closeDrawer();
+    });
+  }
+
   function showSelectedResult() {
     const result = byId("adminUserResult");
     if (!result) return;
     result.dataset.accountSelected = "true";
     result.hidden = false;
+    openDrawer();
   }
 
   function ensureOwnerRoleAction(email) {
@@ -138,14 +184,8 @@
 
     const isModerator = account.role === "moderator";
     panel.innerHTML = `
-      <div>
-        <span class="eyebrow">STAFF ROLE</span>
-        <strong>${isModerator ? "Moderator" : "Standard user"}</strong>
-        <small>${isModerator ? "Remove moderator access from this account." : "Give this account moderator support access."}</small>
-      </div>
-      <button id="staffToggleModeratorButton" class="${isModerator ? "danger-button" : "secondary-button"} compact-button" type="button">
-        ${isModerator ? "Remove moderator" : "Make moderator"}
-      </button>
+      <div><span class="eyebrow">STAFF ROLE</span><strong>${isModerator ? "Moderator" : "Standard user"}</strong><small>${isModerator ? "Remove moderator access from this account." : "Give this account moderator support access."}</small></div>
+      <button id="staffToggleModeratorButton" class="${isModerator ? "danger-button" : "secondary-button"} compact-button" type="button">${isModerator ? "Remove moderator" : "Make moderator"}</button>
       <p id="staffRoleActionStatus" class="admin-status" role="status"></p>`;
 
     byId("staffToggleModeratorButton")?.addEventListener("click", async () => {
@@ -210,6 +250,8 @@
       const email = String(emailNode.textContent || "").replace("♛", "").trim().toLowerCase();
       if (!email.includes("@")) return;
       markSelected(email);
+      const title = byId("staffUserDrawerTitle");
+      if (title) title.textContent = email;
       showSelectedResult();
       ensureOwnerRoleAction(email);
     };
@@ -239,9 +281,9 @@
       const eyebrow = heading.querySelector(".eyebrow");
       const title = heading.querySelector("h2");
       const rate = heading.querySelector(".credit-rate");
-      if (eyebrow) eyebrow.textContent = "ACCOUNTS";
-      if (title) title.textContent = "All users";
-      if (rate) rate.textContent = role() === "moderator" ? "Select a user for support actions" : "Select a user for account actions";
+      if (eyebrow) eyebrow.textContent = "USERS";
+      if (title) title.textContent = "Accounts";
+      if (rate) rate.textContent = "Click an email to open actions";
     }
 
     form.hidden = true;
@@ -251,10 +293,8 @@
       result.prepend(status);
     }
 
-    if (result) {
-      result.hidden = true;
-      delete result.dataset.accountSelected;
-    }
+    result.hidden = true;
+    delete result.dataset.accountSelected;
 
     const directory = document.createElement("section");
     directory.id = "staffUserDirectory";
@@ -262,13 +302,12 @@
     directory.innerHTML = `
       <div class="staff-user-directory-toolbar">
         <label class="sr-only" for="staffUserDirectoryFilter">Filter accounts by email</label>
-        <input id="staffUserDirectoryFilter" type="search" placeholder="Filter users by email…" autocomplete="off">
+        <input id="staffUserDirectoryFilter" type="search" placeholder="Search accounts…" autocomplete="off">
         <span id="staffUserDirectoryCount">Loading accounts…</span>
       </div>
       <div id="staffUserDirectoryList" class="staff-user-directory-list"><p class="notification-empty">Loading accounts…</p></div>`;
 
-    if (result) panel.insertBefore(directory, result);
-    else panel.append(directory);
+    panel.insertBefore(directory, result);
 
     byId("staffUserDirectoryFilter")?.addEventListener("input", (event) => renderDirectory(event.target.value));
     byId("staffUserDirectoryList")?.addEventListener("click", (event) => {
@@ -295,6 +334,7 @@
     if (!staffRole || staffRole === "user") return;
     injectStylesheet();
     buildDirectory();
+    buildDrawer();
     watchSelectedAccount();
     watchActivityRows();
     await loadAccounts();
