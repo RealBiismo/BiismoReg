@@ -564,12 +564,52 @@ body:has(#adminView:not([hidden])) .account-menu-button.is-active {
 }
 
 @media (max-width: 620px) {
-  .account-header { min-height: 72px; grid-template-columns: auto 1fr auto; }
-  .account-header .back-link { min-width: 42px; width: 42px; padding: 0; overflow: hidden; font-size: 0; }
-  .account-header .back-link span { font-size: 20px; }
-  .compact-brand.transparent-brand img { width: clamp(115px, 33vw, 150px); }
-  .account-header-actions { width: auto; }
-  .account-header-actions .header-action { min-width: 42px; padding: 0 11px; }
+  .account-header {
+    min-height: calc(86px + env(safe-area-inset-top));
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: 12px;
+    grid-template-columns: auto 1fr auto;
+    align-items: end;
+  }
+  .account-header .back-link {
+    min-width: 52px;
+    width: 52px;
+    min-height: 52px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 16px;
+    font-size: 0;
+    touch-action: manipulation;
+  }
+  .account-header .back-link span { font-size: 24px; }
+  .compact-brand.transparent-brand img { width: clamp(108px, 31vw, 145px); }
+  .account-header-actions {
+    width: auto;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .notification-bell,
+  .account-header-actions .header-action {
+    min-width: 52px;
+    min-height: 52px;
+    touch-action: manipulation;
+  }
+  .notification-bell {
+    width: 52px;
+    height: 52px;
+  }
+  .notification-bell-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .account-header-actions .header-action {
+    padding: 0 15px;
+    white-space: nowrap;
+  }
   .admin-overview { grid-template-columns: 1fr 1fr; }
   .admin-overview article:last-child { grid-column: 1 / -1; }
   .admin-user-search > div,
