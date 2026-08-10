@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="pwa-install.css">
   <link rel="stylesheet" href="ui-overrides.css">
+  <link rel="stylesheet" href="homepage-fix.css">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
   <link rel="shortcut icon" href="/icon-192.png" type="image/png">
@@ -80,8 +81,8 @@
   </div>
 
   <header class="site-header home-header">
-    <a class="brand transparent-brand" href="/" aria-label="BIISMO REG home">
-      <img src="/icon.svg" alt="BIISMO REG UK vehicle checker">
+    <a class="brand" href="/" aria-label="BIISMO REG home">
+      <img src="/icon-512.png" alt="BIISMO REG UK vehicle checker">
     </a>
     <div class="home-header-actions">
       <button id="accountButton" class="header-action" type="button">Sign in</button>
@@ -124,14 +125,14 @@
           <span>No searches sold</span>
         </div>
       </form>
+    </section>
 
-      <section class="data-note" aria-labelledby="officialVehicleData">
-        <div>
-          <strong id="officialVehicleData">Government-sourced vehicle records</strong>
-          <p>Official DVLA and DVSA information is combined with clearly labelled calculated insights. Results depend on the records available for the registration entered.</p>
-        </div>
-        <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">Created by RealBiismo</a>
-      </section>
+    <section class="data-note homepage-footer-note" aria-labelledby="officialVehicleData">
+      <div>
+        <strong id="officialVehicleData">Government-sourced vehicle records</strong>
+        <p>Official DVLA and DVSA information is combined with clearly labelled calculated insights. Results depend on the records available for the registration entered.</p>
+      </div>
+      <a href="https://instagram.com/realbiismo" target="_blank" rel="noreferrer">Created by RealBiismo</a>
     </section>
 
     <div id="result" aria-live="polite"></div>
