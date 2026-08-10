@@ -152,7 +152,15 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = new URL(event.notification.data?.url || "/account.html", self.location.origin).href;
+
+  const reader = new URL("/notifications.html", self.location.origin);
+  const details = new URLSearchParams();
+  details.set("title", event.notification.title || "BIISMO REG notification");
+  details.set("message", event.notification.body || "Open your inbox for the latest BIISMO REG update.");
+  details.set("tag", event.notification.tag || "");
+  details.set("source", event.notification.data?.url || "/account.html");
+  reader.hash = details.toString();
+  const targetUrl = reader.href;
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
