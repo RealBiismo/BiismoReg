@@ -136,6 +136,24 @@
   }
 }
 
+/* Explain the live reminder cadence directly on each enabled saved vehicle. */
+.reminder-vehicle-option input[type="checkbox"]:checked + span::after {
+  content: "Alerts: 30, 14, 7 and 1 day before each MOT/tax expiry, plus on the expiry day.";
+  display: block;
+  margin-top: 5px;
+  color: #8fd9b4;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+@media (max-width: 520px) {
+  .reminder-vehicle-option input[type="checkbox"]:checked + span::after {
+    max-width: 260px;
+    font-size: 10px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .install-prompt {
     transition: none;
