@@ -4,6 +4,7 @@
   const byId = (id) => document.getElementById(id);
   let clientPromise = null;
   let accounts = [];
+  let selectedEmail = "";
 
   const escapeHtml = (value) => String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -34,7 +35,7 @@
   async function rpc(name, params = {}) {
     const client = await getClient();
     const { data, error } = await client.rpc(name, params);
-    if (error) throw new Error(error.message || "Staff directory unavailable.");
+    if (error) throw new Error(error.message || "Staff action failed.");
     return data;
   }
 
@@ -80,7 +81,7 @@
     if (count) count.textContent = `${filtered.length} of ${accounts.length} accounts`;
     list.innerHTML = filtered.length
       ? filtered.map((item) => `
-        <button class="staff-user-row" type="button" data-user-email="${escapeHtml(item.email)}">
+        <button class="staff-user-row${item.email === selectedEmail ? " is-selected" : ""}" type="button" data-user-email="${escapeHtml(item.email)}">
           <span class="staff-user-main">
             <strong>${escapeHtml(item.email)}</strong>
             <small>${escapeHtml(item.role)} · ${item.verified ? "Verified" : "Unverified"}${item.banned ? " · Banned" : ""}</small>
@@ -96,14 +97,76 @@
   }
 
   function markSelected(email) {
+    selectedEmail = email;
     document.querySelectorAll(".staff-user-row").forEach((row) => {
       row.classList.toggle("is-selected", row.dataset.userEmail === email);
     });
   }
 
+  function showSelectedResult() {
+    const result = byId("adminUserResult");
+    if (!result) return;
+    result.dataset.accountSelected = "true";
+    result.hidden = false;
+  }
+
+  function ensureOwnerRoleAction(email) {
+    if (role() !== "owner") return;
+    const result = byId("adminUserResult");
+    const heading = result?.querySelector(".admin-user-heading");
+    if (!result || !heading) return;
+
+    let panel = byId("staffSelectedRoleAction");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "staffSelectedRoleAction";
+      panel.className = "staff-selected-role-action";
+      heading.after(panel);
+    }
+
+    const account = accounts.find((item) => item.email === email);
+    if (!account) {
+      panel.hidden = true;
+      return;
+    }
+
+    panel.hidden = false;
+    if (account.role === "owner" || account.role === "admin") {
+      panel.innerHTML = `<div><span class="eyebrow">STAFF ROLE</span><strong>${escapeHtml(account.role)}</strong><small>This protected staff role cannot be changed here.</small></div>`;
+      return;
+    }
+
+    const isModerator = account.role === "moderator";
+    panel.innerHTML = `
+      <div>
+        <span class="eyebrow">STAFF ROLE</span>
+        <strong>${isModerator ? "Moderator" : "Standard user"}</strong>
+        <small>${isModerator ? "Remove moderator access from this account." : "Give this account moderator support access."}</small>
+      </div>
+      <button id="staffToggleModeratorButton" class="${isModerator ? "danger-button" : "secondary-button"} compact-button" type="button">
+        ${isModerator ? "Remove moderator" : "Make moderator"}
+      </button>
+      <p id="staffRoleActionStatus" class="admin-status" role="status"></p>`;
+
+    byId("staffToggleModeratorButton")?.addEventListener("click", async () => {
+      const button = byId("staffToggleModeratorButton");
+      const status = byId("staffRoleActionStatus");
+      if (button) button.disabled = true;
+      if (status) status.textContent = isModerator ? "Removing moderator access…" : "Adding moderator access…";
+      try {
+        await rpc("owner_set_moderator", { p_target_email: email, p_enabled: !isModerator });
+        await loadAccounts();
+        ensureOwnerRoleAction(email);
+        if (status) status.textContent = isModerator ? "Moderator access removed." : "Moderator access added.";
+      } catch (error) {
+        if (status) status.textContent = error.message || "Staff role could not be changed.";
+        if (button) button.disabled = false;
+      }
+    });
+  }
+
   async function selectModeratorAccount(email) {
     const account = await rpc("admin_get_user_credits", { p_target_email: email });
-    const result = byId("adminUserResult");
     byId("selectedUserEmail").textContent = account.email;
     byId("selectedUserCredits").textContent = String(Number(account.credits) || 0);
     byId("selectedUserFreeRemaining").textContent = String(Number(account.freeRemaining) || 0);
@@ -114,10 +177,11 @@
       badge.textContent = account.banned ? "Banned" : account.verified ? "Active" : "Unverified";
       badge.className = `account-status-badge ${account.banned ? "is-banned" : "is-active"}`;
     }
-    if (result) result.hidden = false;
+    showSelectedResult();
   }
 
   async function selectAccount(email) {
+    if (!email) return;
     markSelected(email);
     const input = byId("adminUserEmail");
     if (input) input.value = email;
@@ -126,14 +190,42 @@
       try {
         await selectModeratorAccount(email);
       } catch (error) {
-        const list = byId("staffUserDirectoryList");
-        if (list) list.insertAdjacentHTML("afterbegin", `<p class="notification-empty">${escapeHtml(error.message)}</p>`);
+        const result = byId("adminUserResult");
+        if (result) {
+          showSelectedResult();
+          result.insertAdjacentHTML("afterbegin", `<p class="admin-status is-error">${escapeHtml(error.message)}</p>`);
+        }
       }
       return;
     }
 
     const form = byId("adminUserSearchForm");
     if (form) form.requestSubmit();
+  }
+
+  function watchSelectedAccount() {
+    const emailNode = byId("selectedUserEmail");
+    if (!emailNode) return;
+    const update = () => {
+      const email = String(emailNode.textContent || "").replace("♛", "").trim().toLowerCase();
+      if (!email.includes("@")) return;
+      markSelected(email);
+      showSelectedResult();
+      ensureOwnerRoleAction(email);
+    };
+    new MutationObserver(update).observe(emailNode, { childList: true, subtree: true, characterData: true });
+  }
+
+  function watchActivityRows() {
+    const adminView = byId("adminView");
+    if (!adminView) return;
+    adminView.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-account-email]");
+      if (!row) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void selectAccount(row.dataset.accountEmail);
+    }, true);
   }
 
   function buildDirectory() {
@@ -149,12 +241,20 @@
       const rate = heading.querySelector(".credit-rate");
       if (eyebrow) eyebrow.textContent = "ACCOUNTS";
       if (title) title.textContent = "All users";
-      if (rate) rate.textContent = role() === "moderator" ? "Select an account to review" : "Select an account to manage";
+      if (rate) rate.textContent = role() === "moderator" ? "Select a user for support actions" : "Select a user for account actions";
     }
 
     form.hidden = true;
     const status = byId("adminStatus");
-    if (status) status.hidden = true;
+    if (status && result) {
+      status.hidden = false;
+      result.prepend(status);
+    }
+
+    if (result) {
+      result.hidden = true;
+      delete result.dataset.accountSelected;
+    }
 
     const directory = document.createElement("section");
     directory.id = "staffUserDirectory";
@@ -184,6 +284,7 @@
       const data = await rpc("staff_list_accounts");
       accounts = Array.isArray(data?.accounts) ? data.accounts : [];
       renderDirectory(byId("staffUserDirectoryFilter")?.value || "");
+      if (selectedEmail) ensureOwnerRoleAction(selectedEmail);
     } catch (error) {
       if (list) list.innerHTML = `<p class="notification-empty">${escapeHtml(error.message)}</p>`;
     }
@@ -194,6 +295,8 @@
     if (!staffRole || staffRole === "user") return;
     injectStylesheet();
     buildDirectory();
+    watchSelectedAccount();
+    watchActivityRows();
     await loadAccounts();
   }
 
