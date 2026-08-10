@@ -41,5 +41,7 @@
 
 // Staff enhancements are isolated from the core garage/admin code.
 if (window.location.pathname === "/account.html") {
-  import("/moderator-controls.js").catch(() => {});
+  import("/moderator-controls.js")
+    .then(() => import("/staff-dashboard-organizer.js"))
+    .catch(() => {});
 }
