@@ -223,6 +223,6 @@ self.addEventListener("notificationclick", (event) => {
         return existing.focus();
       }
       return self.clients.openWindow(targetUrl);
-    })()
+    })
   );
 });
