@@ -1,3 +1,44 @@
+// Keep the Garage compatible with renamed UI IDs before account.js executes.
+if (window.location.pathname === "/account.html") {
+  const nativeGetById = Document.prototype.getElementById;
+  const aliases = {
+    garageGrid: "savedVehicles",
+    vehicleCount: "savedVehicleCount",
+    reminderToggleButton: "enableNotificationsButton",
+    adminStatus: "adminUserStatus",
+  };
+
+  Document.prototype.getElementById = function biismoCompatibleGetElementById(id) {
+    const direct = nativeGetById.call(this, id);
+    if (direct) return direct;
+    if (aliases[id]) return nativeGetById.call(this, aliases[id]);
+    if (id === "adminUserSearchButton") {
+      return this.querySelector('#adminUserSearchForm button[type="submit"]');
+    }
+    if (id === "garageStatus") {
+      let status = nativeGetById.call(this, "garageStatusCompat");
+      if (!status) {
+        status = this.createElement("p");
+        status.id = "garageStatusCompat";
+        status.className = "garage-status";
+        const grid = nativeGetById.call(this, "savedVehicles");
+        grid?.parentElement?.insertBefore(status, grid);
+      }
+      return status;
+    }
+    return null;
+  };
+
+  // Never allow a startup error to trap the user behind the Garage loader.
+  window.setTimeout(() => {
+    const overlay = nativeGetById.call(document, "loadingOverlay");
+    if (!overlay?.classList.contains("is-visible")) return;
+    overlay.classList.remove("is-visible");
+    overlay.setAttribute("aria-hidden", "true");
+    window.setTimeout(() => overlay.remove(), 250);
+  }, 6500);
+}
+
 (() => {
   const splash = document.getElementById("appSplash");
   if (!splash) return;
