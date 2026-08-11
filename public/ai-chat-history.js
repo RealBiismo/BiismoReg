@@ -60,9 +60,17 @@
     heading.after(hint);
   }
 
-  function relabelBiismoAi() {
-    document.querySelectorAll('.ai-message small').forEach((label) => {
-      if (/BIISMO AI Mechanic/i.test(label.textContent || '')) label.textContent = 'Biismo AI';
+  function tidyMessageLabels() {
+    const assistantMessages = [...document.querySelectorAll('.ai-message.is-assistant')];
+    assistantMessages.forEach((message, index) => {
+      const label = message.querySelector('small');
+      if (!label) return;
+      if (index === 0) {
+        label.hidden = false;
+        label.textContent = 'Biismo AI';
+      } else {
+        label.hidden = true;
+      }
     });
   }
 
@@ -70,9 +78,9 @@
     ensureStyles();
     ensureDeleteButton();
     addHistoryHint();
-    relabelBiismoAi();
+    tidyMessageLabels();
     const messages = document.getElementById('chatMessages');
-    if (messages) new MutationObserver(relabelBiismoAi).observe(messages, { childList:true, subtree:true });
+    if (messages) new MutationObserver(tidyMessageLabels).observe(messages, { childList:true, subtree:true });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once:true });
