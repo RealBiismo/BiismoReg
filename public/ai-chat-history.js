@@ -9,6 +9,14 @@
     document.head.append(link);
   }
 
+  function ensurePhotoFix() {
+    if (document.querySelector('script[src="/ai-photo-fix.js"]')) return;
+    const script = document.createElement('script');
+    script.src = '/ai-photo-fix.js';
+    script.defer = true;
+    document.head.append(script);
+  }
+
   function ensureDeleteButton() {
     const top = document.querySelector('.ai-chat-top');
     if (!top || document.getElementById('removeAiChatButton')) return;
@@ -66,6 +74,7 @@
 
   function init() {
     ensureStyles();
+    ensurePhotoFix();
     ensureDeleteButton();
     addHistoryHint();
     // Do not observe or rewrite message labels here. ai-mechanic.js owns
