@@ -28,9 +28,9 @@
         <p>Describe a car problem, add photos and let BIISMO analyse the likely causes using the vehicle already saved in your Garage.</p>
       </div>
       <div class="ai-price-card">
-        <strong>3 credits</strong>
-        <span>per diagnosis case</span>
-        <small>Follow-up messages included</small>
+        <strong>10 questions</strong>
+        <span>for 4 credits</span>
+        <small>Or 200 / month with BIISMO REG+</small>
       </div>
     </section>
 
@@ -44,7 +44,7 @@
     <section id="aiUnavailable" class="ai-panel ai-empty" hidden>
       <span class="eyebrow">PAID FEATURE</span>
       <h2>AI Mechanic is being activated</h2>
-      <p id="aiUnavailableText">This feature is installed and ready for the OpenAI connection. No credits are charged until it is active.</p>
+      <p id="aiUnavailableText">This feature is installed and ready for the OpenAI connection. No AI questions are used until it is active.</p>
       <a class="secondary-button button-link" href="/account.html">Back to Garage</a>
     </section>
 
@@ -59,7 +59,7 @@
         <div id="newCaseView">
           <div class="ai-panel-heading">
             <div><span class="eyebrow">START A DIAGNOSIS</span><h2>What’s happening with the car?</h2></div>
-            <span id="creditBadge" class="ai-credit-badge">3 credits</span>
+            <span id="creditBadge" class="ai-credit-badge">— AI questions</span>
           </div>
 
           <label for="vehicleSelect">Vehicle</label>
@@ -89,7 +89,8 @@
           <div id="photoPreview" class="ai-photo-preview"></div>
 
           <p class="ai-disclaimer">BIISMO AI provides guidance, not a confirmed mechanical diagnosis. Stop driving and seek professional help if the vehicle may be unsafe.</p>
-          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Start diagnosis · 3 credits</button>
+          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Ask AI Mechanic · 1 question</button>
+          <p class="ai-muted" style="text-align:center;margin-top:8px"><a href="/credits.html">Get AI questions or BIISMO REG+</a></p>
           <p id="aiStatus" class="ai-status" role="status"></p>
         </div>
 
@@ -102,7 +103,7 @@
           <div class="ai-chat-compose">
             <textarea id="chatInput" rows="2" maxlength="1600" placeholder="Ask a follow-up question…"></textarea>
             <label class="secondary-button ai-photo-button" aria-label="Add photos">📷<input id="chatPhotoInput" type="file" accept="image/*" multiple hidden></label>
-            <button id="sendChatButton" class="primary-button" type="button">Send</button>
+            <button id="sendChatButton" class="primary-button" type="button">Send · 1 question</button>
           </div>
           <div id="chatPhotoPreview" class="ai-photo-preview"></div>
           <p id="chatStatus" class="ai-status" role="status"></p>
