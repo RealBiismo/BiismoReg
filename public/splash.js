@@ -66,6 +66,7 @@ if (window.location.pathname === "/account.html") {
 
   const loadGarageHub = () => import("/garage-hub.js")
     .then(() => import("/garage-hub-fixes.js"))
+    .then(() => import("/garage-photo-any.js"))
     .catch(() => {});
   if (document.readyState === "complete") loadGarageHub();
   else window.addEventListener("load", loadGarageHub, { once: true });
