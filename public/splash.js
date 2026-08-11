@@ -48,6 +48,12 @@ document.head.append(referralStyles);
 // It waits for auth internally, so it is safe to load before the account session is ready.
 import("/referral.js").catch(() => {});
 
+const aiEntryStyles = document.createElement("link");
+aiEntryStyles.rel = "stylesheet";
+aiEntryStyles.href = "/ai-mechanic.css";
+document.head.append(aiEntryStyles);
+import("/ai-entry.js").catch(() => {});
+
 if (window.location.pathname === "/" || window.location.pathname === "/index.html") {
   const resultStyles = document.createElement("link");
   resultStyles.rel = "stylesheet";
