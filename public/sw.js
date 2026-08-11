@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v40";
+const CACHE_NAME = "biismo-reg-v41";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -16,6 +16,7 @@ const NETWORK_FIRST_ASSETS = new Set([
   "/garage-hub-fixes.css",
   "/garage-photo-any.js",
   "/garage-photo-unrestricted.js",
+  "/garage-photo-display-fix.js",
   "/pwa.js",
   "/brand-logos.js",
   "/brand-logos.css",
@@ -57,6 +58,7 @@ const STATIC_ASSETS = [
   "/garage-hub-fixes.js",
   "/garage-photo-any.js",
   "/garage-photo-unrestricted.js",
+  "/garage-photo-display-fix.js",
   "/admin-controls.js",
   "/credits.html",
   "/credits.js",
@@ -91,9 +93,7 @@ self.addEventListener("activate", (event) => {
           hadPushSubscription = true;
           await subscription.unsubscribe();
         }
-      } catch {
-        // Continue migrating open windows even if the old subscription cannot be removed.
-      }
+      } catch {}
 
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       await Promise.all(
