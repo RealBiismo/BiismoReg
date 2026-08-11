@@ -3,7 +3,6 @@
   if (!grid || !window.biismoAuth) return;
 
   let client = null;
-  const objectUrls = new WeakMap();
   const refreshTimers = new WeakMap();
 
   function registrationFromCard(card) {
@@ -13,6 +12,15 @@
       .toUpperCase();
   }
 
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error || new Error("Photo could not be prepared for display."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
   function setPhoto(card, url) {
     const image = card.querySelector("[data-vehicle-photo]");
     const placeholder = card.querySelector("[data-photo-placeholder]");
@@ -20,43 +28,30 @@
 
     image.src = url;
     image.hidden = false;
+    image.removeAttribute("hidden");
     image.style.display = "block";
     image.style.visibility = "visible";
     image.style.opacity = "1";
     if (placeholder) {
       placeholder.hidden = true;
+      placeholder.setAttribute("hidden", "");
       placeholder.style.display = "none";
     }
     return true;
   }
 
-  function clearPreviousObjectUrl(card) {
-    const previous = objectUrls.get(card);
-    if (previous) {
-      URL.revokeObjectURL(previous);
-      objectUrls.delete(card);
-    }
-  }
-
   async function displayPhoto(card, path) {
     if (!path) return false;
 
-    // Use an authenticated Storage download first. This avoids Safari/PWA
-    // signed-URL quirks and keeps the bucket private.
+    // The site CSP allows data: images, but blocks blob: and direct Supabase
+    // image URLs. Download privately with the signed-in session, then convert
+    // the Blob to a data URL before assigning it to <img>.
     try {
       const { data, error } = await client.storage.from("vehicle-photos").download(path);
       if (!error && data) {
-        clearPreviousObjectUrl(card);
-        const url = URL.createObjectURL(data);
-        objectUrls.set(card, url);
-        return setPhoto(card, url);
+        const dataUrl = await blobToDataUrl(data);
+        return setPhoto(card, dataUrl);
       }
-    } catch {}
-
-    // Signed URL remains a fallback if direct authenticated download fails.
-    try {
-      const { data, error } = await client.storage.from("vehicle-photos").createSignedUrl(path, 3600);
-      if (!error && data?.signedUrl) return setPhoto(card, data.signedUrl);
     } catch {}
 
     return false;
@@ -91,7 +86,7 @@
     if (!card.querySelector("[data-vehicle-photo]")) return;
     if (card.dataset.photoDisplayFixReady !== "true") {
       card.dataset.photoDisplayFixReady = "true";
-      scheduleRefresh(card, 0);
+      [0, 500, 1500, 4000].forEach((delay) => window.setTimeout(() => refreshCard(card), delay));
     }
   }
 
@@ -103,19 +98,31 @@
     const decorateAll = () => grid.querySelectorAll(".garage-card").forEach(decorate);
     decorateAll();
 
-    new MutationObserver(() => decorateAll()).observe(grid, { childList: true, subtree: true });
-
-    // Re-check after the normal Garage renderer and after any upload completes.
-    [500, 1500, 4000].forEach((delay) => window.setTimeout(() => {
-      grid.querySelectorAll(".garage-card").forEach((card) => scheduleRefresh(card, 0));
-    }, delay));
+    const observer = new MutationObserver((mutations) => {
+      decorateAll();
+      for (const mutation of mutations) {
+        if (mutation.type !== "attributes") continue;
+        const target = mutation.target;
+        if (!(target instanceof HTMLImageElement) || !target.matches("[data-vehicle-photo]")) continue;
+        const card = target.closest(".garage-card");
+        if (card && (target.hidden || !String(target.src || "").startsWith("data:image/"))) {
+          scheduleRefresh(card, 50);
+        }
+      }
+    });
+    observer.observe(grid, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["hidden", "src"],
+    });
 
     grid.addEventListener("change", (event) => {
       const input = event.target.closest?.("[data-photo-input]");
       if (!input) return;
       const card = input.closest(".garage-card");
       if (!card) return;
-      [1800, 5000, 10000].forEach((delay) => window.setTimeout(() => scheduleRefresh(card, 0), delay));
+      [1200, 2500, 5000, 10000].forEach((delay) => window.setTimeout(() => refreshCard(card), delay));
     });
   }
 
