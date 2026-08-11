@@ -29,7 +29,6 @@ if (window.location.pathname === "/account.html") {
     return null;
   };
 
-  // Never allow a startup error to trap the user behind the Garage loader.
   window.setTimeout(() => {
     const overlay = nativeGetById.call(document, "loadingOverlay");
     if (!overlay?.classList.contains("is-visible")) return;
@@ -49,9 +48,7 @@ if (window.location.pathname === "/account.html") {
   try {
     alreadySeen = window.sessionStorage.getItem(sessionKey) === "true";
     if (!alreadySeen) window.sessionStorage.setItem(sessionKey, "true");
-  } catch {
-    // The intro still works when browser storage is unavailable.
-  }
+  } catch {}
 
   if (alreadySeen) {
     splash.remove();
@@ -64,10 +61,8 @@ if (window.location.pathname === "/account.html") {
   const dismiss = () => {
     if (dismissing) return;
     dismissing = true;
-
     const minimumDisplayTime = 1450;
     const remaining = Math.max(0, minimumDisplayTime - (window.performance.now() - startedAt));
-
     window.setTimeout(() => {
       splash.classList.add("is-leaving");
       window.setTimeout(() => splash.remove(), 500);
@@ -76,7 +71,6 @@ if (window.location.pathname === "/account.html") {
 
   if (document.readyState === "complete") dismiss();
   else window.addEventListener("load", dismiss, { once: true });
-
   window.setTimeout(dismiss, 3500);
 })();
 
@@ -84,9 +78,6 @@ const referralStyles = document.createElement("link");
 referralStyles.rel = "stylesheet";
 referralStyles.href = "/referral.css";
 document.head.append(referralStyles);
-
-// Referral capture/claim is deliberately independent from the PWA install code.
-// It waits for auth internally, so it is safe to load before the account session is ready.
 import("/referral.js").catch(() => {});
 
 const aiEntryStyles = document.createElement("link");
@@ -113,12 +104,11 @@ if (window.location.pathname === "/account.html") {
   garageFixStyles.href = "/garage-hub-fixes.css";
   document.head.append(garageFixStyles);
 
-  import("/moderator-controls.js")
-    .then(() => import("/staff-user-directory.js"))
-    .then(() => import("/staff-dashboard-organizer.js"))
-    .then(() => import("/admin-ai-logs.js"))
-    .catch(() => {});
-
+  // Load staff modules independently so one optional module can never block the rest.
+  import("/moderator-controls.js").catch(() => {});
+  import("/staff-user-directory.js").catch(() => {});
+  import("/staff-dashboard-organizer.js").catch(() => {});
+  import("/admin-ai-logs.js").catch(() => {});
   import("/plan-entitlement-ui.js").catch(() => {});
 
   const loadGarageHub = () => import("/garage-hub.js")
