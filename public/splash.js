@@ -54,12 +54,19 @@ if (window.location.pathname === "/account.html") {
   garageHubStyles.href = "/garage-hub.css";
   document.head.append(garageHubStyles);
 
+  const garageFixStyles = document.createElement("link");
+  garageFixStyles.rel = "stylesheet";
+  garageFixStyles.href = "/garage-hub-fixes.css";
+  document.head.append(garageFixStyles);
+
   import("/moderator-controls.js")
     .then(() => import("/staff-user-directory.js"))
     .then(() => import("/staff-dashboard-organizer.js"))
     .catch(() => {});
 
-  const loadGarageHub = () => import("/garage-hub.js").catch(() => {});
+  const loadGarageHub = () => import("/garage-hub.js")
+    .then(() => import("/garage-hub-fixes.js"))
+    .catch(() => {});
   if (document.readyState === "complete") loadGarageHub();
   else window.addEventListener("load", loadGarageHub, { once: true });
 }
