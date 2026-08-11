@@ -13,14 +13,55 @@
 @media(max-width:850px){
   .ai-mobile-draft-vehicle{display:none!important}
   body.ai-mobile-new-chat .ai-mobile-draft-vehicle{display:none!important}
-  body.ai-mobile-new-chat #chatMessages:empty::before{
-    content:'Ask Biismo AI anything about a car, van or motorcycle — faults, warning lights, repairs, maintenance, parts, specs or photos.'!important;
+
+  /* Fresh chats should look like a clean chatbot, not a vehicle card. */
+  body.ai-mobile-new-chat .ai-chat-top{
+    position:static!important;
+    top:auto!important;
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    padding:18px 8px 8px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
   }
-  body.ai-mobile-new-chat .ai-chat-top>div{width:100%;max-width:100%!important}
-  body.ai-mobile-new-chat #chatVehicle{display:block!important;text-align:center;margin-bottom:5px}
-  body.ai-mobile-new-chat #chatTitle{text-align:center}
-  body.ai-mobile-new-chat .ai-chat-top-actions{position:absolute;right:0;top:6px}
-  body.ai-mobile-new-chat #removeAiChatButton{display:none!important}
+  body.ai-mobile-new-chat .ai-chat-top>div{
+    width:100%!important;
+    max-width:100%!important;
+    text-align:center!important;
+  }
+  body.ai-mobile-new-chat #chatVehicle{
+    display:none!important;
+  }
+  body.ai-mobile-new-chat #chatTitle{
+    margin:0!important;
+    text-align:center!important;
+    font-size:22px!important;
+    line-height:1.2!important;
+  }
+  body.ai-mobile-new-chat .ai-chat-top-actions,
+  body.ai-mobile-new-chat #backToNewButton,
+  body.ai-mobile-new-chat #removeAiChatButton{
+    display:none!important;
+  }
+
+  body.ai-mobile-new-chat #chatMessages{
+    min-height:calc(100dvh - 270px)!important;
+    padding-top:8px!important;
+  }
+  body.ai-mobile-new-chat #chatMessages:empty::before{
+    content:'Ask about any car, van or motorcycle — faults, warning lights, repairs, maintenance, parts, specs or photos.'!important;
+    display:block!important;
+    max-width:560px!important;
+    margin:10px auto 0!important;
+    padding:0 10px!important;
+    color:#8f98a8!important;
+    font-size:14px!important;
+    line-height:1.55!important;
+    text-align:center!important;
+  }
 }
 
 @media(min-width:851px){
