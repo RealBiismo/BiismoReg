@@ -43,6 +43,17 @@ const creditBundles = Object.freeze([
   Object.freeze({ id: "best_value", credits: 70, amountPence: 999, label: "Best value" }),
 ]);
 const creditBundlesById = new Map(creditBundles.map((bundle) => [bundle.id, bundle]));
+const plusPlan = Object.freeze({
+  id: "biismo_plus",
+  label: "BIISMO REG+",
+  amountPence: 799,
+  currency: "gbp",
+  interval: "month",
+  creditsMonthly: 60,
+  aiQuestionsMonthly: 200,
+  garageLimit: 6,
+});
+const aiQuestionPack = Object.freeze({ creditsCost: 4, questions: 10 });
 const stripe = stripeConfig.secretKey
   ? new Stripe(stripeConfig.secretKey, { maxNetworkRetries: 2, timeout: 10_000 })
   : null;
@@ -232,6 +243,7 @@ async function callSupabaseRpc(token, functionName, parameters = {}) {
     if (message.includes("notification message")) error.statusCode = 400;
     if (message.includes("delivery totals")) error.statusCode = 400;
     if (message.includes("saved vehicle was not found")) error.statusCode = 404;
+    if (message.includes("4 credits") || message.includes("AI Mechanic questions")) error.statusCode = 400;
     throw error;
   }
 
@@ -295,9 +307,14 @@ function publicAppUrl(req) {
   return url.origin;
 }
 
+function periodEndIso(value) {
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds > 0 ? new Date(seconds * 1000).toISOString() : null;
+}
+
 async function handleStripeWebhook(req, res) {
   if (!stripeIsConfigured()) {
-    return res.status(503).json({ error: "Credit purchases are not configured yet." });
+    return res.status(503).json({ error: "Purchases are not configured yet." });
   }
 
   const signature = req.get("stripe-signature");
@@ -311,43 +328,87 @@ async function handleStripeWebhook(req, res) {
     return res.status(400).json({ error: "Invalid Stripe signature." });
   }
 
-  if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
-    return res.json({ received: true });
-  }
-
-  const session = event.data.object;
-  if (session.payment_status !== "paid") return res.json({ received: true });
-
-  const userId = String(session.metadata?.user_id || "");
-  const bundleId = String(session.metadata?.bundle_id || "");
-  const bundle = creditBundlesById.get(bundleId);
-  const currency = String(session.currency || "").toLowerCase();
-
-  if (
-    !bundle ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId) ||
-    session.client_reference_id !== userId ||
-    session.amount_total !== bundle.amountPence ||
-    currency !== "gbp"
-  ) {
-    console.error(`Stripe checkout ${session.id} failed BIISMO REG fulfilment validation.`);
-    return res.status(400).json({ error: "Invalid credit purchase." });
-  }
-
   try {
+    if (["customer.subscription.updated", "customer.subscription.deleted"].includes(event.type)) {
+      const subscription = event.data.object;
+      const subscriptionId = String(subscription.id || "");
+      if (subscriptionId.startsWith("sub_")) {
+        await callSupabaseAdminRpc("set_biismo_plus_subscription_status", {
+          p_subscription_id: subscriptionId,
+          p_status: String(subscription.status || (event.type.endsWith("deleted") ? "canceled" : "inactive")),
+          p_period_end: periodEndIso(subscription.current_period_end),
+        });
+      }
+      return res.json({ received: true });
+    }
+
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object;
+      if (String(invoice.billing_reason || "") === "subscription_cycle") {
+        const subscriptionId = typeof invoice.subscription === "string"
+          ? invoice.subscription
+          : String(invoice.parent?.subscription_details?.subscription || "");
+        if (subscriptionId.startsWith("sub_")) {
+          const periodEnd = periodEndIso(invoice.lines?.data?.[0]?.period?.end);
+          await callSupabaseAdminRpc("renew_biismo_plus", {
+            p_subscription_id: subscriptionId,
+            p_grant_key: `invoice:${invoice.id}`,
+            p_period_end: periodEnd,
+          });
+        }
+      }
+      return res.json({ received: true });
+    }
+
+    if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
+      return res.json({ received: true });
+    }
+
+    const session = event.data.object;
+    if (session.payment_status !== "paid") return res.json({ received: true });
+
+    const userId = String(session.metadata?.user_id || "");
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId) || session.client_reference_id !== userId) {
+      return res.status(400).json({ error: "Invalid purchase account." });
+    }
+
+    if (session.mode === "subscription" && String(session.metadata?.plan_id || "") === plusPlan.id) {
+      const subscriptionId = typeof session.subscription === "string" ? session.subscription : "";
+      const customerId = typeof session.customer === "string" ? session.customer : "";
+      if (!subscriptionId.startsWith("sub_") || !customerId.startsWith("cus_") || session.amount_total !== plusPlan.amountPence || String(session.currency || "").toLowerCase() !== plusPlan.currency) {
+        return res.status(400).json({ error: "Invalid BIISMO REG+ purchase." });
+      }
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      await callSupabaseAdminRpc("activate_biismo_plus", {
+        p_user_id: userId,
+        p_customer_id: customerId,
+        p_subscription_id: subscriptionId,
+        p_grant_key: `checkout:${session.id}`,
+        p_period_end: periodEndIso(subscription.current_period_end),
+      });
+      return res.json({ received: true });
+    }
+
+    const bundleId = String(session.metadata?.bundle_id || "");
+    const bundle = creditBundlesById.get(bundleId);
+    const currency = String(session.currency || "").toLowerCase();
+    if (!bundle || session.amount_total !== bundle.amountPence || currency !== "gbp") {
+      console.error(`Stripe checkout ${session.id} failed BIISMO REG fulfilment validation.`);
+      return res.status(400).json({ error: "Invalid credit purchase." });
+    }
+
     await callSupabaseAdminRpc("fulfill_stripe_credit_purchase", {
       p_user_id: userId,
       p_checkout_session_id: session.id,
-      p_payment_intent_id:
-        typeof session.payment_intent === "string" ? session.payment_intent : null,
+      p_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
       p_bundle_id: bundle.id,
       p_amount_pence: session.amount_total,
       p_currency: currency,
     });
     return res.json({ received: true });
   } catch (error) {
-    console.error(`Stripe checkout fulfilment failed: ${error.message}`);
-    return res.status(500).json({ error: "Credit fulfilment failed." });
+    console.error(`Stripe fulfilment failed: ${error.message}`);
+    return res.status(500).json({ error: "Purchase fulfilment failed." });
   }
 }
 
@@ -739,6 +800,8 @@ app.get("/api/credits/store", (req, res) => {
     enabled: stripeIsConfigured(),
     currency: "GBP",
     creditCost: 2,
+    aiQuestionPack,
+    plusPlan,
     bundles: creditBundles.map(({ id, credits, amountPence, label }) => ({
       id,
       credits,
@@ -807,6 +870,84 @@ app.post("/api/credits/checkout", checkoutLimiter, async (req, res) => {
     return res.status(statusCode).json({
       error: statusCode >= 500 ? "The secure checkout could not be opened." : error.message,
     });
+  }
+});
+
+app.get("/api/plus/status", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "get_biismo_entitlements"));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "Your plan could not be loaded." : error.message });
+  }
+});
+
+app.post("/api/ai/questions/purchase", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const { token } = await authenticateRequest(req);
+    return res.json(await callSupabaseRpc(token, "purchase_ai_question_pack"));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "AI Mechanic questions could not be unlocked." : error.message });
+  }
+});
+
+app.post("/api/plus/checkout", checkoutLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!stripeIsConfigured()) return res.status(503).json({ error: "BIISMO REG+ checkout is not available yet." });
+  try {
+    const { token, user } = await authenticateRequest(req);
+    const current = await callSupabaseRpc(token, "get_my_biismo_plus_customer");
+    if (current?.plusActive) return res.status(409).json({ error: "BIISMO REG+ is already active on this account." });
+    const appUrl = publicAppUrl(req);
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      client_reference_id: user.id,
+      ...(current?.customerId ? { customer: current.customerId } : { customer_email: user.email || undefined }),
+      success_url: `${appUrl}/credits.html?plus=success`,
+      cancel_url: `${appUrl}/credits.html?plus=cancelled`,
+      metadata: { user_id: user.id, plan_id: plusPlan.id },
+      subscription_data: { metadata: { user_id: user.id, plan_id: plusPlan.id } },
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: plusPlan.currency,
+          unit_amount: plusPlan.amountPence,
+          recurring: { interval: plusPlan.interval },
+          product_data: {
+            name: plusPlan.label,
+            description: `${plusPlan.creditsMonthly} credits, ${plusPlan.aiQuestionsMonthly} AI questions and a ${plusPlan.garageLimit}-vehicle Garage each month`,
+          },
+        },
+      }],
+    });
+    if (!session.url) throw new Error("Stripe did not return a subscription checkout URL.");
+    return res.json({ url: session.url });
+  } catch (error) {
+    const statusCode = error.statusCode || 502;
+    if (statusCode >= 500) console.error(`BIISMO REG+ checkout failed: ${error.message}`);
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "BIISMO REG+ checkout could not be opened." : error.message });
+  }
+});
+
+app.post("/api/plus/portal", checkoutLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!stripeIsConfigured()) return res.status(503).json({ error: "Subscription management is not available yet." });
+  try {
+    const { token } = await authenticateRequest(req);
+    const current = await callSupabaseRpc(token, "get_my_biismo_plus_customer");
+    if (!current?.customerId) return res.status(404).json({ error: "No Stripe subscription profile is linked to this account yet." });
+    const session = await stripe.billingPortal.sessions.create({
+      customer: current.customerId,
+      return_url: `${publicAppUrl(req)}/credits.html`,
+    });
+    return res.json({ url: session.url });
+  } catch (error) {
+    const statusCode = error.statusCode || 502;
+    return res.status(statusCode).json({ error: statusCode >= 500 ? "Subscription management could not be opened." : error.message });
   }
 });
 
