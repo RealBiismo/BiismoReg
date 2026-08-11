@@ -32,12 +32,22 @@ let currentCaseId = null;
 let vehicles = [];
 let aiEnabled = false;
 let aiQuestions = 0;
+let requestInFlight = false;
 
 function escapeHtml(value) {
   return String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 }
 
+function formatMessageTime(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+  }).format(date);
+}
+
 function setBusy(busy) {
+  requestInFlight = busy;
   document.body.classList.toggle('ai-loading', busy);
   startButton.disabled = busy || aiQuestions < 1 || !vehicles.length;
   sendChatButton.disabled = busy || aiQuestions < 1;
@@ -47,7 +57,7 @@ async function invoke(body) {
   const client = window.biismoAuth.getClient();
   const { data, error } = await client.functions.invoke('ai-mechanic', { body });
   if (error) {
-    let message = error.message || 'AI Mechanic could not be reached.';
+    let message = error.message || 'Biismo AI could not be reached.';
     try {
       const context = await error.context?.json?.();
       if (context?.error) message = context.error;
@@ -61,8 +71,8 @@ async function invoke(body) {
 function renderQuestionBalance(value) {
   aiQuestions = Math.max(0, Number(value) || 0);
   creditBadge.textContent = `${aiQuestions} AI ${aiQuestions === 1 ? 'question' : 'questions'}`;
-  startButton.disabled = aiQuestions < 1 || !vehicles.length;
-  sendChatButton.disabled = aiQuestions < 1;
+  startButton.disabled = requestInFlight || aiQuestions < 1 || !vehicles.length;
+  sendChatButton.disabled = requestInFlight || aiQuestions < 1;
 }
 
 async function loadAllowance() {
@@ -88,7 +98,7 @@ async function loadVehicles() {
     const name = [v.make, v.model].filter(Boolean).join(' ');
     return `<option value="${escapeHtml(v.id)}">${escapeHtml(v.registration)} · ${escapeHtml(name || 'Saved vehicle')}</option>`;
   }).join('');
-  startButton.disabled = aiQuestions < 1;
+  startButton.disabled = requestInFlight || aiQuestions < 1;
 }
 
 function renderPhotos(container, photos, onRemove) {
@@ -137,24 +147,54 @@ async function addFiles(fileList, target) {
   for (const file of files) prepared.push(await fileToPreparedDataUrl(file));
   if (target === 'new') {
     newPhotos = [...newPhotos, ...prepared];
-    renderPhotos(photoPreview, newPhotos, i => { newPhotos.splice(i,1); renderPhotos(photoPreview,newPhotos,j=>{newPhotos.splice(j,1);renderPhotos(photoPreview,newPhotos,()=>{});}); });
+    renderPhotos(photoPreview, newPhotos, i => {
+      newPhotos.splice(i,1);
+      renderPhotos(photoPreview, newPhotos, j => { newPhotos.splice(j,1); renderPhotos(photoPreview,newPhotos,()=>{}); });
+    });
   } else {
     chatPhotos = [...chatPhotos, ...prepared];
-    renderPhotos(chatPhotoPreview, chatPhotos, i => { chatPhotos.splice(i,1); renderPhotos(chatPhotoPreview,chatPhotos,j=>{chatPhotos.splice(j,1);renderPhotos(chatPhotoPreview,chatPhotos,()=>{});}); });
+    renderPhotos(chatPhotoPreview, chatPhotos, i => {
+      chatPhotos.splice(i,1);
+      renderPhotos(chatPhotoPreview, chatPhotos, j => { chatPhotos.splice(j,1); renderPhotos(chatPhotoPreview,chatPhotos,()=>{}); });
+    });
   }
 }
 
+function messageHtml(message, assistantIndex) {
+  const role = message.role === 'user' ? 'user' : 'assistant';
+  const showAssistantLabel = role === 'assistant' && assistantIndex === 0;
+  const label = role === 'user' ? '<small class="ai-message-label">You</small>' : showAssistantLabel ? '<small class="ai-message-label">Biismo AI</small>' : '';
+  const timestamp = formatMessageTime(message.createdAt);
+  return `<div class="ai-message is-${role}">${label}<div class="ai-message-copy">${escapeHtml(message.content)}</div>${timestamp ? `<time class="ai-message-time" datetime="${escapeHtml(message.createdAt || '')}">${escapeHtml(timestamp)}</time>` : ''}</div>`;
+}
+
 function renderMessages(messages) {
-  chatMessages.innerHTML = (messages || []).map(message => `<div class="ai-message ${message.role === 'user' ? 'is-user' : 'is-assistant'}"><small>${message.role === 'user' ? 'You' : 'BIISMO AI Mechanic'}</small>${escapeHtml(message.content)}</div>`).join('');
+  let assistantIndex = 0;
+  chatMessages.innerHTML = (messages || []).map(message => {
+    const html = messageHtml(message, assistantIndex);
+    if (message.role !== 'user') assistantIndex += 1;
+    return html;
+  }).join('');
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function appendMessage(role, content) {
+function appendMessage(role, content, createdAt = new Date(), showAssistantLabel = false) {
   const div = document.createElement('div');
   div.className = `ai-message ${role === 'user' ? 'is-user' : 'is-assistant'}`;
-  div.innerHTML = `<small>${role === 'user' ? 'You' : 'BIISMO AI Mechanic'}</small>${escapeHtml(content)}`;
+  const label = role === 'user' ? '<small class="ai-message-label">You</small>' : showAssistantLabel ? '<small class="ai-message-label">Biismo AI</small>' : '';
+  div.innerHTML = `${label}<div class="ai-message-copy">${escapeHtml(content)}</div><time class="ai-message-time">${escapeHtml(formatMessageTime(createdAt))}</time>`;
   chatMessages.append(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+
+function appendThinking(showLabel = false) {
+  const div = document.createElement('div');
+  div.className = 'ai-message is-assistant is-thinking';
+  div.innerHTML = `${showLabel ? '<small class="ai-message-label">Biismo AI</small>' : ''}<div class="ai-thinking-copy"><span></span><span></span><span></span><em>Biismo AI is thinking…</em></div>`;
+  chatMessages.append(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
 }
 
 function showNewCase() {
@@ -167,14 +207,14 @@ function showNewCase() {
 
 async function openCase(caseId) {
   setBusy(true);
-  chatStatus.textContent = 'Loading diagnosis…';
+  chatStatus.textContent = 'Loading chat…';
   try {
     const data = await invoke({ action: 'load', caseId });
     currentCaseId = caseId;
     newCaseView.hidden = true;
     chatView.hidden = false;
     chatVehicle.textContent = `${data.vehicle?.registration || 'VEHICLE'} · ${[data.vehicle?.make,data.vehicle?.model].filter(Boolean).join(' ')}`;
-    chatTitle.textContent = data.case?.title || 'AI diagnosis';
+    chatTitle.textContent = data.case?.title || 'Biismo AI chat';
     renderMessages(data.messages || []);
     chatStatus.textContent = aiQuestions > 0 ? `${aiQuestions} AI questions available.` : 'No AI questions left. Get more from Plans & credits.';
   } catch (error) {
@@ -186,7 +226,7 @@ async function loadCases() {
   try {
     const data = await invoke({ action: 'list' });
     const cases = Array.isArray(data.cases) ? data.cases : [];
-    caseList.innerHTML = cases.length ? cases.map(item => `<button class="ai-case" type="button" data-case-id="${escapeHtml(item.id)}"><strong>${escapeHtml(item.registration)}</strong><span>${escapeHtml(item.title || item.category)}</span><small>${new Date(item.updatedAt || item.createdAt).toLocaleDateString('en-GB')}</small></button>`).join('') : '<p class="ai-muted">No AI diagnoses saved yet.</p>';
+    caseList.innerHTML = cases.length ? cases.map(item => `<button class="ai-case" type="button" data-case-id="${escapeHtml(item.id)}"><strong>${escapeHtml(item.registration)}</strong><span>${escapeHtml(item.title || item.category)}</span><small>${formatMessageTime(item.updatedAt || item.createdAt)}</small></button>`).join('') : '<p class="ai-muted">No Biismo AI chats saved yet.</p>';
     caseList.querySelectorAll('[data-case-id]').forEach(button => button.addEventListener('click', () => openCase(button.dataset.caseId)));
   } catch (error) {
     caseList.innerHTML = `<p class="ai-muted">${escapeHtml(error.message)}</p>`;
@@ -202,14 +242,15 @@ categoryGrid.querySelector('[data-category="Other"]')?.classList.add('is-selecte
 photoInput.addEventListener('change', async () => { try { await addFiles(photoInput.files,'new'); aiStatus.textContent=''; } catch(e){ aiStatus.textContent=e.message; } finally { photoInput.value=''; } });
 chatPhotoInput.addEventListener('change', async () => { try { await addFiles(chatPhotoInput.files,'chat'); chatStatus.textContent=''; } catch(e){ chatStatus.textContent=e.message; } finally { chatPhotoInput.value=''; } });
 
-startButton.addEventListener('click', async () => {
+async function startDiagnosis() {
+  if (requestInFlight) return;
   const vehicleId = vehicleSelect.value;
   const text = issueText.value.trim();
-  if (aiQuestions < 1) return aiStatus.innerHTML = 'You have no AI questions left. <a href="/credits.html">Get 10 questions for 4 credits or upgrade to REG+.</a>';
+  if (aiQuestions < 1) return aiStatus.innerHTML = 'You have no AI questions left. <a href="/credits.html">Buy credits or upgrade to REG+.</a>';
   if (!vehicleId) return aiStatus.textContent = 'Choose a vehicle from your Garage.';
   if (text.length < 3) return aiStatus.textContent = 'Describe what is happening with the car.';
   setBusy(true);
-  aiStatus.textContent = 'BIISMO is analysing the vehicle and your description…';
+  aiStatus.textContent = 'Biismo AI is thinking…';
   try {
     const data = await invoke({ action:'start', vehicleId, category:selectedCategory, text, images:newPhotos });
     currentCaseId = data.caseId;
@@ -220,31 +261,66 @@ startButton.addEventListener('click', async () => {
     chatVehicle.textContent = `${vehicle.registration || ''} · ${[vehicle.make,vehicle.model].filter(Boolean).join(' ')}`;
     chatTitle.textContent = text.slice(0,90);
     chatMessages.innerHTML = '';
-    appendMessage('user', text);
-    appendMessage('assistant', data.reply);
+    appendMessage('user', text, new Date());
+    appendMessage('assistant', data.reply, new Date(), true);
     issueText.value=''; newPhotos=[]; photoPreview.innerHTML='';
     chatStatus.textContent = `${aiQuestions} AI ${aiQuestions === 1 ? 'question' : 'questions'} remaining.`;
-    await loadCases();
-  } catch (error) { aiStatus.textContent = error.message; await loadAllowance(); }
-  finally { setBusy(false); }
-});
+    void loadCases();
+  } catch (error) {
+    aiStatus.textContent = error.message;
+    await loadAllowance();
+  } finally { setBusy(false); }
+}
 
-sendChatButton.addEventListener('click', async () => {
+async function sendChatMessage() {
+  if (requestInFlight) return;
   const text = chatInput.value.trim();
   if (!currentCaseId || !text) return;
-  if (aiQuestions < 1) return chatStatus.innerHTML = 'No AI questions left. <a href="/credits.html">Get more questions.</a>';
+  if (aiQuestions < 1) return chatStatus.innerHTML = 'No AI questions left. <a href="/credits.html">Buy credits or get more AI questions.</a>';
+
+  const sentAt = new Date();
+  appendMessage('user', text, sentAt);
+  chatInput.value='';
+  chatInput.style.height = '';
+  const thinking = appendThinking(false);
+  chatStatus.textContent = 'Biismo AI is thinking…';
   setBusy(true);
-  chatStatus.textContent = 'Analysing your follow-up…';
+
+  const photosForRequest = [...chatPhotos];
+  chatPhotos=[];
+  chatPhotoPreview.innerHTML='';
+
   try {
-    const data = await invoke({ action:'message', caseId:currentCaseId, text, images:chatPhotos });
+    const data = await invoke({ action:'message', caseId:currentCaseId, text, images:photosForRequest });
+    thinking.remove();
     renderQuestionBalance(data.questionsRemaining);
-    appendMessage('user', text);
-    appendMessage('assistant', data.reply);
-    chatInput.value=''; chatPhotos=[]; chatPhotoPreview.innerHTML='';
+    appendMessage('assistant', data.reply, new Date(), false);
     chatStatus.textContent = `${aiQuestions} AI ${aiQuestions === 1 ? 'question' : 'questions'} remaining.`;
-    await loadCases();
-  } catch (error) { chatStatus.textContent = error.message; await loadAllowance(); }
-  finally { setBusy(false); }
+    void loadCases();
+  } catch (error) {
+    thinking.remove();
+    chatStatus.textContent = error.message;
+    await loadAllowance();
+  } finally { setBusy(false); }
+}
+
+startButton.addEventListener('click', startDiagnosis);
+sendChatButton.addEventListener('click', sendChatMessage);
+
+function bindEnterToSend(textarea, handler) {
+  textarea.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+    event.preventDefault();
+    void handler();
+  });
+}
+
+bindEnterToSend(issueText, startDiagnosis);
+bindEnterToSend(chatInput, sendChatMessage);
+
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = `${Math.min(chatInput.scrollHeight, 140)}px`;
 });
 
 newCaseButton.addEventListener('click', showNewCase);
@@ -261,15 +337,15 @@ refreshCasesButton.addEventListener('click', loadCases);
     aiEnabled = Boolean(status.enabled);
     if (!aiEnabled) {
       unavailable.hidden=false;
-      unavailableText.textContent='AI Mechanic is built and ready. Add the OpenAI API key to activate live diagnoses and photo analysis.';
+      unavailableText.textContent='Biismo AI is built and ready. Add the OpenAI API key to activate live diagnoses and photo analysis.';
       return;
     }
     workspace.hidden=false;
     await loadAllowance();
     await Promise.all([loadVehicles(),loadCases()]);
-    if (aiQuestions < 1) aiStatus.innerHTML = 'You have no AI questions yet. <a href="/credits.html">Unlock 10 for 4 credits or get BIISMO REG+.</a>';
+    if (aiQuestions < 1) aiStatus.innerHTML = 'You have no AI questions yet. <a href="/credits.html">Buy credits, unlock questions or get BIISMO REG+.</a>';
   } catch (error) {
     unavailable.hidden=false;
-    unavailableText.textContent=error.message || 'AI Mechanic could not be loaded.';
+    unavailableText.textContent=error.message || 'Biismo AI could not be loaded.';
   }
 })();
