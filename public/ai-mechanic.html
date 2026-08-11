@@ -25,7 +25,7 @@
       <div>
         <span class="eyebrow">BIISMO AI</span>
         <h1>AI Mechanic</h1>
-        <p>Describe a car problem, add photos and let BIISMO analyse the likely causes using the vehicle already saved in your Garage.</p>
+        <p>Describe a car problem, add photos and let Biismo AI analyse the likely causes using the vehicle already saved in your Garage.</p>
       </div>
       <div class="ai-price-card">
         <strong>10 questions</strong>
@@ -36,14 +36,14 @@
 
     <section id="aiSignedOut" class="ai-panel ai-empty" hidden>
       <span class="eyebrow">ACCOUNT REQUIRED</span>
-      <h2>Sign in to use AI Mechanic</h2>
-      <p>Your diagnoses are private and saved against vehicles in your Garage.</p>
+      <h2>Sign in to use Biismo AI</h2>
+      <p>Your chats are private to your account and saved against vehicles in your Garage.</p>
       <a class="primary-button button-link" href="/?login=1">Sign in</a>
     </section>
 
     <section id="aiUnavailable" class="ai-panel ai-empty" hidden>
       <span class="eyebrow">PAID FEATURE</span>
-      <h2>AI Mechanic is being activated</h2>
+      <h2>Biismo AI is being activated</h2>
       <p id="aiUnavailableText">This feature is installed and ready for the OpenAI connection. No AI questions are used until it is active.</p>
       <a class="secondary-button button-link" href="/account.html">Back to Garage</a>
     </section>
@@ -51,14 +51,14 @@
     <section id="aiWorkspace" class="ai-workspace" hidden>
       <aside class="ai-sidebar">
         <button id="newCaseButton" class="primary-button" type="button">+ New diagnosis</button>
-        <div class="ai-sidebar-heading"><span>Previous diagnoses</span><button id="refreshCasesButton" type="button">Refresh</button></div>
-        <div id="caseList" class="ai-case-list"><p class="ai-muted">No AI diagnoses yet.</p></div>
+        <div class="ai-sidebar-heading"><span>Previous chats</span><button id="refreshCasesButton" type="button">Refresh</button></div>
+        <div id="caseList" class="ai-case-list"><p class="ai-muted">No Biismo AI chats yet.</p></div>
       </aside>
 
       <section class="ai-panel ai-diagnosis-panel">
         <div id="newCaseView">
           <div class="ai-panel-heading">
-            <div><span class="eyebrow">START A DIAGNOSIS</span><h2>What’s happening with the car?</h2></div>
+            <div><span class="eyebrow">ASK BIISMO AI</span><h2>What’s happening with the car?</h2></div>
             <span id="creditBadge" class="ai-credit-badge">— AI questions</span>
           </div>
 
@@ -88,16 +88,16 @@
           </div>
           <div id="photoPreview" class="ai-photo-preview"></div>
 
-          <p class="ai-disclaimer">BIISMO AI provides guidance, not a confirmed mechanical diagnosis. Stop driving and seek professional help if the vehicle may be unsafe.</p>
-          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Ask AI Mechanic · 1 question</button>
+          <p class="ai-disclaimer">Biismo AI provides guidance, not a confirmed mechanical diagnosis. Stop driving and seek professional help if the vehicle may be unsafe.</p>
+          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Ask Biismo AI · 1 question</button>
           <p class="ai-muted" style="text-align:center;margin-top:8px"><a href="/credits.html">Get AI questions or BIISMO REG+</a></p>
           <p id="aiStatus" class="ai-status" role="status"></p>
         </div>
 
         <div id="chatView" hidden>
           <div class="ai-chat-top">
-            <div><span id="chatVehicle" class="eyebrow">VEHICLE</span><h2 id="chatTitle">AI diagnosis</h2></div>
-            <button id="backToNewButton" class="secondary-button" type="button">New case</button>
+            <div><span id="chatVehicle" class="eyebrow">VEHICLE</span><h2 id="chatTitle">Biismo AI chat</h2></div>
+            <button id="backToNewButton" class="secondary-button" type="button">New chat</button>
           </div>
           <div id="chatMessages" class="ai-chat-messages"></div>
           <div class="ai-chat-compose">
@@ -115,5 +115,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js" defer></script>
   <script src="auth.js" defer></script>
   <script src="ai-mechanic.js" defer></script>
+  <script src="ai-chat-history.js" defer></script>
 </body>
 </html>
