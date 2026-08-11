@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#05070b">
   <meta name="robots" content="noindex, nofollow">
-  <title>AI Mechanic — BIISMO REG</title>
+  <title>Biismo AI — BIISMO REG</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="ai-mechanic.css">
   <link rel="stylesheet" href="ai-chat-mobile.css">
   <link rel="stylesheet" href="ai-mobile-v2.css">
+  <link rel="stylesheet" href="ai-standalone.css">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
@@ -21,7 +22,6 @@
     <a class="brand compact-brand transparent-brand" href="/" aria-label="BIISMO REG home"><img src="/icon.svg" alt="BIISMO REG"></a>
     <div class="ai-header-actions">
       <a class="header-action ai-buy-credits" href="/credits.html">Buy credits</a>
-      <a class="header-action" href="/account.html">My Garage</a>
     </div>
   </header>
 
@@ -29,8 +29,8 @@
     <section class="ai-hero">
       <div>
         <span class="eyebrow">BIISMO AI</span>
-        <h1>AI Mechanic</h1>
-        <p>Describe a car problem, add photos and let Biismo AI analyse the likely causes using the vehicle already saved in your Garage.</p>
+        <h1>Vehicle AI mechanic.</h1>
+        <p>Ask about faults, warning lights, repairs, servicing, parts, vehicle specs or attach photos for Biismo AI to analyse.</p>
       </div>
       <div class="ai-price-card">
         <strong>10 questions</strong>
@@ -43,15 +43,15 @@
     <section id="aiSignedOut" class="ai-panel ai-empty" hidden>
       <span class="eyebrow">ACCOUNT REQUIRED</span>
       <h2>Sign in to use Biismo AI</h2>
-      <p>Your chats are private to your account and saved against vehicles in your Garage.</p>
+      <p>Your Biismo AI chats stay saved to your account until you remove them.</p>
       <a class="primary-button button-link" href="/?login=1">Sign in</a>
     </section>
 
     <section id="aiUnavailable" class="ai-panel ai-empty" hidden>
       <span class="eyebrow">PAID FEATURE</span>
       <h2>Biismo AI is being activated</h2>
-      <p id="aiUnavailableText">This feature is installed and ready for the OpenAI connection. No AI questions are used until it is active.</p>
-      <a class="secondary-button button-link" href="/account.html">Back to Garage</a>
+      <p id="aiUnavailableText">Biismo AI is currently unavailable.</p>
+      <a class="secondary-button button-link" href="/">Return to BiismoReg</a>
     </section>
 
     <section id="aiWorkspace" class="ai-workspace" hidden>
@@ -64,12 +64,12 @@
       <section class="ai-panel ai-diagnosis-panel">
         <div id="newCaseView">
           <div class="ai-panel-heading">
-            <div><span class="eyebrow">ASK BIISMO AI</span><h2>What’s happening with the car?</h2></div>
+            <div><span class="eyebrow">BIISMO AI</span><h2>Ask your vehicle question</h2></div>
             <span id="creditBadge" class="ai-credit-badge">— AI questions</span>
           </div>
 
           <label for="vehicleSelect">Vehicle</label>
-          <select id="vehicleSelect"></select>
+          <select id="vehicleSelect"><option value="00000000-0000-0000-0000-000000000000">Biismo AI</option></select>
 
           <fieldset class="ai-category-fieldset">
             <legend>Issue type</legend>
@@ -85,11 +85,11 @@
             </div>
           </fieldset>
 
-          <label for="issueText">Describe the problem</label>
-          <textarea id="issueText" rows="5" maxlength="2000" enterkeyhint="send" placeholder="Example: knocking from the front left over bumps, worse at low speed…"></textarea>
+          <label for="issueText">Message</label>
+          <textarea id="issueText" rows="5" maxlength="2000" enterkeyhint="send" placeholder="Ask Biismo AI anything about a vehicle…"></textarea>
 
           <div class="ai-photo-row">
-            <div><strong>Add photos</strong><span>Dashboard warnings, tyres, leaks, components or damage. Up to 3.</span></div>
+            <div><strong>Add photos</strong><span>Warning lights, damage, components, tyres, leaks or anything vehicle-related. Up to 3.</span></div>
             <label class="secondary-button ai-photo-button">Choose photos<input id="photoInput" type="file" accept="image/*" multiple hidden></label>
           </div>
           <div id="photoPreview" class="ai-photo-preview"></div>
@@ -102,7 +102,7 @@
 
         <div id="chatView" class="ai-chat-view" hidden>
           <div class="ai-chat-top">
-            <div><span id="chatVehicle" class="eyebrow">VEHICLE</span><h2 id="chatTitle">Biismo AI chat</h2></div>
+            <div><span id="chatVehicle" class="eyebrow">BIISMO AI</span><h2 id="chatTitle">New chat</h2></div>
             <button id="backToNewButton" class="secondary-button" type="button">New chat</button>
           </div>
           <div id="chatMessages" class="ai-chat-messages" aria-live="polite"></div>
@@ -126,5 +126,6 @@
   <script src="ai-mechanic.js" defer></script>
   <script src="ai-chat-history.js" defer></script>
   <script src="ai-mobile-v2.js" defer></script>
+  <script src="ai-standalone.js" defer></script>
 </body>
 </html>
