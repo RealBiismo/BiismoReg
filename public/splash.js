@@ -39,7 +39,6 @@
   window.setTimeout(dismiss, 3500);
 })();
 
-// Keep vehicle result styling isolated from the homepage layout rules.
 if (window.location.pathname === "/" || window.location.pathname === "/index.html") {
   const resultStyles = document.createElement("link");
   resultStyles.rel = "stylesheet";
@@ -47,7 +46,6 @@ if (window.location.pathname === "/" || window.location.pathname === "/index.htm
   document.head.append(resultStyles);
 }
 
-// Staff and ownership enhancements are isolated from the core garage/admin code.
 if (window.location.pathname === "/account.html") {
   const garageHubStyles = document.createElement("link");
   garageHubStyles.rel = "stylesheet";
@@ -68,8 +66,15 @@ if (window.location.pathname === "/account.html") {
     .then(() => import("/garage-hub-fixes.js"))
     .then(() => import("/garage-photo-any.js"))
     .then(() => import("/garage-photo-unrestricted.js"))
-    .then(() => import("/garage-photo-display-fix.js"))
     .catch(() => {});
-  if (document.readyState === "complete") loadGarageHub();
-  else window.addEventListener("load", loadGarageHub, { once: true });
+
+  const loadPhotoDisplay = () => import("/garage-photo-display-fix.js").catch(() => {});
+
+  if (document.readyState === "complete") {
+    loadGarageHub();
+    loadPhotoDisplay();
+  } else {
+    window.addEventListener("load", loadGarageHub, { once: true });
+    window.addEventListener("load", loadPhotoDisplay, { once: true });
+  }
 }
