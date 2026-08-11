@@ -12,6 +12,7 @@
   function ensureDeleteButton() {
     const top = document.querySelector('.ai-chat-top');
     if (!top || document.getElementById('removeAiChatButton')) return;
+
     const controls = document.createElement('div');
     controls.className = 'ai-chat-top-actions';
 
@@ -22,27 +23,30 @@
     remove.id = 'removeAiChatButton';
     remove.className = 'ai-remove-chat-button';
     remove.type = 'button';
-    remove.textContent = 'Remove chat';
+    remove.textContent = 'Delete chat';
+    remove.setAttribute('aria-label', 'Delete this chat from your history');
     controls.append(remove);
     top.append(controls);
 
     remove.addEventListener('click', async () => {
-      if (!currentCaseId) return;
-      const confirmed = window.confirm('Remove this Biismo AI chat from your history?');
-      if (!confirmed) return;
+      if (!currentCaseId || remove.disabled) return;
+      if (!window.confirm('Delete this chat from your history? It will be removed from your account view.')) return;
+
       remove.disabled = true;
       const original = remove.textContent;
-      remove.textContent = 'Removing…';
+      remove.textContent = 'Deleting…';
+
       try {
         await window.biismoAuth.ready;
         const client = window.biismoAuth.getClient();
         const { error } = await client.rpc('delete_my_ai_mechanic_case', { p_case_id: currentCaseId });
-        if (error) throw new Error(error.message || 'Chat could not be removed.');
-        chatStatus.textContent = 'Chat removed from your history.';
+        if (error) throw new Error(error.message || 'Chat could not be deleted.');
+
         showNewCase();
         await loadCases();
+        aiStatus.textContent = 'Chat deleted from your history.';
       } catch (error) {
-        chatStatus.textContent = error.message || 'Chat could not be removed.';
+        chatStatus.textContent = error.message || 'Chat could not be deleted.';
       } finally {
         remove.disabled = false;
         remove.textContent = original;
@@ -56,31 +60,16 @@
     const hint = document.createElement('p');
     hint.id = 'aiHistoryPersistenceHint';
     hint.className = 'ai-history-persistence-hint';
-    hint.textContent = 'Chats stay saved until you remove them.';
+    hint.textContent = 'Chats stay saved until you delete them.';
     heading.after(hint);
-  }
-
-  function tidyMessageLabels() {
-    const assistantMessages = [...document.querySelectorAll('.ai-message.is-assistant')];
-    assistantMessages.forEach((message, index) => {
-      const label = message.querySelector('small');
-      if (!label) return;
-      if (index === 0) {
-        label.hidden = false;
-        label.textContent = 'Biismo AI';
-      } else {
-        label.hidden = true;
-      }
-    });
   }
 
   function init() {
     ensureStyles();
     ensureDeleteButton();
     addHistoryHint();
-    tidyMessageLabels();
-    const messages = document.getElementById('chatMessages');
-    if (messages) new MutationObserver(tidyMessageLabels).observe(messages, { childList:true, subtree:true });
+    // Do not observe or rewrite message labels here. ai-mechanic.js owns
+    // message rendering; observing its subtree previously caused an iOS freeze loop.
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once:true });
