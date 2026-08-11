@@ -3,6 +3,15 @@
   align-items: center;
   gap: 14px;
   min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.vehicle-title-row .car-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .vehicle-brand-mark {
