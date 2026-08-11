@@ -3,51 +3,33 @@
 
   const GENERIC_VEHICLE_ID = '00000000-0000-0000-0000-000000000000';
 
+  function setGenericVehicleSelect(select) {
+    if (!select) return;
+    if (select.options.length !== 1 || select.options[0]?.value !== GENERIC_VEHICLE_ID) {
+      select.innerHTML = `<option value="${GENERIC_VEHICLE_ID}" selected>Biismo AI</option>`;
+    }
+    if (select.value !== GENERIC_VEHICLE_ID) select.value = GENERIC_VEHICLE_ID;
+    select.classList.add('ai-standalone-hidden');
+  }
+
   function installStandaloneMode() {
-    // ai-mechanic.js uses these global lexical bindings. Keep a harmless generic
-    // vehicle entry so its existing send/busy logic works without Garage data.
     try {
-      vehicles = [{ id: GENERIC_VEHICLE_ID, registration: 'BIISMO AI', make: '', model: '' }];
+      if (!Array.isArray(vehicles) || vehicles.length !== 1 || vehicles[0]?.id !== GENERIC_VEHICLE_ID) {
+        vehicles = [{ id: GENERIC_VEHICLE_ID, registration: 'BIISMO AI', make: '', model: '' }];
+      }
       selectedCategory = 'General vehicle question';
     } catch {}
 
-    const vehicleSelect = document.getElementById('vehicleSelect');
-    if (vehicleSelect) {
-      vehicleSelect.innerHTML = `<option value="${GENERIC_VEHICLE_ID}" selected>Biismo AI</option>`;
-      vehicleSelect.value = GENERIC_VEHICLE_ID;
-      vehicleSelect.classList.add('ai-standalone-hidden');
-    }
-
-    const mobileVehicle = document.getElementById('mobileDraftVehicleSelect');
-    if (mobileVehicle) {
-      mobileVehicle.innerHTML = `<option value="${GENERIC_VEHICLE_ID}" selected>Biismo AI</option>`;
-      mobileVehicle.value = GENERIC_VEHICLE_ID;
-      mobileVehicle.classList.add('ai-standalone-hidden');
-    }
-
-    const category = document.querySelector('.ai-category-fieldset');
-    category?.classList.add('ai-standalone-hidden');
+    setGenericVehicleSelect(document.getElementById('vehicleSelect'));
+    setGenericVehicleSelect(document.getElementById('mobileDraftVehicleSelect'));
+    document.querySelector('.ai-category-fieldset')?.classList.add('ai-standalone-hidden');
     document.querySelector('label[for="vehicleSelect"]')?.classList.add('ai-standalone-hidden');
-
-    const title = document.getElementById('chatTitle');
-    const vehicle = document.getElementById('chatVehicle');
-    if (document.body.classList.contains('ai-mobile-new-chat')) {
-      if (vehicle) vehicle.textContent = 'BIISMO AI';
-      if (title) title.textContent = 'New chat';
-    }
-
-    const remove = document.getElementById('removeAiChatButton');
-    if (remove && !currentCaseId) remove.hidden = true;
   }
 
-  // Replace the legacy Garage loader before the AI page initialiser needs it.
   try {
     loadVehicles = async function standaloneVehicleLoader() {
       vehicles = [{ id: GENERIC_VEHICLE_ID, registration: 'BIISMO AI', make: '', model: '' }];
-      if (vehicleSelect) {
-        vehicleSelect.innerHTML = `<option value="${GENERIC_VEHICLE_ID}" selected>Biismo AI</option>`;
-        vehicleSelect.value = GENERIC_VEHICLE_ID;
-      }
+      setGenericVehicleSelect(vehicleSelect);
       if (startButton) startButton.disabled = requestInFlight || aiQuestions < 1;
     };
   } catch {}
@@ -56,24 +38,35 @@
     const title = document.getElementById('chatTitle');
     const vehicle = document.getElementById('chatVehicle');
     const remove = document.getElementById('removeAiChatButton');
-    if (document.body.classList.contains('ai-mobile-new-chat') || !currentCaseId) {
-      if (vehicle) vehicle.textContent = 'BIISMO AI';
-      if (title && document.body.classList.contains('ai-mobile-new-chat')) title.textContent = 'New chat';
-      if (remove) remove.hidden = true;
-    } else if (remove) {
+    const isDraft = document.body.classList.contains('ai-mobile-new-chat') || !currentCaseId;
+    if (isDraft) {
+      if (vehicle && vehicle.textContent !== 'BIISMO AI') vehicle.textContent = 'BIISMO AI';
+      if (title && document.body.classList.contains('ai-mobile-new-chat') && title.textContent !== 'New chat') title.textContent = 'New chat';
+      if (remove && !remove.hidden) remove.hidden = true;
+    } else if (remove?.hidden) {
       remove.hidden = false;
     }
   }
 
-  const observer = new MutationObserver(() => {
-    installStandaloneMode();
-    syncChatHeader();
-  });
+  let scheduled = false;
+  const sync = () => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      installStandaloneMode();
+      syncChatHeader();
+    });
+  };
 
   function init() {
-    installStandaloneMode();
-    syncChatHeader();
-    observer.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['class','hidden'] });
+    sync();
+    new MutationObserver(sync).observe(document.body, {
+      childList:true,
+      subtree:true,
+      attributes:true,
+      attributeFilter:['class','hidden']
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once:true });
