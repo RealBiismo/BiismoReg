@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v43";
+const CACHE_NAME = "biismo-reg-v44";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -12,7 +12,11 @@ const NETWORK_FIRST_ASSETS = new Set([
   "/ai-mechanic.html",
   "/ai-mechanic.js",
   "/ai-mechanic.css",
+  "/ai-chat-history.js",
+  "/ai-chat-history.css",
   "/ai-entry.js",
+  "/admin-ai-logs.js",
+  "/admin-ai-logs.css",
   "/notifications.js",
   "/notifications.css",
   "/splash.js",
@@ -29,6 +33,8 @@ const NETWORK_FIRST_ASSETS = new Set([
   "/brand-logos.css",
   "/vehicle-title-fit.js",
   "/admin-controls.js",
+  "/staff-user-directory.js",
+  "/staff-user-directory.css",
   "/staff-dashboard-organizer.js",
   "/staff-dashboard-organizer.css",
   "/moderator-controls.js",
@@ -55,6 +61,8 @@ const STATIC_ASSETS = [
   "/ai-mechanic.html",
   "/ai-mechanic.js",
   "/ai-mechanic.css",
+  "/ai-chat-history.js",
+  "/ai-chat-history.css",
   "/ai-entry.js",
   "/script.js",
   "/full-history-preview.js",
@@ -72,6 +80,10 @@ const STATIC_ASSETS = [
   "/garage-photo-unrestricted.js",
   "/garage-photo-display-fix.js",
   "/admin-controls.js",
+  "/staff-user-directory.js",
+  "/staff-user-directory.css",
+  "/admin-ai-logs.js",
+  "/admin-ai-logs.css",
   "/credits.html",
   "/credits.js",
   "/credit-store-v2.css",
