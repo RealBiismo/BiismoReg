@@ -9,14 +9,6 @@
     document.head.append(link);
   }
 
-  function ensurePhotoFix() {
-    if (document.querySelector('script[src="/ai-photo-fix.js"]')) return;
-    const script = document.createElement('script');
-    script.src = '/ai-photo-fix.js';
-    script.defer = true;
-    document.head.append(script);
-  }
-
   function ensureDeleteButton() {
     const top = document.querySelector('.ai-chat-top');
     if (!top || document.getElementById('removeAiChatButton')) return;
@@ -43,13 +35,11 @@
       remove.disabled = true;
       const original = remove.textContent;
       remove.textContent = 'Deleting…';
-
       try {
         await window.biismoAuth.ready;
         const client = window.biismoAuth.getClient();
         const { error } = await client.rpc('delete_my_ai_mechanic_case', { p_case_id: currentCaseId });
         if (error) throw new Error(error.message || 'Chat could not be deleted.');
-
         showNewCase();
         await loadCases();
         aiStatus.textContent = 'Chat deleted from your history.';
@@ -74,11 +64,8 @@
 
   function init() {
     ensureStyles();
-    ensurePhotoFix();
     ensureDeleteButton();
     addHistoryHint();
-    // Do not observe or rewrite message labels here. ai-mechanic.js owns
-    // message rendering; observing its subtree previously caused an iOS freeze loop.
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once:true });
