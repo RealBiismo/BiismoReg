@@ -17,7 +17,10 @@
   <header class="site-header ai-header">
     <a class="back-link" href="/" aria-label="Back to vehicle checker"><span aria-hidden="true">←</span> Checker</a>
     <a class="brand compact-brand transparent-brand" href="/" aria-label="BIISMO REG home"><img src="/icon.svg" alt="BIISMO REG"></a>
-    <a class="header-action" href="/account.html">My Garage</a>
+    <div class="ai-header-actions">
+      <a class="header-action ai-buy-credits" href="/credits.html">Buy credits</a>
+      <a class="header-action" href="/account.html">My Garage</a>
+    </div>
   </header>
 
   <main class="ai-main">
@@ -31,6 +34,7 @@
         <strong>10 questions</strong>
         <span>for 4 credits</span>
         <small>Or 200 / month with BIISMO REG+</small>
+        <a class="secondary-button button-link ai-price-buy" href="/credits.html">Buy credits</a>
       </div>
     </section>
 
@@ -50,7 +54,7 @@
 
     <section id="aiWorkspace" class="ai-workspace" hidden>
       <aside class="ai-sidebar">
-        <button id="newCaseButton" class="primary-button" type="button">+ New diagnosis</button>
+        <button id="newCaseButton" class="primary-button" type="button">+ New chat</button>
         <div class="ai-sidebar-heading"><span>Previous chats</span><button id="refreshCasesButton" type="button">Refresh</button></div>
         <div id="caseList" class="ai-case-list"><p class="ai-muted">No Biismo AI chats yet.</p></div>
       </aside>
@@ -80,7 +84,7 @@
           </fieldset>
 
           <label for="issueText">Describe the problem</label>
-          <textarea id="issueText" rows="5" maxlength="2000" placeholder="Example: knocking from the front left over bumps, worse at low speed…"></textarea>
+          <textarea id="issueText" rows="5" maxlength="2000" enterkeyhint="send" placeholder="Example: knocking from the front left over bumps, worse at low speed…"></textarea>
 
           <div class="ai-photo-row">
             <div><strong>Add photos</strong><span>Dashboard warnings, tyres, leaks, components or damage. Up to 3.</span></div>
@@ -89,24 +93,26 @@
           <div id="photoPreview" class="ai-photo-preview"></div>
 
           <p class="ai-disclaimer">Biismo AI provides guidance, not a confirmed mechanical diagnosis. Stop driving and seek professional help if the vehicle may be unsafe.</p>
-          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Ask Biismo AI · 1 question</button>
-          <p class="ai-muted" style="text-align:center;margin-top:8px"><a href="/credits.html">Get AI questions or BIISMO REG+</a></p>
+          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Ask Biismo AI</button>
+          <div class="ai-access-row"><a href="/credits.html">Buy credits / AI questions</a><span>•</span><a href="/credits.html">View BIISMO REG+</a></div>
           <p id="aiStatus" class="ai-status" role="status"></p>
         </div>
 
-        <div id="chatView" hidden>
+        <div id="chatView" class="ai-chat-view" hidden>
           <div class="ai-chat-top">
             <div><span id="chatVehicle" class="eyebrow">VEHICLE</span><h2 id="chatTitle">Biismo AI chat</h2></div>
             <button id="backToNewButton" class="secondary-button" type="button">New chat</button>
           </div>
-          <div id="chatMessages" class="ai-chat-messages"></div>
-          <div class="ai-chat-compose">
-            <textarea id="chatInput" rows="2" maxlength="1600" placeholder="Ask a follow-up question…"></textarea>
-            <label class="secondary-button ai-photo-button" aria-label="Add photos">📷<input id="chatPhotoInput" type="file" accept="image/*" multiple hidden></label>
-            <button id="sendChatButton" class="primary-button" type="button">Send · 1 question</button>
-          </div>
+          <div id="chatMessages" class="ai-chat-messages" aria-live="polite"></div>
           <div id="chatPhotoPreview" class="ai-photo-preview"></div>
-          <p id="chatStatus" class="ai-status" role="status"></p>
+          <div class="ai-chat-compose-wrap">
+            <div class="ai-chat-compose">
+              <label class="secondary-button ai-photo-button ai-compose-photo" aria-label="Add photos">＋<input id="chatPhotoInput" type="file" accept="image/*" multiple hidden></label>
+              <textarea id="chatInput" rows="1" maxlength="1600" enterkeyhint="send" placeholder="Message Biismo AI…"></textarea>
+              <button id="sendChatButton" class="primary-button ai-send-button" type="button" aria-label="Send message">↑</button>
+            </div>
+            <p id="chatStatus" class="ai-status" role="status"></p>
+          </div>
         </div>
       </section>
     </section>
