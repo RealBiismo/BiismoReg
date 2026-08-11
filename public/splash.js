@@ -39,6 +39,15 @@
   window.setTimeout(dismiss, 3500);
 })();
 
+const referralStyles = document.createElement("link");
+referralStyles.rel = "stylesheet";
+referralStyles.href = "/referral.css";
+document.head.append(referralStyles);
+
+// Referral capture/claim is deliberately independent from the PWA install code.
+// It waits for auth internally, so it is safe to load before the account session is ready.
+import("/referral.js").catch(() => {});
+
 if (window.location.pathname === "/" || window.location.pathname === "/index.html") {
   const resultStyles = document.createElement("link");
   resultStyles.rel = "stylesheet";
