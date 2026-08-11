@@ -1,0 +1,38 @@
+/* Standalone Biismo AI chat: no Garage vehicle dependency. */
+.ai-standalone-hidden{display:none!important}
+
+/* The legacy setup form remains in the DOM only for compatibility with the chat code. */
+#newCaseView>label[for="vehicleSelect"],
+#vehicleSelect,
+.ai-category-fieldset{
+  display:none!important;
+}
+
+.ai-hero p{max-width:690px}
+
+@media(max-width:850px){
+  .ai-mobile-draft-vehicle{display:none!important}
+  body.ai-mobile-new-chat .ai-mobile-draft-vehicle{display:none!important}
+  body.ai-mobile-new-chat #chatMessages:empty::before{
+    content:'Ask Biismo AI anything about a car, van or motorcycle — faults, warning lights, repairs, maintenance, parts, specs or photos.'!important;
+  }
+  body.ai-mobile-new-chat .ai-chat-top>div{width:100%;max-width:100%!important}
+  body.ai-mobile-new-chat #chatVehicle{display:block!important;text-align:center;margin-bottom:5px}
+  body.ai-mobile-new-chat #chatTitle{text-align:center}
+  body.ai-mobile-new-chat .ai-chat-top-actions{position:absolute;right:0;top:6px}
+  body.ai-mobile-new-chat #removeAiChatButton{display:none!important}
+}
+
+@media(min-width:851px){
+  #newCaseView{
+    max-width:820px;
+    margin:0 auto;
+  }
+  #newCaseView .ai-panel-heading{
+    justify-content:center;
+    text-align:center;
+  }
+  #newCaseView .ai-panel-heading>div{width:100%}
+  #newCaseView .ai-panel-heading h2{font-size:clamp(30px,4vw,46px)}
+  #issueText{min-height:150px}
+}
