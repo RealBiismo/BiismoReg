@@ -118,6 +118,8 @@ if (window.location.pathname === "/account.html") {
     .then(() => import("/staff-dashboard-organizer.js"))
     .catch(() => {});
 
+  import("/plan-entitlement-ui.js").catch(() => {});
+
   const loadGarageHub = () => import("/garage-hub.js")
     .then(() => import("/garage-hub-fixes.js"))
     .then(() => import("/garage-photo-any.js"))
