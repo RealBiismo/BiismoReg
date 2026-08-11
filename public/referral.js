@@ -8,11 +8,7 @@
   }
 
   function readPendingCode() {
-    try {
-      return normaliseCode(localStorage.getItem(REFERRAL_KEY));
-    } catch {
-      return null;
-    }
+    try { return normaliseCode(localStorage.getItem(REFERRAL_KEY)); } catch { return null; }
   }
 
   function rememberCode(code) {
@@ -33,9 +29,17 @@
       const message = sessionStorage.getItem(STATUS_KEY) || "";
       sessionStorage.removeItem(STATUS_KEY);
       return message;
-    } catch {
-      return "";
+    } catch { return ""; }
+  }
+
+  async function waitForAuth(timeoutMs = 10000) {
+    const started = Date.now();
+    while (!window.biismoAuth?.ready && Date.now() - started < timeoutMs) {
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
     }
+    if (!window.biismoAuth?.ready) return false;
+    await window.biismoAuth.ready;
+    return true;
   }
 
   const queryCode = normaliseCode(new URLSearchParams(window.location.search).get("ref"));
@@ -103,16 +107,14 @@
       const { data, error } = await client.rpc("get_referral_invite_info", { p_code: code });
       if (error || !data?.valid) return null;
       return data;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
 
   let claimPromise = null;
   async function claimPendingReferral() {
     if (claimPromise) return claimPromise;
     claimPromise = (async () => {
-      await window.biismoAuth?.ready;
+      if (!(await waitForAuth())) return null;
       const user = window.biismoAuth?.getUser?.();
       const client = window.biismoAuth?.getClient?.();
       const code = readPendingCode();
@@ -120,7 +122,6 @@
 
       const invite = await getInviteInfo(client, code);
       const label = invite?.referrerLabel || "your referrer";
-
       const { data: claim, error } = await client.rpc("claim_referral", { p_code: code });
       if (error) throw error;
 
@@ -144,7 +145,7 @@
   }
 
   async function initialise() {
-    await window.biismoAuth?.ready;
+    if (!(await waitForAuth())) return;
     const client = window.biismoAuth?.getClient?.();
     const code = readPendingCode();
 
@@ -156,7 +157,7 @@
 
     const priorStatus = takeStatus();
     if (priorStatus && window.location.pathname === "/account.html") {
-      createClaimNotice(priorStatus, priorStatus.includes("reward unlocked"));
+      createClaimNotice(priorStatus, priorStatus.toLowerCase().includes("reward unlocked"));
     }
 
     if (window.biismoAuth?.getUser?.() && code) {
@@ -169,10 +170,6 @@
     claimPendingReferral().catch(() => {});
   });
 
-  window.biismoReferral = {
-    getPendingCode: readPendingCode,
-    claimPendingReferral,
-  };
-
+  window.biismoReferral = { getPendingCode: readPendingCode, claimPendingReferral };
   initialise().catch(() => {});
 })();
