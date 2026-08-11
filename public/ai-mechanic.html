@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05070b">
+  <meta name="robots" content="noindex, nofollow">
+  <title>AI Mechanic — BIISMO REG</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="classic.css">
+  <link rel="stylesheet" href="ai-mechanic.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+</head>
+<body class="ai-page">
+  <header class="site-header ai-header">
+    <a class="back-link" href="/" aria-label="Back to vehicle checker"><span aria-hidden="true">←</span> Checker</a>
+    <a class="brand compact-brand transparent-brand" href="/" aria-label="BIISMO REG home"><img src="/icon.svg" alt="BIISMO REG"></a>
+    <a class="header-action" href="/account.html">My Garage</a>
+  </header>
+
+  <main class="ai-main">
+    <section class="ai-hero">
+      <div>
+        <span class="eyebrow">BIISMO AI</span>
+        <h1>AI Mechanic</h1>
+        <p>Describe a car problem, add photos and let BIISMO analyse the likely causes using the vehicle already saved in your Garage.</p>
+      </div>
+      <div class="ai-price-card">
+        <strong>3 credits</strong>
+        <span>per diagnosis case</span>
+        <small>Follow-up messages included</small>
+      </div>
+    </section>
+
+    <section id="aiSignedOut" class="ai-panel ai-empty" hidden>
+      <span class="eyebrow">ACCOUNT REQUIRED</span>
+      <h2>Sign in to use AI Mechanic</h2>
+      <p>Your diagnoses are private and saved against vehicles in your Garage.</p>
+      <a class="primary-button button-link" href="/?login=1">Sign in</a>
+    </section>
+
+    <section id="aiUnavailable" class="ai-panel ai-empty" hidden>
+      <span class="eyebrow">PAID FEATURE</span>
+      <h2>AI Mechanic is ready for activation</h2>
+      <p id="aiUnavailableText">The feature is built, but the OpenAI API connection has not been enabled yet.</p>
+      <a class="secondary-button button-link" href="/account.html">Back to Garage</a>
+    </section>
+
+    <div id="aiWorkspace" class="ai-workspace" hidden>
+      <aside class="ai-sidebar">
+        <button id="newCaseButton" class="primary-button" type="button">＋ New diagnosis</button>
+        <div class="ai-sidebar-heading"><span>Saved cases</span><button id="refreshCasesButton" type="button">Refresh</button></div>
+        <div id="caseList" class="ai-case-list"><p class="ai-muted">Loading previous cases…</p></div>
+      </aside>
+
+      <section class="ai-panel ai-diagnosis-panel">
+        <div id="newCaseView">
+          <div class="ai-panel-heading">
+            <div><span class="eyebrow">START A DIAGNOSIS</span><h2>What’s happening with the car?</h2></div>
+            <span id="creditBadge" class="ai-credit-badge">Checking credits…</span>
+          </div>
+
+          <label for="vehicleSelect">Vehicle</label>
+          <select id="vehicleSelect"><option value="">Loading your Garage…</option></select>
+
+          <fieldset class="ai-category-fieldset">
+            <legend>Issue type</legend>
+            <div id="categoryGrid" class="ai-category-grid">
+              <button type="button" data-category="Warning light">Warning light</button>
+              <button type="button" data-category="Strange noise">Strange noise</button>
+              <button type="button" data-category="Engine">Engine</button>
+              <button type="button" data-category="Brakes">Brakes</button>
+              <button type="button" data-category="Tyres">Tyres</button>
+              <button type="button" data-category="Electrical">Electrical</button>
+              <button type="button" data-category="Leak">Leak</button>
+              <button type="button" data-category="Other">Something else</button>
+            </div>
+          </fieldset>
+
+          <label for="issueText">Describe the problem</label>
+          <textarea id="issueText" rows="5" maxlength="3000" placeholder="Example: There’s a knocking noise from the front left when I go over small bumps. It seems worse at low speed."></textarea>
+
+          <div class="ai-photo-row">
+            <div><strong>Add photos</strong><span>Dashboard lights, leaks, tyre wear, damaged parts, OBD screens and more.</span></div>
+            <label class="secondary-button ai-photo-button" for="photoInput">＋ Add photos</label>
+            <input id="photoInput" type="file" accept="image/*" multiple hidden>
+          </div>
+          <div id="photoPreview" class="ai-photo-preview"></div>
+
+          <div class="ai-disclaimer">AI guidance is not a confirmed mechanical diagnosis. If there is a safety risk, warning light, braking issue, overheating, smoke or loss of control, stop driving and seek professional help.</div>
+          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Start AI diagnosis · 3 credits</button>
+          <p id="aiStatus" class="ai-status" role="status"></p>
+        </div>
+
+        <div id="chatView" hidden>
+          <div class="ai-chat-top">
+            <button id="backToNewButton" class="secondary-button" type="button">← New diagnosis</button>
+            <div><span id="chatVehicle" class="eyebrow">VEHICLE</span><h2 id="chatTitle">AI diagnosis</h2></div>
+          </div>
+          <div id="chatMessages" class="ai-chat-messages"></div>
+          <div id="chatPhotoPreview" class="ai-photo-preview"></div>
+          <div class="ai-chat-compose">
+            <textarea id="chatInput" rows="2" maxlength="3000" placeholder="Reply with more detail or ask a follow-up question…"></textarea>
+            <label class="secondary-button ai-photo-button" for="chatPhotoInput">Photo</label>
+            <input id="chatPhotoInput" type="file" accept="image/*" multiple hidden>
+            <button id="sendChatButton" class="primary-button" type="button">Send</button>
+          </div>
+          <p id="chatStatus" class="ai-status" role="status"></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="ai-mechanic.js" defer></script>
+</body>
+</html>
