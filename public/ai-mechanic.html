@@ -44,30 +44,30 @@
     <section id="aiUnavailable" class="ai-panel ai-empty" hidden>
       <span class="eyebrow">PAID FEATURE</span>
       <h2>AI Mechanic is being activated</h2>
-      <p>This feature is installed and ready for the OpenAI connection. No credits are charged until it is active.</p>
+      <p id="aiUnavailableText">This feature is installed and ready for the OpenAI connection. No credits are charged until it is active.</p>
       <a class="secondary-button button-link" href="/account.html">Back to Garage</a>
     </section>
 
     <section id="aiWorkspace" class="ai-workspace" hidden>
       <aside class="ai-sidebar">
-        <button id="newAiCaseButton" class="primary-button" type="button">+ New diagnosis</button>
-        <div class="ai-sidebar-heading"><span>Previous diagnoses</span><button id="refreshAiCasesButton" type="button">Refresh</button></div>
-        <div id="aiCaseList" class="ai-case-list"><p class="ai-muted">No AI diagnoses yet.</p></div>
+        <button id="newCaseButton" class="primary-button" type="button">+ New diagnosis</button>
+        <div class="ai-sidebar-heading"><span>Previous diagnoses</span><button id="refreshCasesButton" type="button">Refresh</button></div>
+        <div id="caseList" class="ai-case-list"><p class="ai-muted">No AI diagnoses yet.</p></div>
       </aside>
 
       <section class="ai-panel ai-diagnosis-panel">
-        <div id="aiNewCaseView">
+        <div id="newCaseView">
           <div class="ai-panel-heading">
             <div><span class="eyebrow">START A DIAGNOSIS</span><h2>What’s happening with the car?</h2></div>
-            <span id="aiCreditBadge" class="ai-credit-badge">3 credits</span>
+            <span id="creditBadge" class="ai-credit-badge">3 credits</span>
           </div>
 
-          <label for="aiVehicleSelect">Vehicle</label>
-          <select id="aiVehicleSelect"></select>
+          <label for="vehicleSelect">Vehicle</label>
+          <select id="vehicleSelect"></select>
 
           <fieldset class="ai-category-fieldset">
             <legend>Issue type</legend>
-            <div id="aiCategoryGrid" class="ai-category-grid">
+            <div id="categoryGrid" class="ai-category-grid">
               <button type="button" data-category="Warning light">Warning light</button>
               <button type="button" data-category="Strange noise">Strange noise</button>
               <button type="button" data-category="Engine issue">Engine</button>
@@ -79,33 +79,33 @@
             </div>
           </fieldset>
 
-          <label for="aiSymptoms">Describe the problem</label>
-          <textarea id="aiSymptoms" rows="5" maxlength="2000" placeholder="Example: knocking from the front left over bumps, worse at low speed…"></textarea>
+          <label for="issueText">Describe the problem</label>
+          <textarea id="issueText" rows="5" maxlength="2000" placeholder="Example: knocking from the front left over bumps, worse at low speed…"></textarea>
 
           <div class="ai-photo-row">
             <div><strong>Add photos</strong><span>Dashboard warnings, tyres, leaks, components or damage. Up to 3.</span></div>
-            <label class="secondary-button ai-photo-button">Choose photos<input id="aiPhotoInput" type="file" accept="image/*" multiple hidden></label>
+            <label class="secondary-button ai-photo-button">Choose photos<input id="photoInput" type="file" accept="image/*" multiple hidden></label>
           </div>
-          <div id="aiPhotoPreview" class="ai-photo-preview"></div>
+          <div id="photoPreview" class="ai-photo-preview"></div>
 
           <p class="ai-disclaimer">BIISMO AI provides guidance, not a confirmed mechanical diagnosis. Stop driving and seek professional help if the vehicle may be unsafe.</p>
-          <button id="startAiDiagnosisButton" class="primary-button ai-start-button" type="button">Start diagnosis · 3 credits</button>
+          <button id="startDiagnosisButton" class="primary-button ai-start-button" type="button">Start diagnosis · 3 credits</button>
           <p id="aiStatus" class="ai-status" role="status"></p>
         </div>
 
-        <div id="aiChatView" hidden>
+        <div id="chatView" hidden>
           <div class="ai-chat-top">
-            <div><span id="aiChatVehicle" class="eyebrow">VEHICLE</span><h2 id="aiChatTitle">AI diagnosis</h2></div>
-            <button id="closeAiChatButton" class="secondary-button" type="button">New case</button>
+            <div><span id="chatVehicle" class="eyebrow">VEHICLE</span><h2 id="chatTitle">AI diagnosis</h2></div>
+            <button id="backToNewButton" class="secondary-button" type="button">New case</button>
           </div>
-          <div id="aiChatMessages" class="ai-chat-messages"></div>
+          <div id="chatMessages" class="ai-chat-messages"></div>
           <div class="ai-chat-compose">
-            <textarea id="aiFollowup" rows="2" maxlength="1600" placeholder="Ask a follow-up question…"></textarea>
-            <label class="secondary-button ai-photo-button" aria-label="Add photos">📷<input id="aiFollowupPhotos" type="file" accept="image/*" multiple hidden></label>
-            <button id="sendAiFollowupButton" class="primary-button" type="button">Send</button>
+            <textarea id="chatInput" rows="2" maxlength="1600" placeholder="Ask a follow-up question…"></textarea>
+            <label class="secondary-button ai-photo-button" aria-label="Add photos">📷<input id="chatPhotoInput" type="file" accept="image/*" multiple hidden></label>
+            <button id="sendChatButton" class="primary-button" type="button">Send</button>
           </div>
-          <div id="aiFollowupPreview" class="ai-photo-preview"></div>
-          <p id="aiChatStatus" class="ai-status" role="status"></p>
+          <div id="chatPhotoPreview" class="ai-photo-preview"></div>
+          <p id="chatStatus" class="ai-status" role="status"></p>
         </div>
       </section>
     </section>
