@@ -315,6 +315,7 @@
   window.biismoAuth = {
     ready,
     getUser: () => currentUser,
+    getClient: () => client,
     isConfigured: () => Boolean(client),
     openAuthDialog,
     signOut,

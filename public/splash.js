@@ -47,10 +47,19 @@ if (window.location.pathname === "/" || window.location.pathname === "/index.htm
   document.head.append(resultStyles);
 }
 
-// Staff enhancements are isolated from the core garage/admin code.
+// Staff and ownership enhancements are isolated from the core garage/admin code.
 if (window.location.pathname === "/account.html") {
+  const garageHubStyles = document.createElement("link");
+  garageHubStyles.rel = "stylesheet";
+  garageHubStyles.href = "/garage-hub.css";
+  document.head.append(garageHubStyles);
+
   import("/moderator-controls.js")
     .then(() => import("/staff-user-directory.js"))
     .then(() => import("/staff-dashboard-organizer.js"))
     .catch(() => {});
+
+  const loadGarageHub = () => import("/garage-hub.js").catch(() => {});
+  if (document.readyState === "complete") loadGarageHub();
+  else window.addEventListener("load", loadGarageHub, { once: true });
 }
