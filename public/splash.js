@@ -8,10 +8,29 @@ if (window.location.pathname === "/account.html") {
     adminStatus: "adminUserStatus",
   };
 
+  const legacyAdminFields = new Set([
+    "selectedUserFreeRemaining",
+    "selectedUserFreeUsed",
+    "selectedUserPushDevices",
+    "adminAccountStatusBadge",
+  ]);
+
+  function getLegacyAdminField(id) {
+    let node = nativeGetById.call(document, `legacyCompat_${id}`);
+    if (node) return node;
+    node = document.createElement("span");
+    node.id = `legacyCompat_${id}`;
+    node.hidden = true;
+    node.setAttribute("aria-hidden", "true");
+    (nativeGetById.call(document, "adminUserResult") || document.body).append(node);
+    return node;
+  }
+
   Document.prototype.getElementById = function biismoCompatibleGetElementById(id) {
     const direct = nativeGetById.call(this, id);
     if (direct) return direct;
     if (aliases[id]) return nativeGetById.call(this, aliases[id]);
+    if (legacyAdminFields.has(id)) return getLegacyAdminField(id);
     if (id === "adminUserSearchButton") {
       return this.querySelector('#adminUserSearchForm button[type="submit"]');
     }
