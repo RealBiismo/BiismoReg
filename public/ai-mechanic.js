@@ -31,6 +31,7 @@ let chatPhotos = [];
 let currentCaseId = null;
 let vehicles = [];
 let aiEnabled = false;
+let aiQuestions = 0;
 
 function escapeHtml(value) {
   return String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
@@ -38,8 +39,8 @@ function escapeHtml(value) {
 
 function setBusy(busy) {
   document.body.classList.toggle('ai-loading', busy);
-  startButton.disabled = busy;
-  sendChatButton.disabled = busy;
+  startButton.disabled = busy || aiQuestions < 1 || !vehicles.length;
+  sendChatButton.disabled = busy || aiQuestions < 1;
 }
 
 async function invoke(body) {
@@ -57,14 +58,21 @@ async function invoke(body) {
   return data;
 }
 
+function renderQuestionBalance(value) {
+  aiQuestions = Math.max(0, Number(value) || 0);
+  creditBadge.textContent = `${aiQuestions} AI ${aiQuestions === 1 ? 'question' : 'questions'}`;
+  startButton.disabled = aiQuestions < 1 || !vehicles.length;
+  sendChatButton.disabled = aiQuestions < 1;
+}
+
 async function loadAllowance() {
   try {
-    const response = await window.biismoAuth.authorizedFetch('/api/allowance', { cache: 'no-store' });
+    const response = await window.biismoAuth.authorizedFetch('/api/plus/status', { cache: 'no-store' });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Credits could not be loaded.');
-    creditBadge.textContent = `${Number(data.credits) || 0} credits available`;
+    if (!response.ok) throw new Error(data.error || 'AI question balance could not be loaded.');
+    renderQuestionBalance(data.aiQuestions);
   } catch {
-    creditBadge.textContent = 'Credits unavailable';
+    creditBadge.textContent = 'Questions unavailable';
   }
 }
 
@@ -80,6 +88,7 @@ async function loadVehicles() {
     const name = [v.make, v.model].filter(Boolean).join(' ');
     return `<option value="${escapeHtml(v.id)}">${escapeHtml(v.registration)} · ${escapeHtml(name || 'Saved vehicle')}</option>`;
   }).join('');
+  startButton.disabled = aiQuestions < 1;
 }
 
 function renderPhotos(container, photos, onRemove) {
@@ -167,7 +176,7 @@ async function openCase(caseId) {
     chatVehicle.textContent = `${data.vehicle?.registration || 'VEHICLE'} · ${[data.vehicle?.make,data.vehicle?.model].filter(Boolean).join(' ')}`;
     chatTitle.textContent = data.case?.title || 'AI diagnosis';
     renderMessages(data.messages || []);
-    chatStatus.textContent = '';
+    chatStatus.textContent = aiQuestions > 0 ? `${aiQuestions} AI questions available.` : 'No AI questions left. Get more from Plans & credits.';
   } catch (error) {
     aiStatus.textContent = error.message;
   } finally { setBusy(false); }
@@ -196,6 +205,7 @@ chatPhotoInput.addEventListener('change', async () => { try { await addFiles(cha
 startButton.addEventListener('click', async () => {
   const vehicleId = vehicleSelect.value;
   const text = issueText.value.trim();
+  if (aiQuestions < 1) return aiStatus.innerHTML = 'You have no AI questions left. <a href="/credits.html">Get 10 questions for 4 credits or upgrade to REG+.</a>';
   if (!vehicleId) return aiStatus.textContent = 'Choose a vehicle from your Garage.';
   if (text.length < 3) return aiStatus.textContent = 'Describe what is happening with the car.';
   setBusy(true);
@@ -203,6 +213,7 @@ startButton.addEventListener('click', async () => {
   try {
     const data = await invoke({ action:'start', vehicleId, category:selectedCategory, text, images:newPhotos });
     currentCaseId = data.caseId;
+    renderQuestionBalance(data.questionsRemaining);
     newCaseView.hidden = true;
     chatView.hidden = false;
     const vehicle = data.vehicle || vehicles.find(v => v.id === vehicleId) || {};
@@ -212,25 +223,27 @@ startButton.addEventListener('click', async () => {
     appendMessage('user', text);
     appendMessage('assistant', data.reply);
     issueText.value=''; newPhotos=[]; photoPreview.innerHTML='';
-    chatStatus.textContent = `Diagnosis started. ${Number(data.creditsRemaining)} credits remaining. Follow-up messages in this case are included.`;
-    await Promise.all([loadCases(),loadAllowance()]);
-  } catch (error) { aiStatus.textContent = error.message; }
+    chatStatus.textContent = `${aiQuestions} AI ${aiQuestions === 1 ? 'question' : 'questions'} remaining.`;
+    await loadCases();
+  } catch (error) { aiStatus.textContent = error.message; await loadAllowance(); }
   finally { setBusy(false); }
 });
 
 sendChatButton.addEventListener('click', async () => {
   const text = chatInput.value.trim();
   if (!currentCaseId || !text) return;
+  if (aiQuestions < 1) return chatStatus.innerHTML = 'No AI questions left. <a href="/credits.html">Get more questions.</a>';
   setBusy(true);
   chatStatus.textContent = 'Analysing your follow-up…';
   try {
     const data = await invoke({ action:'message', caseId:currentCaseId, text, images:chatPhotos });
+    renderQuestionBalance(data.questionsRemaining);
     appendMessage('user', text);
     appendMessage('assistant', data.reply);
     chatInput.value=''; chatPhotos=[]; chatPhotoPreview.innerHTML='';
-    chatStatus.textContent = 'Follow-up saved to this vehicle diagnosis.';
+    chatStatus.textContent = `${aiQuestions} AI ${aiQuestions === 1 ? 'question' : 'questions'} remaining.`;
     await loadCases();
-  } catch (error) { chatStatus.textContent = error.message; }
+  } catch (error) { chatStatus.textContent = error.message; await loadAllowance(); }
   finally { setBusy(false); }
 });
 
@@ -252,7 +265,9 @@ refreshCasesButton.addEventListener('click', loadCases);
       return;
     }
     workspace.hidden=false;
-    await Promise.all([loadVehicles(),loadAllowance(),loadCases()]);
+    await loadAllowance();
+    await Promise.all([loadVehicles(),loadCases()]);
+    if (aiQuestions < 1) aiStatus.innerHTML = 'You have no AI questions yet. <a href="/credits.html">Unlock 10 for 4 credits or get BIISMO REG+.</a>';
   } catch (error) {
     unavailable.hidden=false;
     unavailableText.textContent=error.message || 'AI Mechanic could not be loaded.';
