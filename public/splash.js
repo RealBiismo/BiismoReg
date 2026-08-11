@@ -116,6 +116,7 @@ if (window.location.pathname === "/account.html") {
   import("/moderator-controls.js")
     .then(() => import("/staff-user-directory.js"))
     .then(() => import("/staff-dashboard-organizer.js"))
+    .then(() => import("/admin-ai-logs.js"))
     .catch(() => {});
 
   import("/plan-entitlement-ui.js").catch(() => {});
