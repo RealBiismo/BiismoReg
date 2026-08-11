@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v48";
+const CACHE_NAME = "biismo-reg-v49";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -13,6 +13,8 @@ const NETWORK_FIRST_ASSETS = new Set([
   "/ai-mechanic.js",
   "/ai-mechanic.css",
   "/ai-chat-mobile.css",
+  "/ai-mobile-v2.css",
+  "/ai-mobile-v2.js",
   "/ai-viewport-lock.js",
   "/ai-chat-history.js",
   "/ai-chat-history.css",
@@ -64,6 +66,8 @@ const STATIC_ASSETS = [
   "/ai-mechanic.js",
   "/ai-mechanic.css",
   "/ai-chat-mobile.css",
+  "/ai-mobile-v2.css",
+  "/ai-mobile-v2.js",
   "/ai-viewport-lock.js",
   "/ai-chat-history.js",
   "/ai-chat-history.css",
