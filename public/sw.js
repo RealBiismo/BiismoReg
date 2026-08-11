@@ -1,4 +1,4 @@
-const CACHE_NAME = "biismo-reg-v36";
+const CACHE_NAME = "biismo-reg-v37";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
@@ -8,6 +8,10 @@ const NETWORK_FIRST_ASSETS = new Set([
   "/notifications.html",
   "/notifications.js",
   "/notifications.css",
+  "/splash.js",
+  "/auth.js",
+  "/garage-hub.js",
+  "/garage-hub.css",
   "/pwa.js",
   "/brand-logos.js",
   "/brand-logos.css",
@@ -34,6 +38,7 @@ const STATIC_ASSETS = [
   "/homepage-fix.css",
   "/brand-logos.css",
   "/full-history-preview.css",
+  "/garage-hub.css",
   "/script.js",
   "/full-history-preview.js",
   "/vehicle-title-fit.js",
@@ -43,6 +48,7 @@ const STATIC_ASSETS = [
   "/brand-logos.js",
   "/account.html",
   "/account.js",
+  "/garage-hub.js",
   "/admin-controls.js",
   "/credits.html",
   "/credits.js",
