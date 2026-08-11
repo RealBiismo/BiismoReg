@@ -152,6 +152,7 @@
   }
 
   function showPage(page, staffRole) {
+    const hero = adminView.querySelector(".dashboard-hero");
     const overview = adminView.querySelector(".admin-overview");
     const activity = adminView.querySelector(".admin-quick-tools");
     const dashboardGrid = adminView.querySelector(".admin-dashboard-grid");
@@ -161,11 +162,12 @@
     if (page === "tools" && staffRole === "moderator") page = "home";
     adminView.dataset.simpleStaffPage = page;
 
+    hide(hero, page !== "home");
     hide(overview, page !== "home");
     hide(activity, page !== "home");
     hide(dashboardGrid, page !== "users");
     hide(broadcast, page !== "tools");
-    hide(history, page !== "tools" || Boolean(history?.hidden));
+    hide(history, page !== "tools");
 
     if (page === "home") updateActivityPanels();
 
@@ -182,7 +184,7 @@
     document.body.classList.add("has-simple-staff-dashboard");
     if (staffRole === "moderator") document.body.classList.add("has-moderator-workspace");
 
-    const hero = adminView.querySelector(".admin-hero");
+    const hero = adminView.querySelector(".dashboard-hero");
     const overview = adminView.querySelector(".admin-overview");
     const dashboardGrid = adminView.querySelector(".admin-dashboard-grid");
     const userPanel = adminView.querySelector(".admin-user-panel");
@@ -194,9 +196,10 @@
     const banner = byId("staffRoleBanner");
     const globalActions = byId("staffGlobalActions");
 
-    [hero, oldNav, teamPanel, banner, globalActions].forEach((node) => hide(node, true));
+    [oldNav, teamPanel, banner, globalActions].forEach((node) => hide(node, true));
     hide(history, true);
     hide(broadcast, true);
+    hide(hero, false);
     hide(overview, false);
     hide(activity, false);
     hide(userPanel, false);
@@ -226,7 +229,7 @@
 
     const observer = new MutationObserver(() => {
       [byId("teamManagementPanel"), byId("staffRoleBanner"), byId("staffGlobalActions")].forEach((node) => hide(node, true));
-      updateActivityPanels();
+      if (adminView.dataset.simpleStaffPage === "home") updateActivityPanels();
     });
     observer.observe(adminView, { childList: true, subtree: true });
   }
