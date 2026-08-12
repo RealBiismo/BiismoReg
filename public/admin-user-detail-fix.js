@@ -1,6 +1,7 @@
 (() => {
   if (window.location.pathname !== '/account.html') return;
 
+  const OWNER_EMAIL = 'cybzerohq@gmail.com';
   const byId = (id) => document.getElementById(id);
   let loadingEmail = '';
   let lastLoadedEmail = '';
@@ -22,6 +23,77 @@
       .toLowerCase();
   }
 
+  function setResetStatus(message, type = '') {
+    const status = byId('adminPasswordResetStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.className = `admin-status ${type ? `is-${type}` : ''}`.trim();
+  }
+
+  function ensurePasswordResetControl() {
+    const result = byId('adminUserResult');
+    if (!result || byId('adminSendPasswordResetButton')) return;
+
+    const currentUser = window.biismoAuth?.getUser?.();
+    if (String(currentUser?.email || '').toLowerCase() !== OWNER_EMAIL) return;
+
+    const anchor = result.querySelector('.admin-access-controls') || result.querySelector('.admin-credit-controls');
+    if (!anchor) return;
+
+    const section = document.createElement('div');
+    section.className = 'admin-password-reset-control';
+    section.innerHTML = `
+      <div>
+        <span class="eyebrow">PASSWORD ACCESS</span>
+        <p>Send this user a secure link to choose a new password.</p>
+      </div>
+      <button id="adminSendPasswordResetButton" class="secondary-button" type="button">Send password reset link</button>
+      <p id="adminPasswordResetStatus" class="admin-status" role="status"></p>
+    `;
+    anchor.insertAdjacentElement('afterend', section);
+
+    const style = document.createElement('style');
+    style.textContent = `
+      .admin-password-reset-control{margin-top:14px;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.025)}
+      .admin-password-reset-control>div p{margin:5px 0 12px;color:#9ca5b4;font-size:13px;line-height:1.45}
+      .admin-password-reset-control .secondary-button{width:100%}
+      .admin-password-reset-control .admin-status{margin:9px 0 0}
+    `;
+    document.head.append(style);
+
+    byId('adminSendPasswordResetButton')?.addEventListener('click', sendPasswordReset);
+  }
+
+  async function sendPasswordReset() {
+    const email = selectedEmail();
+    const button = byId('adminSendPasswordResetButton');
+    if (!email.includes('@') || !button) return;
+
+    const currentUser = window.biismoAuth?.getUser?.();
+    if (String(currentUser?.email || '').toLowerCase() !== OWNER_EMAIL) {
+      setResetStatus('Owner access required.', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Send a password reset link to ${email}?`)) return;
+
+    button.disabled = true;
+    setResetStatus('Sending password reset email…');
+    try {
+      await window.biismoAuth.ready;
+      const client = window.biismoAuth.getClient();
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/?recovery=1`
+      });
+      if (error) throw error;
+      setResetStatus(`Password reset link sent to ${email}.`, 'success');
+    } catch (error) {
+      setResetStatus(error?.message || 'Password reset email could not be sent.', 'error');
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   function render(account) {
     const searches = byId('selectedUserSearches');
     const vehicles = byId('selectedUserVehicles');
@@ -32,6 +104,8 @@
     if (searches) searches.textContent = String(Number(account?.searchesToday) || 0);
     if (vehicles) vehicles.textContent = String(Number(account?.savedVehicles) || 0);
     if (joined) joined.textContent = formatJoined(account?.joinedAt);
+    ensurePasswordResetControl();
+    setResetStatus('');
   }
 
   async function load(email) {
@@ -59,6 +133,7 @@
   function sync() {
     const email = selectedEmail();
     if (!email.includes('@')) return;
+    ensurePasswordResetControl();
     if (email !== lastLoadedEmail) void load(email);
   }
 
