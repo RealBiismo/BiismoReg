@@ -537,3 +537,11 @@ body:has(#adminView:not([hidden])) .account-menu-button.is-active {
   .result-card .info-value { font-size: clamp(20px, 6vw, 25px); }
   .result-card .actions-row { margin-top: 20px; padding-top: 20px; }
 }
+.admin-password-reset-control{margin-top:14px;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.025)}
+.admin-password-reset-control>div p{margin:5px 0 12px;color:#9ca5b4;font-size:13px;line-height:1.45}
+.admin-password-reset-control .secondary-button{width:100%}
+.admin-password-reset-control .admin-status{margin:9px 0 0}
+#result .vehicle-title-row .car-title{min-width:0!important;max-width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important}
+#result .vehicle-title-row .car-title.is-long-title{font-size:26px!important}
+#result .vehicle-title-row .car-title.is-very-long-title{font-size:22px!important;letter-spacing:-.025em!important}
+@media(max-width:640px){#result .vehicle-title-row .car-title.is-long-title{font-size:22px!important}#result .vehicle-title-row .car-title.is-very-long-title{font-size:18px!important;letter-spacing:-.03em!important}}

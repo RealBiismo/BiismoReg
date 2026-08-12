@@ -287,7 +287,7 @@
     }
 
     form.hidden = true;
-    const status = byId("adminStatus");
+    const status = byId("adminUserStatus");
     if (status && result) {
       status.hidden = false;
       result.prepend(status);

@@ -52,15 +52,6 @@
     `;
     anchor.insertAdjacentElement('afterend', section);
 
-    const style = document.createElement('style');
-    style.textContent = `
-      .admin-password-reset-control{margin-top:14px;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.025)}
-      .admin-password-reset-control>div p{margin:5px 0 12px;color:#9ca5b4;font-size:13px;line-height:1.45}
-      .admin-password-reset-control .secondary-button{width:100%}
-      .admin-password-reset-control .admin-status{margin:9px 0 0}
-    `;
-    document.head.append(style);
-
     byId('adminSendPasswordResetButton')?.addEventListener('click', sendPasswordReset);
   }
 

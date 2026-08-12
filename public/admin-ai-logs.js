@@ -87,7 +87,7 @@
   async function refreshDashboard() {
     if (!isAdminRole() || dashboardLoading) return;
     dashboardLoading = true;
-    const button = byId('adminRefreshButton');
+    const button = byId('adminDashboardRefreshButton');
     if (button) button.disabled = true;
     try {
       await window.biismoAuth.ready;
@@ -205,7 +205,7 @@
     if (node) new MutationObserver(onSelectedUserChanged).observe(node, { childList:true, subtree:true, characterData:true });
     onSelectedUserChanged();
 
-    byId('adminRefreshButton')?.addEventListener('click', (event) => {
+    byId('adminDashboardRefreshButton')?.addEventListener('click', (event) => {
       event.preventDefault();
       void refreshDashboard();
     }, true);

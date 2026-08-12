@@ -33,6 +33,7 @@ let vehicles = [];
 let aiEnabled = false;
 let aiQuestions = 0;
 let requestInFlight = false;
+const AI_REQUEST_TIMEOUT_MS = 45_000;
 
 function escapeHtml(value) {
   return String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
@@ -53,7 +54,20 @@ function setBusy(busy) {
 
 async function invoke(body) {
   const client = window.biismoAuth.getClient();
-  const { data, error } = await client.functions.invoke('ai-mechanic', { body });
+  let timeoutId;
+  const request = client.functions.invoke('ai-mechanic', { body });
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error('Biismo AI took too long to respond. Your controls have been unlocked — please retry.'));
+    }, AI_REQUEST_TIMEOUT_MS);
+  });
+  let result;
+  try {
+    result = await Promise.race([request, timeout]);
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+  const { data, error } = result;
   if (error) {
     let message = error.message || 'Biismo AI could not be reached.';
     try {
@@ -391,17 +405,6 @@ function installAttachmentLayout() {
   const wrap = document.querySelector('.ai-chat-compose-wrap');
   const compose = wrap?.querySelector('.ai-chat-compose');
   if (wrap && compose && chatPhotoPreview) wrap.insertBefore(chatPhotoPreview, compose);
-  const style = document.createElement('style');
-  style.textContent = `
-    #chatPhotoPreview{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;z-index:auto!important;width:100%!important;max-width:700px!important;margin:0 auto 8px!important;padding:0 4px!important;background:transparent!important;display:flex!important;gap:8px!important;overflow-x:auto!important}
-    #chatPhotoPreview[hidden]{display:none!important}
-    .ai-photo-chip-confirmed{position:relative;flex:0 0 74px;width:74px;height:74px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.16);background:#10151d}
-    .ai-photo-chip-confirmed img{width:100%;height:100%;object-fit:cover;display:block}
-    .ai-photo-chip-confirmed button{position:absolute;top:4px;right:4px;width:22px;height:22px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;font-size:16px;line-height:1}
-    .ai-photo-attached-badge{position:absolute;left:4px;bottom:4px;padding:2px 5px;border-radius:6px;background:rgba(0,0,0,.68);color:#fff;font-size:8px;font-weight:800}
-    .ai-message-attachment{margin:0 0 7px;font-size:10px;font-weight:800;opacity:.75}
-  `;
-  document.head.append(style);
   renderPhotos(chatPhotoPreview, chatPhotos, 'chat');
   renderPhotos(photoPreview, newPhotos, 'new');
 }

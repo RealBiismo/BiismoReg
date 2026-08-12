@@ -90,6 +90,7 @@
           <div><span class="eyebrow">COLLECTION</span><h2 id="savedTitle">Saved vehicles</h2></div>
           <div class="garage-heading-meta"><span class="garage-limit">Maximum 3 vehicles per account</span><span id="savedVehicleCount" class="saved-count">0 vehicles</span></div>
         </div>
+        <p id="garageStatus" class="garage-status" role="status"></p>
         <div id="savedVehicles" class="saved-grid"><p class="empty-state">Loading saved vehicles…</p></div>
       </section>
     </section>
@@ -98,7 +99,7 @@
       <section class="admin-control-centre">
         <section class="dashboard-hero">
           <div><span class="eyebrow">OWNER WORKSPACE</span><h1>Admin control centre.</h1><p>Monitor the app, manage accounts, issue credits and send notifications from one place.</p></div>
-          <button id="adminRefreshButton" class="secondary-button compact-button" type="button">Refresh dashboard</button>
+          <button id="adminDashboardRefreshButton" class="secondary-button compact-button" type="button">Refresh dashboard</button>
         </section>
 
         <section class="admin-overview" aria-label="App overview">
@@ -112,11 +113,11 @@
         <div class="admin-dashboard-grid">
           <section class="admin-panel admin-user-panel">
             <div class="admin-panel-heading"><div><span class="eyebrow">ACCOUNT LOOKUP</span><h2>Manage a user</h2></div></div>
-            <form id="adminUserSearchForm" class="admin-user-search"><label for="adminUserEmail">Email address</label><div><input id="adminUserEmail" type="email" placeholder="name@example.com" autocomplete="off"><button class="primary-button" type="submit">Find user</button></div></form>
+            <form id="adminUserSearchForm" class="admin-user-search"><label for="adminUserEmail">Email address</label><div><input id="adminUserEmail" type="email" placeholder="name@example.com" autocomplete="off"><button id="adminUserSearchButton" class="primary-button" type="submit">Find user</button></div></form>
             <p id="adminUserStatus" class="admin-status" role="status"></p>
             <div id="adminUserResult" class="admin-user-result" hidden>
-              <div class="admin-user-heading"><div><span class="eyebrow">SELECTED ACCOUNT</span><h3 id="selectedUserEmail">—</h3></div><span id="selectedUserAccountStatus" class="account-status-badge">Active</span></div>
-              <div class="admin-user-stats"><article><span>Credits</span><strong id="selectedUserCredits">—</strong></article><article><span>Searches today</span><strong id="selectedUserSearches">—</strong></article><article><span>Saved vehicles</span><strong id="selectedUserVehicles">—</strong></article><article><span>Joined</span><strong id="selectedUserJoined">—</strong></article></div>
+              <div class="admin-user-heading"><div><span class="eyebrow">SELECTED ACCOUNT</span><h3 id="selectedUserEmail">—</h3></div><span id="adminAccountStatusBadge" class="account-status-badge">Active</span></div>
+              <div class="admin-user-stats"><article><span>Credits</span><strong id="selectedUserCredits">—</strong></article><article><span>Searches today</span><strong id="selectedUserSearches">—</strong></article><article><span>Free remaining</span><strong id="selectedUserFreeRemaining">—</strong></article><article><span>Free used</span><strong id="selectedUserFreeUsed">—</strong></article><article><span>Saved vehicles</span><strong id="selectedUserVehicles">—</strong></article><article><span>Push devices</span><strong id="selectedUserPushDevices">—</strong></article><article><span>Joined</span><strong id="selectedUserJoined">—</strong></article></div>
               <div class="admin-credit-controls"><label for="adminCreditAmount">Credit amount</label><input id="adminCreditAmount" type="number" min="0" max="100000" step="1" value="2"><div class="admin-action-buttons"><button id="adminAddCreditsButton" class="primary-button" type="button">Add credits</button><button id="adminSetCreditsButton" class="secondary-button" type="button">Set balance</button><button id="adminResetCreditsButton" class="secondary-button" type="button">Reset to 0</button></div></div>
               <div class="admin-access-controls"><div><span class="eyebrow">ACCOUNT ACCESS</span><p id="adminAccessCopy">Suspend this account from using BIISMO REG.</p></div><button id="adminBanUserButton" class="danger-button" type="button">Ban user</button></div>
               <div class="admin-direct-notification"><span class="eyebrow">DIRECT PUSH</span><label for="adminDirectNotificationTitle">Title</label><input id="adminDirectNotificationTitle" type="text" maxlength="80" value="BIISMO REG"><label for="adminDirectNotificationMessage">Message</label><textarea id="adminDirectNotificationMessage" maxlength="240" rows="3" placeholder="Type a message for this account…"></textarea><button id="adminDirectNotificationButton" class="secondary-button" type="button">Send to this account</button><p id="adminDirectNotificationStatus" class="admin-status" role="status"></p></div>
