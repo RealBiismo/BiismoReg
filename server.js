@@ -314,7 +314,7 @@ function periodEndIso(value) {
 
 async function handleStripeWebhook(req, res) {
   if (!stripeIsConfigured()) {
-    return res.status(503).json({ error: "Purchases are not configured yet." });
+    return res.status(503).json({ error: "Credit purchases are not configured yet." });
   }
 
   const signature = req.get("stripe-signature");

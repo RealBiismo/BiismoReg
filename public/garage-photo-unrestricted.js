@@ -1,5 +1,5 @@
 (() => {
-  const grid = document.getElementById("garageGrid");
+  const grid = document.getElementById("savedVehicles");
   if (!grid) return;
 
   const helperText = "Choose any photo from your device";

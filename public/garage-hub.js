@@ -1,5 +1,5 @@
 (() => {
-  const garageGrid = document.getElementById("garageGrid");
+  const garageGrid = document.getElementById("savedVehicles");
   if (!garageGrid || !window.biismoAuth) return;
 
   const profiles = new Map();

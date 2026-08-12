@@ -1,7 +1,7 @@
 (() => {
-  const grid = document.getElementById("garageGrid");
+  const grid = document.getElementById("savedVehicles");
   const originalReminderSection = document.querySelector(".reminder-section");
-  const originalReminderToggle = document.getElementById("reminderToggleButton");
+  const originalReminderToggle = document.getElementById("enableNotificationsButton");
   if (!grid || !window.biismoAuth) return;
 
   let client = null;

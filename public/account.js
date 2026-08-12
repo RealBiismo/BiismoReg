@@ -1,6 +1,6 @@
-const garageGrid = document.getElementById("garageGrid");
+const garageGrid = document.getElementById("savedVehicles");
 const garageStatus = document.getElementById("garageStatus");
-const vehicleCount = document.getElementById("vehicleCount");
+const vehicleCount = document.getElementById("savedVehicleCount");
 const accountEmail = document.getElementById("accountEmail");
 const loadingOverlay = document.getElementById("loadingOverlay");
 const freeSearchesRemaining = document.getElementById("freeSearchesRemaining");
@@ -13,14 +13,14 @@ const adminView = document.getElementById("adminView");
 const adminUserSearchForm = document.getElementById("adminUserSearchForm");
 const adminUserEmail = document.getElementById("adminUserEmail");
 const adminUserSearchButton = document.getElementById("adminUserSearchButton");
-const adminStatus = document.getElementById("adminStatus");
+const adminStatus = document.getElementById("adminUserStatus");
 const adminUserResult = document.getElementById("adminUserResult");
 const adminCreditAmount = document.getElementById("adminCreditAmount");
 const adminAddCreditsButton = document.getElementById("adminAddCreditsButton");
 const adminSetCreditsButton = document.getElementById("adminSetCreditsButton");
 const adminResetCreditsButton = document.getElementById("adminResetCreditsButton");
 const reminderStatus = document.getElementById("reminderStatus");
-const reminderToggleButton = document.getElementById("reminderToggleButton");
+const reminderToggleButton = document.getElementById("enableNotificationsButton");
 const reminderVehicleList = document.getElementById("reminderVehicleList");
 const adminNotificationTitle = document.getElementById("adminNotificationTitle");
 const adminNotificationMessage = document.getElementById("adminNotificationMessage");
@@ -565,9 +565,8 @@ function renderAdminUser(account) {
   selectedPushDevices = Number(account.pushDevices) || 0;
   document.getElementById("selectedUserEmail").textContent = account.email;
   document.getElementById("selectedUserCredits").textContent = String(Number(account.credits) || 0);
-  document.getElementById("selectedUserFreeRemaining").textContent = String(Number(account.freeRemaining) || 0);
-  document.getElementById("selectedUserFreeUsed").textContent = String(Number(account.freeUsed) || 0);
-  document.getElementById("selectedUserPushDevices").textContent = String(selectedPushDevices);
+  document.getElementById("selectedUserSearches").textContent = String(Number(account.searchesToday ?? account.freeUsed) || 0);
+  document.getElementById("selectedUserVehicles").textContent = String(Number(account.savedVehicles ?? account.vehicleCount) || 0);
   adminUserResult.hidden = false;
 }
 

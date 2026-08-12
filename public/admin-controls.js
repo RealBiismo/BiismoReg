@@ -6,7 +6,7 @@
   const adminUserSearchForm = byId("adminUserSearchForm");
   const adminUserEmail = byId("adminUserEmail");
   const adminUserSearchButton = byId("adminUserSearchButton");
-  const adminStatus = byId("adminStatus");
+  const adminStatus = byId("adminUserStatus");
   const adminUserResult = byId("adminUserResult");
   const selectedUserEmail = byId("selectedUserEmail");
   const selectedUserCredits = byId("selectedUserCredits");

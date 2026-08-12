@@ -1,8 +1,12 @@
-const CACHE_NAME = "biismo-reg-v56";
+const CACHE_NAME = "biismo-reg-v57";
 const CANONICAL_ORIGIN = "https://biismoreg.com";
 const LEGACY_HOSTS = new Set(["biismoreg-com.onrender.com"]);
 const NETWORK_FIRST_ASSETS = new Set([
+  "/",
   "/index.html",
+  "/script.js",
+  "/style.css",
+  "/classic.css",
   "/account.html",
   "/credits.html",
   "/credits.js",
@@ -116,7 +120,17 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        STATIC_ASSETS.map(async (asset) => {
+          const response = await fetch(asset, { cache: "reload" });
+          if (!response.ok) throw new Error(`Could not precache ${asset}: ${response.status}`);
+          await cache.put(asset, response);
+        })
+      )
+    )
+  );
   self.skipWaiting();
 });
 
@@ -163,7 +177,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (NETWORK_FIRST_ASSETS.has(requestUrl.pathname)) {
+  if (event.request.mode === "navigate" || NETWORK_FIRST_ASSETS.has(requestUrl.pathname)) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
