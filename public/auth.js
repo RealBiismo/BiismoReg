@@ -1,4 +1,5 @@
 (() => {
+  const BIISMO_ORIGIN = "https://biismoreg.com";
   let client = null;
   let currentUser = null;
   let authMode = "signin";
@@ -16,6 +17,35 @@
   const signUpTab = document.getElementById("signUpTab");
   const googleAuthButton = document.getElementById("googleAuthButton");
   const forgotPasswordButton = document.getElementById("forgotPasswordButton");
+
+  function installBiismoAuthBrand() {
+    if (!document.querySelector('link[href="/auth-brand.css"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "/auth-brand.css";
+      document.head.append(link);
+    }
+    if (!authDialog || authDialog.querySelector(".biismo-auth-brand")) return;
+    const brand = document.createElement("div");
+    brand.className = "biismo-auth-brand";
+    brand.innerHTML = '<img src="/icon-192.png" alt=""><div><strong>BIISMO REG</strong><span>Secure account access</span></div>';
+    authDialog.prepend(brand);
+    const legal = authDialog.querySelector(".auth-legal");
+    if (legal) legal.textContent = "Secure sign-in for your BIISMO REG account. New email accounts must confirm their email before signing in.";
+  }
+
+  function friendlyAuthError(error, fallback = "We couldn't complete that account request. Please try again.") {
+    const raw = String(error?.message || error || "").toLowerCase();
+    if (!raw) return fallback;
+    if (raw.includes("invalid login credentials")) return "That email or password doesn't match a BIISMO REG account.";
+    if (raw.includes("email not confirmed")) return "Confirm your email first, then come back and sign in.";
+    if (raw.includes("user already registered")) return "A BIISMO REG account already exists with that email.";
+    if (raw.includes("password") && (raw.includes("weak") || raw.includes("characters"))) return "Choose a stronger password with at least 8 characters.";
+    if (raw.includes("rate limit") || raw.includes("too many")) return "Too many attempts. Wait a moment and try again.";
+    if (raw.includes("network") || raw.includes("fetch") || raw.includes("timeout")) return "BIISMO REG couldn't reach the account service. Check your connection and try again.";
+    if (raw.includes("provider") || raw.includes("oauth")) return "Google sign-in couldn't be completed. Please try again.";
+    return fallback;
+  }
 
   function setAuthMessage(message, type = "") {
     if (!authMessage) return;
@@ -35,13 +65,14 @@
 
     const isSignUp = mode === "signup";
     const isRecovery = mode === "recovery";
+    authDialog?.classList.toggle("is-recovery", isRecovery);
     authTitle.textContent = isRecovery
-      ? "Choose a new password"
+      ? "Reset your BIISMO REG password"
       : isSignUp
-        ? "Create your account"
+        ? "Create your BIISMO REG account"
         : "Welcome back";
     authSubmitButton.textContent = isRecovery
-      ? "Update password"
+      ? "Save new password"
       : isSignUp
         ? "Create account"
         : "Sign in";
@@ -54,7 +85,10 @@
     document.querySelector(".auth-tabs")?.classList.toggle("is-hidden", isRecovery);
     document.getElementById("authEmailLabel")?.classList.toggle("is-hidden", isRecovery);
     if (authEmail) authEmail.classList.toggle("is-hidden", isRecovery);
-    if (authPassword) authPassword.autocomplete = isSignUp || isRecovery ? "new-password" : "current-password";
+    if (authPassword) {
+      authPassword.autocomplete = isSignUp || isRecovery ? "new-password" : "current-password";
+      authPassword.placeholder = isRecovery ? "Choose at least 8 characters" : "At least 8 characters";
+    }
     googleAuthButton?.classList.toggle("is-hidden", isRecovery);
     forgotPasswordButton?.classList.toggle("is-hidden", mode !== "signin");
     document.querySelector(".auth-divider")?.classList.toggle("is-hidden", isRecovery);
@@ -62,20 +96,22 @@
   }
 
   function openAuthDialog(mode = "signin") {
+    installBiismoAuthBrand();
     setAuthMode(mode);
     if (configurationError) setAuthMessage(configurationError, "error");
     if (authDialog && !authDialog.open) authDialog.showModal();
   }
 
   async function initialize() {
+    installBiismoAuthBrand();
     try {
       if (!window.supabase?.createClient) {
-        throw new Error("The secure account library could not be loaded.");
+        throw new Error("BIISMO REG secure account services could not be loaded.");
       }
 
       const response = await fetch("/api/config", { cache: "no-store" });
       const config = await response.json();
-      if (!response.ok) throw new Error(config.error || "Account services are unavailable.");
+      if (!response.ok) throw new Error(config.error || "BIISMO REG account services are unavailable.");
 
       client = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
         auth: {
@@ -99,9 +135,7 @@
           })
         );
 
-        if (event === "PASSWORD_RECOVERY") {
-          openAuthDialog("recovery");
-        }
+        if (event === "PASSWORD_RECOVERY") openAuthDialog("recovery");
       });
 
       const params = new URLSearchParams(window.location.search);
@@ -110,14 +144,14 @@
 
       return true;
     } catch (error) {
-      configurationError = error.message || "Account services are unavailable.";
+      configurationError = friendlyAuthError(error, "BIISMO REG account services are unavailable right now.");
       updateAccountButton();
       return false;
     }
   }
 
   function requireClient() {
-    if (!client) throw new Error(configurationError || "Account services are unavailable.");
+    if (!client) throw new Error(configurationError || "BIISMO REG account services are unavailable.");
     return client;
   }
 
@@ -130,10 +164,7 @@
     const headers = new Headers(options.headers || {});
     headers.set("Authorization", `Bearer ${data.session.access_token}`);
 
-    return fetch(url, {
-      ...options,
-      headers,
-    });
+    return fetch(url, { ...options, headers });
   }
 
   async function signIn(email, password) {
@@ -148,7 +179,7 @@
     const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/account.html` },
+      options: { emailRedirectTo: `${BIISMO_ORIGIN}/account.html` },
     });
     if (error) throw error;
     return data;
@@ -158,7 +189,7 @@
     const supabaseClient = requireClient();
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/account.html` },
+      options: { redirectTo: `${BIISMO_ORIGIN}/account.html` },
     });
     if (error) throw error;
   }
@@ -239,12 +270,12 @@
   signUpTab?.addEventListener("click", () => setAuthMode("signup"));
 
   googleAuthButton?.addEventListener("click", async () => {
-    setAuthMessage("Opening Google sign-in…");
+    setAuthMessage("Opening secure Google sign-in…");
     googleAuthButton.disabled = true;
     try {
       await signInWithGoogle();
     } catch (error) {
-      setAuthMessage(error.message, "error");
+      setAuthMessage(friendlyAuthError(error, "Google sign-in couldn't be completed. Please try again."), "error");
       googleAuthButton.disabled = false;
     }
   });
@@ -264,28 +295,28 @@
     }
 
     authSubmitButton.disabled = true;
-    setAuthMessage(authMode === "signup" ? "Creating your secure account…" : "Signing you in…");
+    setAuthMessage(authMode === "signup" ? "Creating your BIISMO REG account…" : authMode === "recovery" ? "Saving your new password…" : "Signing you in…");
 
     try {
       if (authMode === "recovery") {
         const { error } = await requireClient().auth.updateUser({ password });
         if (error) throw error;
-        setAuthMessage("Password updated. Taking you to your garage…", "success");
-        setTimeout(() => { window.location.href = "/account.html"; }, 700);
+        setAuthMessage("Password updated. Taking you to your account…", "success");
+        setTimeout(() => { window.location.href = `${BIISMO_ORIGIN}/account.html`; }, 700);
       } else if (authMode === "signup") {
         const data = await signUp(email, password);
         if (data.session) {
-          window.location.href = "/account.html";
+          window.location.href = `${BIISMO_ORIGIN}/account.html`;
         } else {
-          setAuthMessage("Check your inbox and confirm your email to activate the account.", "success");
+          setAuthMessage("We've sent a BIISMO REG confirmation email. Open it to activate your account.", "success");
           authForm.reset();
         }
       } else {
         await signIn(email, password);
-        window.location.href = "/account.html";
+        window.location.href = `${BIISMO_ORIGIN}/account.html`;
       }
     } catch (error) {
-      setAuthMessage(error.message || "Authentication failed. Please try again.", "error");
+      setAuthMessage(friendlyAuthError(error), "error");
     } finally {
       authSubmitButton.disabled = false;
     }
@@ -299,14 +330,15 @@
     }
 
     forgotPasswordButton.disabled = true;
+    setAuthMessage("Sending your BIISMO REG reset link…");
     try {
       const { error } = await requireClient().auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/?recovery=1`,
+        redirectTo: `${BIISMO_ORIGIN}/?recovery=1`,
       });
       if (error) throw error;
-      setAuthMessage("Password reset email sent. Check your inbox.", "success");
+      setAuthMessage("Reset link sent. Check your inbox and follow the BIISMO REG password reset link.", "success");
     } catch (error) {
-      setAuthMessage(error.message || "The reset email could not be sent.", "error");
+      setAuthMessage(friendlyAuthError(error, "The reset email couldn't be sent. Please try again."), "error");
     } finally {
       forgotPasswordButton.disabled = false;
     }
